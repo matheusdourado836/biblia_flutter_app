@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>693460458631-qo3u5vp4spma6eomjt21nn1oktvoi5q0.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.693460458631-qo3u5vp4spma6eomjt21nn1oktvoi5q0</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBUu81pwxGZwWB7_G0Sz5UUQXir3Ab1rK0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>693460458631</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.bibliaFlutterApp</string>
+	<key>PROJECT_ID</key>
+	<string>biblia-online-a1a06</string>
+	<key>STORAGE_BUCKET</key>
+	<string>biblia-online-a1a06.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:693460458631:ios:065950a0f75cc7e28cac22</string>
+</dict>
+</plist>
