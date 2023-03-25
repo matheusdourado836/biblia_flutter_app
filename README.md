@@ -4,13 +4,13 @@ Este é um aplicativo para dispositivos Android que permite aos usuários acessa
 Todas as imagens utilizadas no aplicativo foram obtidas no site FlatIcon e possuem licença gratuita para uso.
 
 # Funcionalidades
-Leitura da Bíblia em diversos idiomas e traduções;
-Pesquisa de versículos por palavras-chave;
-Favoritar versículos para acesso rápido;
-Compartilhamento de versículos nas redes sociais;
-Marcar livros como lidos;
-Exibição do progresso de leitura;
-Suporte para modo escuro.
+- Leitura da Bíblia em diversos idiomas e traduções;
+- Pesquisa de versículos por palavras-chave;
+- Favoritar versículos para acesso rápido;
+- Compartilhamento de versículos nas redes sociais;
+- Marcar livros como lidos;
+- Exibição do progresso de leitura;
+- Suporte para modo escuro.
 
 # Instalação
 O aplicativo pode ser instalado a partir da Google Play Store ou por meio do arquivo APK disponível no repositório GitHub do projeto.
