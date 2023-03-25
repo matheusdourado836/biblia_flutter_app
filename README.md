@@ -1,16 +1,30 @@
-# biblia_flutter_app
+## Bíblia Online
+Este é um aplicativo para dispositivos Android que permite aos usuários acessarem a Bíblia Sagrada online. O aplicativo foi desenvolvido utilizando a tecnologia Flutter como forma de testar os conhecimentos em desenvolvimento de aplicativos móveis.
 
-A new Flutter project.
+Todas as imagens utilizadas no aplicativo foram obtidas no site FlatIcon e possuem licença gratuita para uso.
 
-## Getting Started
+# Funcionalidades
+Leitura da Bíblia em diversos idiomas e traduções;
+Pesquisa de versículos por palavras-chave;
+Favoritar versículos para acesso rápido;
+Compartilhamento de versículos nas redes sociais;
+Marcar livros como lidos;
+Exibição do progresso de leitura;
+Suporte para modo escuro.
 
-This project is a starting point for a Flutter application.
+# Instalação
+O aplicativo pode ser instalado a partir da Google Play Store ou por meio do arquivo APK disponível no repositório GitHub do projeto.
 
-A few resources to get you started if this is your first Flutter project:
+# Como usar
+Ao abrir o aplicativo, os usuários podem selecionar a tradução e o livro que desejam ler. Em seguida, os capítulos disponíveis serão exibidos e o usuário pode escolher o capítulo que deseja ler.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Os usuários também podem pesquisar versículos específicos por meio da barra de pesquisa. Para favoritar um versículo, basta pressioná-lo e selecionar e escolher a cor desejada.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Para marcar um livro como lido, o usuário deve selecionar o livro em questão e selecionar a checkbox que aparecerá na tela dos capítulos. O progresso de leitura será exibido ao lado do nome do livro na lista de livros disponíveis e também no menu de informações que está na tela inicial.
+
+Para compartilhar um versículo, basta pressioná-lo e selecionar a opção "compartilhar". Em seguida, o usuário poderá escolher em qual rede social deseja compartilhar o versículo.
+
+O aplicativo também suporta o modo escuro, que pode ser habilitado no menu.
+
+# Contribuindo
+Este é um projeto de código aberto e todos são bem-vindos para contribuir. Para contribuir com o projeto, basta criar um "fork" do repositório, implementar as melhorias desejadas e enviar um "pull request" para análise.
