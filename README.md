@@ -4,6 +4,7 @@ Este é um aplicativo para dispositivos Android que permite aos usuários acessa
 Todas as imagens utilizadas no aplicativo foram obtidas no site FlatIcon e possuem licença gratuita para uso.
 
 # Funcionalidades
+- Sitema de envio de notificações diárias para todos os usuários;
 - Leitura da Bíblia em diversos idiomas e traduções;
 - Pesquisa de versículos por palavras-chave;
 - Favoritar versículos para acesso rápido;
