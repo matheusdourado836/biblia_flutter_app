@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
-import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/verse_model.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';

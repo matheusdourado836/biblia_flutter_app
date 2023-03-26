@@ -1,6 +1,5 @@
 import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
-import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/convert_colors.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
