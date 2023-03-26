@@ -1,9 +1,11 @@
 import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/exception_dialog.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
+import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/email_screen/email_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
+import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/saved_verses.dart';
 import 'package:biblia_flutter_app/screens/search_screen/search_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/verses_screen.dart';
@@ -50,6 +52,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => SavedVersesProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => SearchVersesProvider()),
+        ChangeNotifierProvider(create: (context) => VersionProvider()),
       ],
       child: const MyApp(),
     ),
@@ -97,7 +100,7 @@ class MyApp extends StatelessWidget {
                 verseNumber: map?["verseNumber"],
               );
             }catch (e) {
-              return exceptionDialog(content: 'Não foi possível carregar o versículo\nErro: ${e.toString()}');
+              return alertDialog(content: 'Não foi possível carregar o versículo\nErro: ${e.toString()}');
             }
           });
         } else if (settings.name == 'saved_verses') {
@@ -111,6 +114,10 @@ class MyApp extends StatelessWidget {
         } else if (settings.name == 'email_screen') {
           return MaterialPageRoute(builder: (context) {
             return const EmailScreen();
+          });
+        } else if (settings.name == 'random_verse_screen') {
+          return MaterialPageRoute(builder: (context) {
+            return const RandomVerseScreen();
           });
         }
 

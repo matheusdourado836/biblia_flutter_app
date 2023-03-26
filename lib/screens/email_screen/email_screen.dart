@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../helpers/exception_dialog.dart';
+import '../../helpers/alert_dialog.dart';
 
 class EmailScreen extends StatelessWidget {
   final String emailAddress = 'mathewdourado@gmail.com';
@@ -36,7 +36,7 @@ class EmailScreen extends StatelessWidget {
             try {
               await launchUrl(emailLaunchUri);
             }catch (e) {
-              exceptionDialog(content: e.toString());
+              alertDialog(content: e.toString());
             }
           },
         ),

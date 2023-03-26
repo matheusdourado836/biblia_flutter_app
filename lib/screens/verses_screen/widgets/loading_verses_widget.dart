@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/convert_colors.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
@@ -10,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../data/verse_inherited.dart';
-import '../../../helpers/exception_dialog.dart';
+import '../../../helpers/alert_dialog.dart';
 import '../../../helpers/loading_widget.dart';
 import '../../../models/chapter.dart';
 import '../verses_screen.dart';
@@ -53,14 +54,14 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SavedVersesProvider>(
-      builder: (context, value, child) {
+    return Consumer<VersionProvider>(
+      builder: (context, value, widgett) {
         return FutureBuilder<List<Chapter>>(
-          future: service.getVerses(widget.abbrev, _chapter.toString(), version: savedVersesProvider.version.toLowerCase())
+          future: service.getVerses(widget.abbrev, _chapter.toString(), version: versionProvider.version.toLowerCase())
               .catchError(
                 (error) {
               var innerError = error as TimeoutException;
-              exceptionDialog(title: 'Erro ${innerError.message}',
+              alertDialog(title: 'Erro ${innerError.message}',
                   content:
                   'O servidor demorou pra responder. Tente novamente mais tarde.');
             },
@@ -69,9 +70,14 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
           builder: (context, snapshot) {
             if (snapshot.data != null) {
               if (snapshot.data!.isNotEmpty && listColorsDb.length == snapshot.data!.length) {
-                return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: verseWidget(snapshot.data!, snapshot.data!.length));
+                return Consumer<SavedVersesProvider>(
+                  builder: (context, value, widget) {
+                    return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: verseWidget(snapshot.data!, snapshot.data!.length)
+                    );
+                  },
+                );
               }
             }else if(snapshot.hasError) {
               return Center(child: Text('ERRO: ${snapshot.error}'));

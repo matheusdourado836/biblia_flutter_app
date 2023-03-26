@@ -19,6 +19,16 @@ ThemeData darkTheme = ThemeData(
       color: Color.fromRGBO(255, 255, 255, 0.85),
       fontWeight: FontWeight.bold
     ),
+    displayLarge: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 24
+    ),
+    displayMedium: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 20
+    ),
     titleLarge: TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.bold,

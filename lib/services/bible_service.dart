@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:biblia_flutter_app/services/webclient.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,9 @@ import '../models/chapter.dart';
 
 class BibleService {
   static String? token = dotenv.env['API_TOKEN'];
-      String url = Webclient.url;
+  static String? imageToken = dotenv.env['IMAGES_API_TOKEN'];
+  static String url = Webclient.url;
+  static String imageUrl = Webclient.imageUrl;
   http.Client client = Webclient().client;
 
   Future<List<Book>> getAllBooks() async {
@@ -69,6 +72,21 @@ class BibleService {
     }
 
     return json.decode(response.body);
+  }
+
+  Future<String> getRandomImage() async {
+    http.Response response = await client.get(
+        Uri.parse('${imageUrl}verses/nvi/random'),
+        headers: {"Authorization": "$imageToken"});
+
+    if (response.statusCode != 200) {
+      throw HttpException(response.statusCode.toString());
+    }
+    final List<dynamic> photos = jsonDecode(response.body)['photos'];
+    final Map<String, dynamic> randomPhoto = photos[Random().nextInt(photos.length)];
+    final String url = randomPhoto['src']['large2x'];
+
+    return url;
   }
 
   Future<List<Chapter>> searchByWord(String text) async {

@@ -1,4 +1,5 @@
 import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import '../../data/verse_inherited.dart';
 
 int initialVerse = 0;
 late SavedVersesProvider savedVersesProvider;
+late VersionProvider versionProvider;
 
 class VersesScreen extends StatefulWidget {
   final String bookName;
@@ -55,6 +57,7 @@ class _VersesScreenState extends State<VersesScreen> {
     }
     _pageController = PageController(initialPage: widget.chapter - 1);
     savedVersesProvider = Provider.of<SavedVersesProvider>(context, listen: false);
+    versionProvider = Provider.of<VersionProvider>(context, listen: false);
     super.initState();
   }
 
@@ -73,7 +76,8 @@ class _VersesScreenState extends State<VersesScreen> {
           leading: IconButton(
             onPressed: (() {
               savedVersesProvider.refresh();
-              Navigator.pushReplacementNamed(context, 'chapter_screen', arguments: {'bookName': widget.bookName, 'abbrev': widget.abbrev, 'chapters': _chapters});
+              Navigator.pop(context);
+              //Navigator.pushReplacementNamed(context, 'chapter_screen', arguments: {'bookName': widget.bookName, 'abbrev': widget.abbrev, 'chapters': _chapters});
             }),
             icon: const Icon(Icons.arrow_back),
           ),
@@ -152,7 +156,7 @@ class _VersesScreenState extends State<VersesScreen> {
                       setState(() {
                         _selectedOption = newValue!;
                       });
-                      savedVersesProvider.changeVersion(_selectedOption.split(' ')[0]);
+                      versionProvider.changeVersion(_selectedOption.split(' ')[0]);
                     },
                     selectedItemBuilder: (BuildContext context) {
                       return _optinsReduced;
@@ -219,7 +223,7 @@ class _VersesScreenState extends State<VersesScreen> {
                       }),
                       child: Icon(
                         Icons.arrow_back_ios_rounded,
-                        size: (notScrolling && savedVersesProvider.versesSelected == false) ? 26 : 0,
+                        size: (notScrolling && savedVersesProvider.versesSelected == false) ? 22 : 0,
                         color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
                       ),
                     ),
@@ -242,7 +246,7 @@ class _VersesScreenState extends State<VersesScreen> {
                     }),
                     child: Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: (notScrolling && savedVersesProvider.versesSelected == false) ? 26 : 0,
+                      size: (notScrolling && savedVersesProvider.versesSelected == false) ? 22 : 0,
                       color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
                     ),
                   ),

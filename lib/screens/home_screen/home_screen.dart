@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
-import 'package:biblia_flutter_app/data/verses_dao.dart';
-import 'package:biblia_flutter_app/helpers/random_verse_dialog.dart';
+import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../helpers/exception_dialog.dart';
 import '../../models/book.dart';
 import '../../services/bible_service.dart';
 import '../../data/theme_provider.dart';
@@ -25,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final BibleService service = BibleService();
   late Future<List<Book>> futureList;
   List<Book>? listBooks;
-  Map<String, dynamic> verseInfo = {};
   bool changeLayout = true;
   bool toggleMode = true;
   late SavedVersesProvider _savedVersesProvider;
@@ -33,9 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     futureList = service.getAllBooks();
-    _savedVersesProvider = Provider.of<SavedVersesProvider>(context, listen: false);
+    _savedVersesProvider = Provider.of<SavedVersesProvider>(navigatorKey!.currentContext!, listen: false);
     _savedVersesProvider.refresh();
-    getRandomVerse();
+    _savedVersesProvider.getRandomVerse();
     super.initState();
   }
 
@@ -50,8 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              randomVerseDialog(verseInfo, title: '${verseInfo["bookName"]} ${verseInfo["chapter"]}:${verseInfo["verseNumber"]}', content: verseInfo["verse"],);
-              getRandomVerse();
+              if(_savedVersesProvider.verseInfo.isEmpty) {
+                _savedVersesProvider.getRandomVerse().then((value) => {if(value.isNotEmpty){Navigator.pushNamed(context, 'random_verse_screen')}else {alertDialog(content: 'Não foi possível carregar um versículo aleatório')}});
+              }
+              Navigator.pushNamed(context, 'random_verse_screen');
             },
             tooltip: 'Versículo Aleatório',
             icon: const Icon(Icons.help_outline_rounded),
@@ -255,38 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return false;
-  }
-
-  getRandomVerse() {
-    verseInfo = {};
-    service.getRandomVerse().then((value) async => {
-        await service.getBookDetail(value["book"]["abbrev"]["pt"]).then((value) => {verseInfo["chapters"] = value["chapters"]}),
-        verseInfo["bookName"] = value["book"]["name"],
-        verseInfo["abbrev"] = value["book"]["abbrev"]["pt"],
-        verseInfo["chapter"] = value["chapter"],
-        verseInfo["verseNumber"] = value["number"],
-        verseInfo["verse"] = value["text"]
-    }
-    ).catchError(
-          (error) {
-            var innerError = error as TimeoutException;
-        exceptionDialog(title: 'Erro ${innerError.message}',
-            content:
-            'O servidor demorou pra responder. Tente novamente mais tarde.');
-      },
-      test: (error) => error is TimeoutException,
-    ).catchError(
-          (error) {
-            var innerError = error as HttpException;
-        exceptionDialog(title: 'Erro ${innerError.message}',
-            content:
-            'O servidor demorou pra responder. Tente novamente mais tarde.');
-      },
-      test: (error) => error is HttpException,
-    );
-    setState(() {
-      verseInfo;
-    });
   }
 
   formatValue(double value) {

@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -102,60 +103,82 @@ class _SearchScreenState extends State<SearchScreen> {
                                 context, 'verses_screen', arguments: map);
                           }),
                           child: Card(
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment
-                                        .spaceBetween,
-                                    children: [
-                                      Text(
-                                        '${listResult![index]['book']} ${listResult![index]['chapter']}:${listResult![index]['verseNumber']}',
-                                        style: Theme
-                                            .of(context)
-                                            .textTheme
-                                            .titleLarge,),
-                                    ],
+                            child: Slidable(
+                              endActionPane: ActionPane(
+                                motion: const ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (context) {_searchVersesProvider.share(listResult![index]['book'], listResult![index]['verse'], listResult![index]['chapter'], listResult![index]['verseNumber']);},
+                                    icon: Icons.share,
+                                    label: 'Share',
+                                    backgroundColor: Theme.of(context).buttonTheme.colorScheme!.background,
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Container(
-                                    color: Theme
-                                        .of(context)
-                                        .colorScheme
-                                        .surface,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                          '${listResult![index]['verse']}',
+                                  SlidableAction(
+                                    onPressed: (context) {_searchVersesProvider.copyText(listResult![index]['book'], listResult![index]['verse'], listResult![index]['chapter'], listResult![index]['verseNumber']);},
+                                    icon: Icons.copy,
+                                    label: 'Copiar',
+                                    backgroundColor: Theme.of(context).buttonTheme.colorScheme!.background.withOpacity(0.9),
+                                  )
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment
+                                          .spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${listResult![index]['book']} ${listResult![index]['chapter']}:${listResult![index]['verseNumber']}',
                                           style: Theme
                                               .of(context)
                                               .textTheme
-                                              .bodyLarge),
+                                              .titleLarge,),
+                                      ],
                                     ),
                                   ),
-                                )
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      color: Theme
+                                          .of(context)
+                                          .colorScheme
+                                          .surface,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                            '${listResult![index]['verse']}',
+                                            style: Theme
+                                                .of(context)
+                                                .textTheme
+                                                .bodyLarge),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       );
                     });
               } else if (listResult != null && listResult!.isEmpty) {
-                return Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Image(
-                        image: AssetImage('assets/images/nothing_yet.png')),
-                    SizedBox(height: 32),
-                    Text('Nenhum Versículo Encontrado...',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w200),
-                        textAlign: TextAlign.center)
-                  ],
+                return SizedBox(
+                  height: MediaQuery.of(context).size.height,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Image(
+                            image: AssetImage('assets/images/not_found.png')),
+                        Text('Nenhum Versículo Encontrado...',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w200),
+                            textAlign: TextAlign.center)
+                      ],
+                    ),
+                  ),
                 );
               } else {
                 return Container();

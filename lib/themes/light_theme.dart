@@ -24,6 +24,16 @@ ThemeData lightTheme = ThemeData(
       titleMedium: TextStyle(
         color: Colors.yellow[400]!,
       ),
+        displayLarge: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 24
+        ),
+        displayMedium: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20
+        ),
         titleLarge: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
