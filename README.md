@@ -1,5 +1,5 @@
-# Bíblia Online
-Este é um aplicativo para dispositivos Android que permite aos usuários acessarem a Bíblia Sagrada online. O aplicativo foi desenvolvido utilizando a tecnologia Flutter como forma de testar os conhecimentos em desenvolvimento de aplicativos móveis.
+# Bíblia Offline
+Este é um aplicativo para dispositivos Android que permite aos usuários acessarem a Bíblia Sagrada offline. O aplicativo foi desenvolvido utilizando a tecnologia Flutter como forma de testar os conhecimentos em desenvolvimento de aplicativos móveis.
 
 Todas as imagens utilizadas no aplicativo foram obtidas no site FlatIcon e possuem licença gratuita para uso.
 
