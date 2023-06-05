@@ -28,42 +28,42 @@ class NotificationService {
   _initializeNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await localNotificationsPlugin.initialize(
-      const InitializationSettings(
-        android: android
-      ),
+      const InitializationSettings(android: android),
       onSelectNotification: _onSelectedNotification,
     );
   }
 
   _onSelectedNotification(String? payload) {
-    if(payload != null && payload.isNotEmpty) {
-      GoToVerseScreen().goToVersePage(payload.split(' ')[0], payload.split(' ')[1], int.parse(payload.split(' ')[2]), int.parse(payload.split(' ')[3]), int.parse(payload.split(' ')[4]));
+    if (payload != null && payload.isNotEmpty) {
+      GoToVerseScreen().goToVersePage(
+          payload.split(' ')[0],
+          payload.split(' ')[1],
+          int.parse(payload.split(' ')[2]),
+          int.parse(payload.split(' ')[3]),
+          int.parse(payload.split(' ')[4]),
+          int.parse(payload.split(' ')[5]));
     }
   }
 
   showNotification(CustomNotification notification) {
     androidNotificationDetails = const AndroidNotificationDetails(
-      'versiculo_diario_notification',
-      'versiculo_diario',
-      importance: Importance.max,
-      priority: Priority.max,
-      enableVibration: true
-    );
+        'versiculo_diario_notification', 'versiculo_diario',
+        importance: Importance.max,
+        priority: Priority.max,
+        enableVibration: true);
 
     localNotificationsPlugin.show(
-      notification.id,
-      notification.title,
-      notification.body,
-      NotificationDetails(
-        android: androidNotificationDetails
-      ),
-      payload: notification.payload
-    );
+        notification.id,
+        notification.title,
+        notification.body,
+        NotificationDetails(android: androidNotificationDetails),
+        payload: notification.payload);
   }
 
   checkForNotification() async {
-    final details = await localNotificationsPlugin.getNotificationAppLaunchDetails();
-    if(details != null && details.didNotificationLaunchApp) {
+    final details =
+        await localNotificationsPlugin.getNotificationAppLaunchDetails();
+    if (details != null && details.didNotificationLaunchApp) {
       _onSelectedNotification(details.payload);
     }
   }

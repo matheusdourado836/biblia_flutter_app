@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 
-class RoundContainer extends StatefulWidget {
+class RoundContainer extends StatelessWidget {
   final Color color;
 
   const RoundContainer({Key? key, required this.color}) : super(key: key);
 
-  @override
-  State<RoundContainer> createState() => _RoundContainerState();
-}
-
-class _RoundContainerState extends State<RoundContainer> {
   @override
   Widget build(BuildContext context) {
     const double width = 35;
@@ -18,7 +13,7 @@ class _RoundContainerState extends State<RoundContainer> {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: widget.color,
+        color: color,
         borderRadius: const BorderRadius.all(
           Radius.circular(100),
         ),

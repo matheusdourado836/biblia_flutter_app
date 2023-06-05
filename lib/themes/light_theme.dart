@@ -8,6 +8,13 @@ ThemeData lightTheme = ThemeData(
   cardTheme: const CardTheme(
     color: Colors.brown,
   ),
+  dropdownMenuTheme: const DropdownMenuThemeData(
+    textStyle: TextStyle(
+      color: Colors.black,
+      fontSize: 16,
+      fontWeight: FontWeight.w600
+    ),
+  ),
   highlightColor: Colors.black12,
   appBarTheme: const AppBarTheme(
     iconTheme: IconThemeData(
@@ -21,7 +28,14 @@ ThemeData lightTheme = ThemeData(
       fontSize: 16,),
   ),
     textTheme: TextTheme(
+       titleLarge: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16
+       ),
       titleMedium: TextStyle(
+        fontFamily: 'Poppins',
+        fontWeight: FontWeight.w500,
         color: Colors.yellow[400]!,
       ),
         displayLarge: const TextStyle(
@@ -34,19 +48,13 @@ ThemeData lightTheme = ThemeData(
             fontWeight: FontWeight.bold,
             fontSize: 20
         ),
-        titleLarge: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16
-        ),
         bodyMedium: const TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.normal,
+            color: Colors.black, fontSize: 16, fontFamily: 'Poppins', fontWeight: FontWeight.w500
         ),
         bodyLarge: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+          fontFamily: 'Poppins',
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         )
     ),
 );

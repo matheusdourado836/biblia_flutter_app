@@ -1,116 +1,127 @@
-import 'dart:async';
-
-import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
-import 'package:biblia_flutter_app/data/verses_dao.dart';
-import 'package:biblia_flutter_app/data/version_provider.dart';
-import 'package:biblia_flutter_app/helpers/convert_colors.dart';
+import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:uuid/uuid.dart';
+import '../../../data/bible_data_controller.dart';
 import '../../../data/verse_inherited.dart';
-import '../../../helpers/alert_dialog.dart';
-import '../../../helpers/loading_widget.dart';
-import '../../../models/chapter.dart';
+import '../../../models/annotation_model.dart';
 import '../verses_screen.dart';
 
-List<Map<String, dynamic>> listMap = [];
 bool versesSelected = false;
+late ItemScrollController itemScrollController;
 
 class LoadingVersesWidget extends StatefulWidget {
   final String bookName;
   final String abbrev;
+  final int bookIndex;
   final int chapter;
   final String verseColors;
 
-  const LoadingVersesWidget(
-      {Key? key,
-      required this.bookName,
-      required this.abbrev,
-      required this.chapter,
-      required this.verseColors,})
-      : super(key: key);
+  const LoadingVersesWidget({
+    Key? key,
+    required this.bookName,
+    required this.abbrev,
+    required this.chapter,
+    required this.verseColors,
+    required this.bookIndex,
+  }) : super(key: key);
 
   @override
   State<LoadingVersesWidget> createState() => _LoadingVersesWidgetState();
 }
 
 class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
-  final ItemScrollController _itemScrollController = ItemScrollController();
+  List<Map<String, dynamic>> listMap = [];
+  final BibleDataController bibleDataController = BibleDataController();
   int _chapter = 1;
-  List<Map<String, dynamic>> listColorsDb = [];
-  late SavedVersesProvider _savedVersesProvider;
-  late List<Chapter> futureVerses;
+
+  late VersesProvider _versesProvider;
 
   @override
   void initState() {
     _chapter = widget.chapter;
-    _savedVersesProvider = Provider.of<SavedVersesProvider>(context, listen: false);
-    refreshFunction();
+    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
+        listen: false);
+    itemScrollController = ItemScrollController();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<VersionProvider>(
-      builder: (context, value, widgett) {
-        return FutureBuilder<List<Chapter>>(
-          future: service.getVerses(widget.abbrev, _chapter.toString(), version: versionProvider.version.toLowerCase())
-              .catchError(
-                (error) {
-              var innerError = error as TimeoutException;
-              alertDialog(title: 'Erro ${innerError.message}',
-                  content:
-                  'O servidor demorou pra responder. Tente novamente mais tarde.');
-            },
-            test: (error) => error is TimeoutException,
-          ),
-          builder: (context, snapshot) {
-            if (snapshot.data != null) {
-              if (snapshot.data!.isNotEmpty && listColorsDb.length == snapshot.data!.length) {
-                return Consumer<SavedVersesProvider>(
-                  builder: (context, value, widget) {
-                    return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: verseWidget(snapshot.data!, snapshot.data!.length)
-                    );
-                  },
-                );
-              }
-            }else if(snapshot.hasError) {
-              return Center(child: Text('ERRO: ${snapshot.error}'));
-            }
-            return const LoadingWidget();
-          },
-        );
-      },
-    );
-  }
+    setState(() {
+      listMap = _versesProvider.allVerses[_chapter];
+    });
 
-  Widget verseWidget(List<Chapter> verses, int qtdVerses) {
-    return ScrollablePositionedList.builder(
-      initialScrollIndex: initialVerse - 1,
-      itemScrollController: _itemScrollController,
-      physics: const BouncingScrollPhysics(),
-      itemCount: qtdVerses,
-      itemBuilder: (BuildContext context, int index) {
-        String verse = verses[index].verse;
-        listMap[index]["index"] = index;
-        listMap[index]["chapter"] = widget.chapter;
-        return Padding(
-          padding: const EdgeInsets.all(3.0),
-          child: InkWell(
-            onTap: (() {onTap(context, index);}),
-            child: VerseArea(
-              verseNumber: index + 1,
-              verse: verse,
-              verseColor: (listMap[index]["isSelected"]) ? Theme.of(context).highlightColor : listMap[index]["verseColor"],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ScrollablePositionedList.builder(
+        initialScrollIndex: initialVerse - 1,
+        itemScrollController: itemScrollController,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _versesProvider.allVerses[_chapter].length,
+        itemBuilder: (BuildContext context, int index) {
+          bibleDataController
+              .annotationExists(
+                  '${widget.bookName} ${widget.chapter}:${index + 1}')
+              .then((value) => {listMap[index]["hasAnnotation"] = value});
+          listMap[index]["index"] = index;
+          listMap[index]["chapter"] = _chapter;
+          if ((index + 1) == _versesProvider.allVerses[_chapter].length) {
+            return Column(
+              children: [
+                InkWell(
+                  onTap: (() {
+                    onTap(context, index);
+                  }),
+                  child: VerseArea(
+                    chapter: _chapter,
+                    title: (listMap[index]["hasAnnotation"] == true)
+                        ? '${widget.bookName} ${widget.chapter}:${index + 1}'
+                        : null,
+                    verseNumber: index + 1,
+                    verse: listMap[index]["verse"],
+                    verseColor: (listMap[index]["isSelected"])
+                        ? Theme.of(context).highlightColor
+                        : listMap[index]["verseColor"],
+                    verseHasAnnotation:
+                        (listMap[index]["hasAnnotation"] == null)
+                            ? false
+                            : listMap[index]["hasAnnotation"],
+                  ),
+                ),
+                Container(height: 200,)
+              ],
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: InkWell(
+              onTap: (() {
+                onTap(context, index);
+              }),
+              child: VerseArea(
+                chapter: _chapter,
+                title: (listMap[index]["hasAnnotation"] == true)
+                    ? '${widget.bookName} ${widget.chapter}:${index + 1}'
+                    : null,
+                verseNumber: index + 1,
+                verse: listMap[index]["verse"],
+                verseColor: (listMap[index]["isSelected"])
+                    ? Theme.of(context).highlightColor
+                    : listMap[index]["verseColor"],
+                verseHasAnnotation: (listMap[index]["hasAnnotation"] == null)
+                    ? false
+                    : listMap[index]["hasAnnotation"],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -124,201 +135,249 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
       listMap[index]["isEditing"] = isEditing;
     });
 
-    final selectedVersesExist = _savedVersesProvider.verseSelectedExists(listMap);
-
-    if(selectedVersesExist) {
-      showBottomSheet(context: context, builder: (BuildContext ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    final selectedVersesExist = _versesProvider.verseSelectedExists(listMap);
+    if (selectedVersesExist) {
+      _versesProvider.openBottomSheet(true);
+      showBottomSheet(
+          context: context,
+          builder: (BuildContext ctx) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  onPressed: (() {
-                    VerseInherited.of(context)
-                        .share(context, listMap, widget.bookName);
-                  }),
-                  icon: const Icon(Icons.share),
-                ),
-                IconButton(
-                  onPressed: (() async {
-                    VerseInherited.of(context).copyText(context, listMap);
-                  }),
-                  icon: const Icon(Icons.copy),
-                ),
-                IconButton(
-                  onPressed: (() {
-                    VerseInherited.of(context).deleteVerses(listMap);
-                    refreshFunction();
-                  }),
-                  icon: const Icon(Icons.delete),
-                ),
-                IconButton(
-                  onPressed: (() {
-                    _savedVersesProvider.clearSelectedVerses(listMap);
-                    Navigator.pop(ctx);
-                  }),
-                  icon: const Icon(Icons.minimize),
-                ),
-              ],
-            ),
-            const Divider(
-              thickness: 1.5,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color2, ThemeColors.colorString2);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color2),
-                ),
-                InkWell(
-                    onTap: (() {
-                      setState(() {
-                        if(listMap[index]["verseColor"] != Colors.transparent) {
-                          listMap[index]["isEditing"] = true;
-                        }
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      onPressed: (() {
                         VerseInherited.of(context)
-                            .updateColors(listMap, ThemeColors.color3, ThemeColors.colorString3);
-                      });
-                      _savedVersesProvider.refresh();
-                    }),
-                    child: RoundContainer(color: ThemeColors.color3)),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color4, ThemeColors.colorString4);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: const RoundContainer(color: Colors.brown),
+                            .share(context, listMap, widget.bookName);
+                      }),
+                      icon: const Icon(Icons.share),
+                    ),
+                    IconButton(
+                      onPressed: (() {
+                        VerseInherited.of(context).copyText(context, listMap);
+                      }),
+                      icon: const Icon(Icons.copy),
+                    ),
+                    IconButton(
+                      onPressed: (() {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(
+                            context, 'verse_with_background',
+                            arguments: {
+                              "bookName": listMap[index]["bookName"],
+                              "chapter": listMap[index]["chapter"],
+                              "verseNumber": listMap[index]["verseNumber"],
+                              "content": listMap[index]["verse"]
+                            });
+                        _versesProvider.openBottomSheet(false);
+                        _versesProvider.clearSelectedVerses(listMap);
+                      }),
+                      icon: const Icon(Icons.photo_outlined),
+                    ),
+                    IconButton(
+                      onPressed: (() {
+                        bibleDataController.getStartAndEndIndex(
+                            listMap, listMap[index]["verseNumber"]);
+                        AnnotationModel innerAnnotation = AnnotationModel(
+                            annotationId: const Uuid().v1(),
+                            title:
+                                '${widget.bookName} ${widget.chapter}:${index + 1}',
+                            content: '',
+                            book: widget.bookName,
+                            chapter: widget.chapter,
+                            verseStart: bibleDataController.startIndex,
+                            verseEnd: index + 1);
+                        bibleDataController
+                            .verifyAnnotationExists(
+                                '${widget.bookName} ${widget.chapter}:${index + 1}')
+                            .then((value) => {
+                                  if (value != null)
+                                    {
+                                      innerAnnotation = value[0],
+                                      Navigator.pushNamed(
+                                          context, 'annotation_widget',
+                                          arguments: {
+                                            'annotation': innerAnnotation,
+                                            'isEditing': true
+                                          })
+                                    }
+                                  else
+                                    {
+                                      Navigator.pushNamed(
+                                          context, 'annotation_widget',
+                                          arguments: {
+                                            'annotation': innerAnnotation,
+                                            'isEditing': false
+                                          })
+                                    },
+                                });
+                      }),
+                      icon: const Icon(Icons.edit_rounded),
+                    ),
+                    IconButton(
+                      onPressed: (listMap[index]["verseColor"] != Colors.transparent) ? (() {
+                        _versesProvider.openBottomSheet(false);
+                        _versesProvider.deleteVerses(listMap);
+                        Navigator.pop(ctx);
+                      }) : null,
+                      icon: const Icon(Icons.delete),
+                    ),
+                    IconButton(
+                      onPressed: (() {
+                        _versesProvider.clearSelectedVerses(listMap);
+                        _versesProvider.openBottomSheet(false);
+                        Navigator.pop(ctx);
+                      }),
+                      icon: const Icon(Icons.minimize),
+                    ),
+                  ],
                 ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color5, ThemeColors.colorString5);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color5),
+                const Divider(
+                  thickness: 1.5,
                 ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color6, ThemeColors.colorString6);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color6),
-                ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color7, ThemeColors.colorString7);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color7),
-                ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color8, ThemeColors.colorString8);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color8),
-                ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      if(listMap[index]["verseColor"] != Colors.transparent) {
-                        listMap[index]["isEditing"] = true;
-                      }
-                      VerseInherited.of(context)
-                          .updateColors(listMap, ThemeColors.color1, ThemeColors.colorString1);
-                    });
-                    _savedVersesProvider.refresh();
-                  }),
-                  child: RoundContainer(color: ThemeColors.color1),
-                ),
-                const SizedBox(
-                  height: 70,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color2, ThemeColors.colorString2);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color2),
+                    ),
+                    InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            VerseInherited.of(context).updateColors(listMap,
+                                ThemeColors.color3, ThemeColors.colorString3);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color3)),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color4, ThemeColors.colorString4);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: const RoundContainer(color: Colors.brown),
+                    ),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color5, ThemeColors.colorString5);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color5),
+                    ),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color6, ThemeColors.colorString6);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color6),
+                    ),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color7, ThemeColors.colorString7);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color7),
+                    ),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color8, ThemeColors.colorString8);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color8),
+                    ),
+                    InkWell(
+                      onTap: (() {
+                        setState(() {
+                          _versesProvider.openBottomSheet(false);
+                          if (listMap[index]["verseColor"] !=
+                              Colors.transparent) {
+                            listMap[index]["isEditing"] = true;
+                          }
+                          VerseInherited.of(context).updateColors(listMap,
+                              ThemeColors.color1, ThemeColors.colorString1);
+                        });
+                        _versesProvider.refresh();
+                        Navigator.pop(ctx);
+                      }),
+                      child: RoundContainer(color: ThemeColors.color1),
+                    ),
+                    const SizedBox(
+                      height: 70,
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        );
-      });
+            );
+          });
+    } else {
+      Navigator.pop(context);
+      _versesProvider.openBottomSheet(false);
     }
-    if(selectedVersesExist == false) {
-      Navigator.maybePop(context);
-    }
-  }
-
-  refreshFunction() {
-    listColorsDb = [];
-    listMap = [];
-    service.getVerses(widget.abbrev, _chapter.toString()).then((value) async => {
-      for(var element in value) {
-        await VersesDao().find(element.verse).then((res) => {
-          if(res.isNotEmpty) {
-            if(res[0].verse == element.verse) {
-              listColorsDb.add({
-                "verse": element.verse,
-                "color": ConvertColors().convertColors(res[0].verseColor)
-              }),
-            }
-          }else {
-            listColorsDb.add({
-              "verse": element.verse,
-              "color": Colors.transparent
-            }),
-          },
-        }),
-        listMap.add({
-          "bookName": widget.bookName,
-          "chapter": widget.chapter,
-          "verseNumber": element.verseNumber,
-          "verse": element.verse,
-          "verseColor": listColorsDb[element.verseNumber - 1]["color"],
-          "isSelected": false,
-          "isEditing": false
-        }),
-      },
-      setState(() {
-        listColorsDb;
-      })
-    });
   }
 }

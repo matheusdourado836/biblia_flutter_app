@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import '../models/book.dart';
 
 class ChapterPageHelpers {
-
   final List<Book> _listBooksVT = [];
   final List<Book> _listBooksNT = [];
 
@@ -11,7 +9,7 @@ class ChapterPageHelpers {
     for (var value in listBooks) {
       if (value.testament == 'VT') {
         _listBooksVT.add(value);
-      } else if (value.testament == 'NT'){
+      } else if (value.testament == 'NT') {
         _listBooksNT.add(value);
       }
     }
@@ -20,10 +18,5 @@ class ChapterPageHelpers {
     map["livrosNT"] = _listBooksNT;
 
     return map;
-
-  }
-
-  callChapterScreen(BuildContext context, Book? book) {
-     Navigator.pushNamed(context, 'chapter_screen', arguments: book);
   }
 }

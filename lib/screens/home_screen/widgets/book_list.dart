@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
+import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/book.dart';
@@ -18,7 +18,7 @@ class _BookListState extends State<BookList> {
   Widget build(BuildContext context) {
     String abbrev = '';
     String bookName = '';
-    return Consumer<SavedVersesProvider>(
+    return Consumer<VersesProvider>(
         builder: (context, value, child) {
           return Container(
             height: MediaQuery.of(context).size.height,
@@ -33,7 +33,8 @@ class _BookListState extends State<BookList> {
                   padding: const EdgeInsets.all(16.0),
                   child: InkWell(
                     onTap: (() {
-                      Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': widget.listBooks[index].name, 'abbrev': widget.listBooks[index].abbrev, 'chapters': widget.listBooks[index].chapters});
+                      value.clear();
+                      Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': widget.listBooks[index].name, 'abbrev': widget.listBooks[index].abbrev, 'bookIndex': index, 'chapters': widget.listBooks[index].chapters,});
                     }),
                     child: Row(
                       children: [

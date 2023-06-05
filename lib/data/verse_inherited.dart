@@ -18,30 +18,24 @@ class VerseInherited extends InheritedWidget {
         element["verseColor"] = newColor;
         element["isSelected"] = false;
         if(element["isEditing"] == true) {
-          VersesDao().updateColor(element["verse"], bdColor);
+          VersesDao().updateColor(element["verseDefault"], bdColor);
         }else {
-          VersesDao().save(VerseModel(verse: element["verse"], verseColor: bdColor, book: element["bookName"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
+          VersesDao().save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
         }
-      }
-    }
-  }
-
-  void deleteVerses(List<Map<String, dynamic>> listMap) {
-    for (var element in listMap) {
-      if(element["isSelected"] == true && element["isEditing"] == true) {
-        VersesDao().delete(element["verse"]);
       }
     }
   }
 
   void share(BuildContext context, List<Map<String, dynamic>> listMap, String bookName) {
     String verse = '';
+    String book = '';
     for (var element in listMap) {
+      book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"]} ${element["verse"]}';
+        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
       }
     }
-    Share.share('$bookName$verse');
+    Share.share('$book:$verse');
   }
 
   void copyText(BuildContext context, List<Map<String, dynamic>> listMap) async {
@@ -50,7 +44,7 @@ class VerseInherited extends InheritedWidget {
     for (var element in listMap) {
       book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"]} ${element["verse"]}';
+        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
       }
     }
     await Clipboard.setData(

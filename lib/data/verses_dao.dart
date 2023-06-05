@@ -7,6 +7,7 @@ class VersesDao {
       '$_verse TEXT, '
       '$_verseColor TEXT, '
       '$_bookName TEXT, '
+      '$_version INTEGER, '
       '$_chapter INTEGER, '
       '$_verseNumber INTEGER)';
 
@@ -14,6 +15,7 @@ class VersesDao {
   static const String _verse = 'verse';
   static const String _verseColor = 'verseColor';
   static const String _bookName = 'bookName';
+  static const String _version = 'version';
   static const String _chapter = 'chapter';
   static const String _verseNumber = 'verseNumber';
 
@@ -71,11 +73,17 @@ class VersesDao {
     return bancoDeDados.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
   }
 
+  deleteAllVerses() async {
+    final Database bancoDeDados = await getDatabase();
+
+    return bancoDeDados.delete(_tablename);
+  }
+
   List<VerseModel> toList(List<Map<String, dynamic>> mapaDeVersos) {
     final List<VerseModel> verses = [];
     for (Map<String, dynamic> linha in mapaDeVersos) {
       final VerseModel verse =
-      VerseModel(verse: linha[_verse], verseColor: linha[_verseColor], book: linha[_bookName], chapter: linha[_chapter], verseNumber: linha[_verseNumber]);
+      VerseModel(verse: linha[_verse], verseColor: linha[_verseColor], book: linha[_bookName], version: linha[_version], chapter: linha[_chapter], verseNumber: linha[_verseNumber]);
       verses.add(verse);
     }
 
@@ -87,6 +95,7 @@ class VersesDao {
     mapaDeVersos[_verse] = verse.verse;
     mapaDeVersos[_verseColor] = verse.verseColor;
     mapaDeVersos[_bookName] = verse.book;
+    mapaDeVersos[_version] = verse.version;
     mapaDeVersos[_chapter] = verse.chapter;
     mapaDeVersos[_verseNumber] = verse.verseNumber;
 

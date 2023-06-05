@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
+import 'package:biblia_flutter_app/data/bible_data_controller.dart';
+import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_list.dart';
+import 'package:biblia_flutter_app/screens/home_screen/widgets/home_app_bar.dart';
+import 'package:biblia_flutter_app/screens/home_screen/widgets/home_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/book.dart';
-import '../../services/bible_service.dart';
-import '../../data/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,200 +19,49 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final BibleService service = BibleService();
-  late Future<List<Book>> futureList;
+  final BibleDataController bibleDataController = BibleDataController();
+  late Future<List<Book>> futureListBooks;
   List<Book>? listBooks;
   bool changeLayout = true;
-  bool toggleMode = true;
-  late SavedVersesProvider _savedVersesProvider;
+  late VersesProvider _versesProvider;
 
   @override
   void initState() {
-    futureList = service.getAllBooks();
-    _savedVersesProvider = Provider.of<SavedVersesProvider>(navigatorKey!.currentContext!, listen: false);
-    _savedVersesProvider.refresh();
-    _savedVersesProvider.getRandomVerse();
+    futureListBooks = bibleDataController.getBooks();
+    _versesProvider = Provider.of<VersesProvider>(
+        navigatorKey!.currentContext!,
+        listen: false);
+    _versesProvider.refresh();
+    _versesProvider.getImage();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    _savedVersesProvider.refresh();
+    _versesProvider.refresh();
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Biblia Online'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              if(_savedVersesProvider.verseInfo.isEmpty) {
-                _savedVersesProvider.getRandomVerse().then((value) => {if(value.isNotEmpty){Navigator.pushNamed(context, 'random_verse_screen')}else {alertDialog(content: 'Não foi possível carregar um versículo aleatório')}});
-              }
-              Navigator.pushNamed(context, 'random_verse_screen');
-            },
-            tooltip: 'Versículo Aleatório',
-            icon: const Icon(Icons.help_outline_rounded),
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        child: Consumer<SavedVersesProvider>(
-          builder: (context, value, child) {
-            return Column(
-              children: [
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    boxShadow: kElevationToShadow[3],
-                    borderRadius:
-                    const BorderRadius.only(bottomRight: Radius.circular(10)),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              height: 80,
-                              width: 80,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 8.0,
-                                backgroundColor:
-                                Theme.of(context).colorScheme.surface,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                value: _savedVersesProvider.listMap.length / 66,
-                              ),
-                            ),
-                            Text(
-                              '     Progresso: ${formatValue(_savedVersesProvider.listMap.length / 66)}%',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            )
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Livros Lidos:\n${_savedVersesProvider.listMap.length}/66',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                InkWell(
-                  onTap: (() {
-                    Navigator.pushNamed(context, 'saved_verses');
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16.0,
-                      top: 32.0,
-                      right: 16.0,
-                      bottom: 16.0,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bookmark,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Text('   Versículos Salvos'),
-                        const Spacer(),
-                        Text('${_savedVersesProvider.qtdVerses}')
-                      ],
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: (() {
-                    Navigator.popAndPushNamed(context, 'search_screen');
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Text('   Pesquisar passagens'),
-                      ],
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: (() {
-                    setState(() {
-                      toggleMode = !toggleMode;
-                    });
-                    themeProvider.toggleTheme(toggleMode);
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        (toggleMode)
-                            ? Icon(
-                          Icons.light_mode_sharp,
-                          color: Theme.of(context).colorScheme.primary,
-                        )
-                            : Icon(
-                          Icons.dark_mode_sharp,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Text('   Trocar modo do app'),
-                      ],
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: (() {
-                    Navigator.pushNamed(context, 'email_screen');
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bug_report,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const Text('   Reportar um erro'),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+      appBar: const HomeAppBar(),
+      drawer: const HomeDrawer(),
       body: (changeLayout)
           ? Container(
               color: Theme.of(context).primaryColor,
               padding: const EdgeInsets.all(8.0),
               child: FutureBuilder<List<Book>>(
-                future: futureList,
+                future: futureListBooks,
                 builder: (context, snapshot) {
                   if (snapshot.data != null) {
                     if (snapshot.data!.isNotEmpty) {
                       listBooks = snapshot.data!;
-                      return ListBooks(
-                        database: listBooks,
+                      return BookCard(
+                        database: bibleDataController.books,
                         bookIsRead: bookIsRead,
                       );
                     }
-                  }else if(snapshot.hasError) {
+                  } else if (snapshot.hasError) {
                     return InkWell(
-                        onTap: (() {setState(() {});}),
+                        onTap: (() {
+                          setState(() {});
+                        }),
                         child: Text('Erro Inesperado! ${snapshot.error}'));
                   }
                   return const LoadingWidget();
@@ -220,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           : BookList(
-              listBooks: listBooks!,
+              listBooks: bibleDataController.books,
               bookIsRead: bookIsRead,
             ),
       floatingActionButton: FloatingActionButton(
@@ -245,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool bookIsRead(String bookName) {
     List<Map<String, dynamic>> listMap = [];
-    listMap = _savedVersesProvider.listMap;
+    listMap = _versesProvider.listMap;
     for (var element in listMap) {
       if (element["bookName"] == bookName) {
         return true;
@@ -253,12 +102,5 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return false;
-  }
-
-  formatValue(double value) {
-    value = value * 100;
-    var formatedLevel = value.toStringAsFixed(2);
-
-    return double.parse(formatedLevel);
   }
 }

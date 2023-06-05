@@ -2,14 +2,20 @@ import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/widgets/chapters_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../data/saved_verses_provider.dart';
+import '../../data/verses_provider.dart';
 
 class ChapterScreen extends StatefulWidget {
   final String bookName;
   final String abbrev;
+  final int bookIndex;
   final int chapters;
-  const ChapterScreen({Key? key, required this.bookName, required this.chapters, required this.abbrev}) : super(key: key);
+  const ChapterScreen(
+      {Key? key,
+      required this.bookName,
+      required this.chapters,
+      required this.abbrev,
+      required this.bookIndex})
+      : super(key: key);
 
   @override
   State<ChapterScreen> createState() => _ChapterScreenState();
@@ -17,13 +23,13 @@ class ChapterScreen extends StatefulWidget {
 
 class _ChapterScreenState extends State<ChapterScreen> {
   bool isSelected = false;
-  late SavedVersesProvider _savedVersesProvider;
+  late VersesProvider _versesProvider;
 
   @override
   void initState() {
     BooksDao().find(widget.bookName).then((value) {
-      if(value.isNotEmpty) {
-        if(value[0]["finishedReading"] == 1) {
+      if (value.isNotEmpty) {
+        if (value[0]["finishedReading"] == 1) {
           setState(() {
             isSelected = true;
           });
@@ -35,26 +41,31 @@ class _ChapterScreenState extends State<ChapterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _savedVersesProvider = Provider.of<SavedVersesProvider>(context);
+    _versesProvider = Provider.of<VersesProvider>(context);
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text(widget.bookName)),
+        centerTitle: true,
+        title: Text(widget.bookName),
         actions: [
           IconButton(
             onPressed: () async {
               setState(() {
                 isSelected = !isSelected;
-                _savedVersesProvider.bookIsReadCheckBox(isSelected);
+                _versesProvider.bookIsReadCheckBox(isSelected);
               });
-              if(isSelected) {
+              if (isSelected) {
                 await BooksDao().save(widget.bookName, 1);
-              }else {
+              } else {
                 await BooksDao().delete(widget.bookName);
               }
-              _savedVersesProvider.refresh();
+              _versesProvider.refresh();
             },
-            icon: isSelected ? const Icon(Icons.check_box,) : const Icon(Icons.check_box_outline_blank_rounded),
+            icon: isSelected
+                ? const Icon(
+                    Icons.check_box,
+                  )
+                : const Icon(Icons.check_box_outline_blank_rounded),
           ),
         ],
       ),
@@ -62,9 +73,13 @@ class _ChapterScreenState extends State<ChapterScreen> {
         height: height,
         color: Theme.of(context).primaryColor,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ChapterCard(chapters: widget.chapters, bookName: widget.bookName, abbrev: widget.abbrev,)
-        ),
+            padding: const EdgeInsets.all(8.0),
+            child: ChapterCard(
+              bookIndex: widget.bookIndex,
+              chapters: widget.chapters,
+              bookName: widget.bookName,
+              abbrev: widget.abbrev,
+            )),
       ),
     );
   }

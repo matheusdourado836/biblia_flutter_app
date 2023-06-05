@@ -1,15 +1,15 @@
-import 'package:biblia_flutter_app/data/saved_verses_provider.dart';
-import 'package:biblia_flutter_app/data/verses_dao.dart';
+import 'package:biblia_flutter_app/data/bible_data_controller.dart';
+import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/convert_colors.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
-import '../../models/book.dart';
 import '../../models/verse_model.dart';
-import '../verses_screen/verses_screen.dart';
 
 class SavedVerses extends StatefulWidget {
   const SavedVerses({Key? key}) : super(key: key);
@@ -19,9 +19,10 @@ class SavedVerses extends StatefulWidget {
 }
 
 class _SavedVersesState extends State<SavedVerses> {
-  Future<List<VerseModel>>? savedVersesList;
-  List<Book> futureList = [];
-  late SavedVersesProvider _savedVersesProvider;
+  List<Map<String, dynamic>> allBooksList = [];
+  late VersesProvider _versesProvider;
+  late VersionProvider _versionProvider;
+  BibleDataController bibleDataController = BibleDataController();
   String _selectedOption = '';
   final List<Widget> _listColors = [
     Container(),
@@ -49,17 +50,18 @@ class _SavedVersesState extends State<SavedVerses> {
   @override
   void initState() {
     _selectedOption = _options[0];
-    service.getAllBooks().then((value) => setState(() {
-          futureList = value;
+    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
+        listen: false);
+    _versionProvider = Provider.of<VersionProvider>(context, listen: false);
+    _versesProvider.getAllBooks().then((value) => setState(() {
+          allBooksList = value;
         }));
-    savedVersesList = VersesDao().findAll();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    _savedVersesProvider = Provider.of<SavedVersesProvider>(context, listen: false);
-    _savedVersesProvider.refresh();
+    _versesProvider.refresh();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -70,7 +72,8 @@ class _SavedVersesState extends State<SavedVerses> {
               value: option,
               child: Row(
                 children: [
-                  _listColors[getColorName(option.toLowerCase())],
+                  _listColors[
+                      bibleDataController.getColorName(option.toLowerCase())],
                   Text(
                     '   $option',
                     style: Theme.of(context).textTheme.bodyLarge,
@@ -83,20 +86,110 @@ class _SavedVersesState extends State<SavedVerses> {
             setState(() {
               _selectedOption = newValue!;
             });
-            _savedVersesProvider
-                .orderListByColor(_selectedOption.toLowerCase());
+            _versesProvider.orderListByColor(_selectedOption.toLowerCase());
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+                onPressed: (_versesProvider.lista.isNotEmpty)
+                    ? (() {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                titlePadding: const EdgeInsets.all(0),
+                                title: Container(
+                                  height: 80,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .error
+                                      .withOpacity(0.6),
+                                  child: Center(
+                                    child: Text(
+                                      'Alerta',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onBackground,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                                content: Text(
+                                    'Tem certeza que deseja deletar todos os seus versículos salvos?',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
+                                actions: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context)
+                                                .highlightColor
+                                                .withOpacity(0.2),
+                                            minimumSize: const Size(80, 36),
+                                            textStyle: const TextStyle(
+                                                color: Colors.white)),
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'Cancelar'),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            textStyle: const TextStyle(
+                                                color: Colors.white),
+                                            minimumSize: const Size(80, 36),
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .error
+                                                .withOpacity(0.65)),
+                                        onPressed: () {
+                                          _versesProvider
+                                              .deleteAllVerses()
+                                              .then((value) => {
+                                                    _versesProvider.refresh(),
+                                                    Navigator.pop(context)
+                                                  });
+                                        },
+                                        child: Text(
+                                          'Sim',
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onBackground,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              );
+                            });
+                      })
+                    : null,
+                icon: const Icon(
+                  Icons.delete_forever,
+                  size: 32,
+                )),
+          )
+        ],
       ),
       body: Container(
           color: Theme.of(context).primaryColor,
-          child: Consumer<SavedVersesProvider>(
+          child: Consumer<VersesProvider>(
             builder: (context, list, child) {
-              if (_savedVersesProvider.lista.isEmpty) {
-                return Column(
+              if (_versesProvider.lista.isEmpty) {
+                return const Column(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Image(image: AssetImage('assets/images/nothing_yet.png')),
                     SizedBox(height: 32),
                     Text('Nenhum Versículo Salvo ainda...',
@@ -108,34 +201,10 @@ class _SavedVersesState extends State<SavedVerses> {
               }
 
               return coresListWidget(
-                  list: _savedVersesProvider.lista,
-                  corSelecionada: _selectedOption);
+                  list: _versesProvider.lista, corSelecionada: _selectedOption);
             },
           )),
     );
-  }
-
-  getColorName(String option) {
-    switch (option) {
-      case 'todas':
-        return 0;
-      case 'ciano':
-        return 2;
-      case 'azul':
-        return 1;
-      case 'amarelo':
-        return 3;
-      case 'marrom':
-        return 4;
-      case 'vermelho':
-        return 5;
-      case 'laranja':
-        return 6;
-      case 'verde':
-        return 7;
-      case 'rosa':
-        return 8;
-    }
   }
 
   Widget coresListWidget(
@@ -155,16 +224,28 @@ class _SavedVersesState extends State<SavedVerses> {
         String book = objetosFiltrados[index].book;
         int chapter = objetosFiltrados[index].chapter;
         String verse = objetosFiltrados[index].verse;
+        String version =
+            bibleDataController.getVersionName(list[index].version);
         int verseNumber = objetosFiltrados[index].verseNumber;
         String verseColor = objetosFiltrados[index].verseColor;
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: InkWell(
             onTap: (() {
-              for (var element in futureList) {
-                if (element.name == book) {
-                  GoToVerseScreen().goToVersePage(book, element.abbrev,
-                      element.chapters, chapter, verseNumber);
+              _versesProvider.clear();
+              for (var i = 0; i < allBooksList.length; i++) {
+                if (allBooksList[i]["bookName"] == book) {
+                  _versionProvider.changeOptionBd(version);
+                  _versesProvider
+                      .loadVerses(allBooksList[i]["bookIndex"], book,
+                          versionIndex: list[index].version)
+                      .whenComplete(() => GoToVerseScreen().goToVersePage(
+                          book,
+                          allBooksList[i]["abbrev"],
+                          allBooksList[i]["chapters"],
+                          allBooksList[i]["bookIndex"],
+                          chapter,
+                          verseNumber));
                 }
               }
             }),
@@ -176,28 +257,38 @@ class _SavedVersesState extends State<SavedVerses> {
                   children: [
                     SlidableAction(
                       onPressed: (context) {
-                        showDialog<void>(context: context, builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Alerta', style: Theme.of(context).textTheme.bodyLarge,),
-                            content: Text('Tem certeza que deseja remover esse versículo de seus versículos salvos?', style: Theme.of(context).textTheme.bodyMedium),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, 'Não'),
-                                child: const Text('Não'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  _savedVersesProvider.deleteVerse(verse).then((value) => {
-                                    _savedVersesProvider.refresh(),
-                                    Navigator.pop(context)
-                                  });
-                                },
-                                child: const Text('Sim'),
-                              ),
-                            ],
-                          );
-                        });
-                        },
+                        showDialog<void>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text(
+                                  'Alerta',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                content: Text(
+                                    'Tem certeza que deseja remover esse versículo de seus versículos salvos?',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, 'Não'),
+                                    child: const Text('Não'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      _versesProvider.deleteVerse(verse).then(
+                                          (value) => {
+                                                _versesProvider.refresh(),
+                                                Navigator.pop(context)
+                                              });
+                                    },
+                                    child: const Text('Sim'),
+                                  ),
+                                ],
+                              );
+                            });
+                      },
                       icon: Icons.delete,
                       label: 'Deletar',
                       foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -209,16 +300,27 @@ class _SavedVersesState extends State<SavedVerses> {
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
-                      onPressed: (context) {_savedVersesProvider.share(book, verse, chapter, verseNumber);},
+                      onPressed: (context) {
+                        _versesProvider.share(
+                            book, verse, chapter, verseNumber);
+                      },
                       icon: Icons.share,
                       label: 'Share',
-                      backgroundColor: Theme.of(context).buttonTheme.colorScheme!.background,
+                      backgroundColor:
+                          Theme.of(context).buttonTheme.colorScheme!.background,
                     ),
                     SlidableAction(
-                      onPressed: (context) {_savedVersesProvider.copyText(book, verse, chapter, verseNumber);},
+                      onPressed: (context) {
+                        _versesProvider.copyText(
+                            book, verse, chapter, verseNumber);
+                      },
                       icon: Icons.copy,
                       label: 'Copiar',
-                      backgroundColor: Theme.of(context).buttonTheme.colorScheme!.background.withOpacity(0.9),
+                      backgroundColor: Theme.of(context)
+                          .buttonTheme
+                          .colorScheme!
+                          .background
+                          .withOpacity(0.9),
                     )
                   ],
                 ),
@@ -230,7 +332,7 @@ class _SavedVersesState extends State<SavedVerses> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '$book $chapter:$verseNumber',
+                            '$book $chapter:$verseNumber (${version.split(' ')[0]})',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           RoundContainer(
