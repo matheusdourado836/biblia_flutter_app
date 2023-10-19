@@ -1,4 +1,4 @@
-class AnnotationModel {
+class Annotation {
   String annotationId;
   String title;
   String content;
@@ -7,7 +7,7 @@ class AnnotationModel {
   int verseStart;
   int? verseEnd;
 
-  AnnotationModel({required this.annotationId, required this.title, required this.content, required this.book, required this.chapter, required this.verseStart, this.verseEnd});
+  Annotation({required this.annotationId, required this.title, required this.content, required this.book, required this.chapter, required this.verseStart, this.verseEnd});
 
   @override
   String toString() {

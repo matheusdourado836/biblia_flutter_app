@@ -68,7 +68,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(top: 48.0),
+                                padding: const EdgeInsets.only(top: 72.0),
                                 child: Text(
                                   'BibleWise',
                                   style: Theme.of(context).textTheme.displayLarge,

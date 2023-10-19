@@ -1,30 +1,36 @@
-import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/call_chapter_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../data/verses_provider.dart';
+import '../../../helpers/call_chapter_page.dart';
 import '../../../models/book.dart';
 
-class BookCard extends StatefulWidget {
+class BookCardChronologicalOrder extends StatefulWidget {
   final List<Book>? database;
   final Function bookIsRead;
-
-  const BookCard({
-    Key? key,
-    required this.database,
-    required this.bookIsRead,
-  }) : super(key: key);
+  const BookCardChronologicalOrder({super.key, this.database, required this.bookIsRead});
 
   @override
-  State<BookCard> createState() => _BookCardState();
+  State<BookCardChronologicalOrder> createState() => _BookCardChronologicalOrderState();
 }
 
-class _BookCardState extends State<BookCard> {
+class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder> {
   late Map<String, List<Book>> booksMap;
+  Map<String, List<Book>> orderedList = {};
   @override
   void initState() {
     booksMap = ChapterPageHelpers().formatedBookMap(widget.database!);
+    List<int> indexArray = [
+      0, 17, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 10, 12, 19, 21, 20, 11, 13, 30, 28, 31, 29,
+      27, 32, 22, 33, 35, 23, 24, 34, 26, 25, 14, 16, 15, 36, 37, 38
+    ];
+    List<Book> mappedList = indexArray.map((index) => booksMap['livrosVT']![index]).toList();
+    setState(() {
+      orderedList['livrosVT'] = mappedList;
+    });
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     setState(() {
@@ -70,10 +76,9 @@ class _BookCardState extends State<BookCard> {
         shrinkWrap: true,
         itemCount: 39,
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 80.0,
-          crossAxisSpacing: 5.0,
-          mainAxisSpacing: 10.0,
-          childAspectRatio: 1/1
+          maxCrossAxisExtent: 70.0,
+          crossAxisSpacing: 8.0,
+          mainAxisSpacing: 20.0,
         ),
         itemBuilder: (context, i) {
           return Stack(
@@ -83,18 +88,19 @@ class _BookCardState extends State<BookCard> {
                 child: InkWell(
                   onTap: (() {
                     clear();
+                    print('INDEX CLICADO $i INDEX REAL ${booksMap["livrosVT"]!.indexOf(orderedList["livrosVT"]![i])}');
                     Navigator.pushNamed(context, 'chapter_screen', arguments: {
-                      'bookName': booksMap["livrosVT"]![i].name,
-                      'abbrev': booksMap["livrosVT"]![i].abbrev,
-                      'bookIndex': i,
-                      'chapters': booksMap["livrosVT"]![i].chapters,
+                      'bookName': orderedList["livrosVT"]![i].name,
+                      'abbrev': orderedList["livrosVT"]![i].abbrev,
+                      'bookIndex': booksMap["livrosVT"]!.indexOf(orderedList["livrosVT"]![i]),
+                      'chapters': orderedList["livrosVT"]![i].chapters,
                     }).then((value) => setState(() {}));
                   }),
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        booksMap["livrosVT"]![i].abbrev,
+                        orderedList["livrosVT"]![i].abbrev,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -102,14 +108,14 @@ class _BookCardState extends State<BookCard> {
                 ),
               ),
               SizedBox(
-                  child: (widget.bookIsRead(booksMap["livrosVT"]![i].name))
+                  child: (widget.bookIsRead(orderedList["livrosVT"]![i].name))
                       ? Icon(
-                          Icons.check_circle,
-                          color: Theme.of(context)
-                              .buttonTheme
-                              .colorScheme
-                              ?.background,
-                        )
+                    Icons.check_circle,
+                    color: Theme.of(context)
+                        .buttonTheme
+                        .colorScheme
+                        ?.background,
+                  )
                       : null),
             ],
           );
@@ -122,10 +128,9 @@ class _BookCardState extends State<BookCard> {
       shrinkWrap: true,
       itemCount: 27,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 80.0,
-        crossAxisSpacing: 5.0,
-        mainAxisSpacing: 10.0,
-        childAspectRatio: 1/1
+        maxCrossAxisExtent: 70.0,
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 20.0,
       ),
       itemBuilder: (context, i) => Stack(
         children: [

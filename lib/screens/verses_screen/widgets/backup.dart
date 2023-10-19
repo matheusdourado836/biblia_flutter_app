@@ -11,7 +11,7 @@ class VerseArea extends StatefulWidget {
   final int verseNumber;
   final Color verseColor;
   final String? title;
-  final List<TextSpan> verse;
+  final String verse;
   final bool verseHasAnnotation;
 
   const VerseArea({
@@ -55,7 +55,11 @@ class _VerseAreaState extends State<VerseArea> {
             TextSpan(
               text: '${widget.verseNumber.toString()}  ',
               style: (widget.verseColor == Colors.transparent) ? themeColors.verseNumberColor(themeProvider.isOn) : themeColors.coloredVerse(),
-              children: widget.verse,
+              children: <TextSpan>[
+                (widget.verseColor != Colors.transparent)
+                    ? TextSpan(text: widget.verse, style: themeColors.coloredVerse())
+                    : TextSpan(text: widget.verse, style: themeColors.verseColor(themeProvider.isOn)),
+              ],
             ),
           ),
           (widget.verseHasAnnotation) ? IconButton(onPressed: (() {

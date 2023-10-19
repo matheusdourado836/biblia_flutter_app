@@ -9,7 +9,8 @@ import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
-import '../../models/verse_model.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../../models/verse.dart';
 
 class SavedVerses extends StatefulWidget {
   const SavedVerses({Key? key}) : super(key: key);
@@ -61,19 +62,23 @@ class _SavedVersesState extends State<SavedVerses> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
     _versesProvider.refresh();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: DropdownButton(
+          underline: Container(
+            height: 0,
+            color: Colors.transparent,
+          ),
           value: _selectedOption,
           items: _options.map((option) {
             return DropdownMenuItem(
               value: option,
               child: Row(
                 children: [
-                  _listColors[
-                      bibleDataController.getColorName(option.toLowerCase())],
+                  _listColors[bibleDataController.getColorName(option.toLowerCase())],
                   Text(
                     '   $option',
                     style: Theme.of(context).textTheme.bodyLarge,
@@ -102,54 +107,43 @@ class _SavedVersesState extends State<SavedVerses> {
                                 titlePadding: const EdgeInsets.all(0),
                                 title: Container(
                                   height: 80,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .error
-                                      .withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.error.withOpacity(0.6),
                                   child: Center(
                                     child: Text(
                                       'Alerta',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onBackground,
+                                          color: Theme.of(context).colorScheme.onBackground,
                                           fontSize: 20,
-                                          fontWeight: FontWeight.bold),
+                                          fontWeight: FontWeight.bold
+                                      ),
                                     ),
                                   ),
                                 ),
                                 content: Text(
                                     'Tem certeza que deseja deletar todos os seus versículos salvos?',
                                     textAlign: TextAlign.center,
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium),
+                                    style: Theme.of(context).textTheme.bodyMedium
+                                ),
                                 actions: [
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: [
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .highlightColor
-                                                .withOpacity(0.2),
+                                            backgroundColor: Theme.of(context).highlightColor.withOpacity(0.2),
                                             minimumSize: const Size(80, 36),
-                                            textStyle: const TextStyle(
-                                                color: Colors.white)),
-                                        onPressed: () =>
-                                            Navigator.pop(context, 'Cancelar'),
+                                            textStyle: const TextStyle(color: Colors.white)
+                                        ),
+                                        onPressed: () => Navigator.pop(context, 'Cancelar'),
                                         child: const Text('Cancelar'),
                                       ),
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                            textStyle: const TextStyle(
-                                                color: Colors.white),
+                                            textStyle: const TextStyle(color: Colors.white),
                                             minimumSize: const Size(80, 36),
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .error
-                                                .withOpacity(0.65)),
+                                            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.65)
+                                        ),
                                         onPressed: () {
                                           _versesProvider
                                               .deleteAllVerses()
@@ -181,18 +175,24 @@ class _SavedVersesState extends State<SavedVerses> {
           )
         ],
       ),
-      body: Container(
-          color: Theme.of(context).primaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: height,
+          width: MediaQuery.of(context).size.width,
           child: Consumer<VersesProvider>(
             builder: (context, list, child) {
               if (_versesProvider.lista.isEmpty) {
-                return const Column(
-                  mainAxisSize: MainAxisSize.max,
+                return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image(image: AssetImage('assets/images/nothing_yet.png')),
-                    SizedBox(height: 32),
-                    Text('Nenhum Versículo Salvo ainda...',
+                    Image.asset(
+                        'assets/images/nothing_yet.png',
+                      width: double.infinity,
+                      height: height * .55,
+                    ),
+                    const SizedBox(height: 32),
+                    const Text('Nenhum Versículo Salvo ainda...',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w200),
                         textAlign: TextAlign.center)
@@ -200,25 +200,24 @@ class _SavedVersesState extends State<SavedVerses> {
                 );
               }
 
-              return coresListWidget(
-                  list: _versesProvider.lista, corSelecionada: _selectedOption);
+              return coresListWidget(list: _versesProvider.lista, corSelecionada: _selectedOption);
             },
-          )),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget coresListWidget(
-      {required List<VerseModel> list, required String corSelecionada}) {
+  Widget coresListWidget({required List<VerseModel> list, required String corSelecionada}) {
     final List<dynamic> objetosFiltrados =
         corSelecionada.toLowerCase() == 'todas'
             ? list
-            : list
-                .where((objeto) => ConvertColors()
+            : list.where((objeto) => ConvertColors()
                     .convertColorsToText(objeto.verseColor)
                     .contains(corSelecionada.toLowerCase()))
                 .toList();
 
-    return ListView.builder(
+    return ScrollablePositionedList.builder(
       itemCount: objetosFiltrados.length,
       itemBuilder: (context, index) {
         String book = objetosFiltrados[index].book;
@@ -228,6 +227,9 @@ class _SavedVersesState extends State<SavedVerses> {
             bibleDataController.getVersionName(list[index].version);
         int verseNumber = objetosFiltrados[index].verseNumber;
         String verseColor = objetosFiltrados[index].verseColor;
+        if(objetosFiltrados.length > 5 && (index + 1) == objetosFiltrados.length) {
+          return const SizedBox(height: 100);
+        }
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: InkWell(

@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/models/verse_model.dart';
+import 'package:biblia_flutter_app/models/verse.dart';
 import 'package:sqflite/sqflite.dart';
 import 'database.dart';
 

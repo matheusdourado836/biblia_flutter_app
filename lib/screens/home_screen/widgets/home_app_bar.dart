@@ -1,6 +1,7 @@
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/models/custom_notification.dart';
+import 'package:biblia_flutter_app/services/notification_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../helpers/alert_dialog.dart';
 import '../../../services/bible_service.dart';
@@ -27,14 +28,12 @@ class _HomeAppBarState extends State<HomeAppBar> {
           onPressed: () {
             versesProvider.clear();
             BibleService().checkInternetConnectivity().then((value) => {
-                  if (value)
-                    {Navigator.pushNamed(context, 'random_verse_screen')}
-                  else
-                    {
-                      alertDialog(
-                          content:
-                              'Você precisa estar conectado a internet para receber um versiculo aleatório')
-                    }
+                  if (value) {
+                    Navigator.pushNamed(context, 'random_verse_screen')
+                  }
+                  else {
+                      alertDialog(content: 'Você precisa estar conectado a internet para receber um versiculo aleatório')
+                  }
                 });
           },
           tooltip: 'Versículo Aleatório',

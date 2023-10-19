@@ -1,30 +1,94 @@
+import 'dart:convert';
 import 'package:biblia_flutter_app/data/database.dart';
 import 'package:sqflite/sqflite.dart';
+import 'bible_data.dart';
 
 class BooksDao {
   static const String tableSql = 'CREATE TABLE $_tablename('
       '$_bookName TEXT, '
+      '$_chapters TEXT, '
       '$_finishedReading INTEGER)';
 
   static const String _tablename = 'bookstable';
   static const String _bookName = 'bookName';
+  static const String _chapters = 'chapters';
   static const String _finishedReading = 'finishedReading';
 
-  save(String bookName, int finishedReading) async {
+  save(String bookName, int chapters, int finishedReading) async {
     final Database bancoDeDados = await getDatabase();
-    var itemExists = await find(bookName);
-    Map<String, dynamic> bookMap = toMap(bookName, finishedReading);
+    Map<String, dynamic> bookMap = toMap(bookName, setChapters(chapters, 1).toString(), finishedReading);
 
-    if (itemExists.isEmpty) {
-      return await bancoDeDados.insert(_tablename, bookMap);
+    return await bancoDeDados.update(_tablename, bookMap, where: '$_bookName = ?', whereArgs: [bookName]);
+  }
+
+  saveChapters(String bookName) async {
+    var itemExists = await find(bookName);
+    if(itemExists.isEmpty) {
+      final Database bancoDeDados = await getDatabase();
+      final List<dynamic> list = BibleData().data[0];
+      final bookInfo = list.where((element) => element['name'] == bookName).toList();
+      final chapters = bookInfo[0]['chapters'].length;
+      final Map<String, dynamic> mapaDeCapitulos = toMap(bookName, setChapters(chapters, 0).toString(), 0);
+
+      return await bancoDeDados.insert(_tablename, mapaDeCapitulos);
     }
+  }
+
+  saveChapter(String bookName, String chapter) async {
+    int finishedReading = 0;
+    final Database bancoDeDados = await getDatabase();
+    Map<String, dynamic> mapChapters = {};
+    await findByChapter(bookName).then((value) => mapChapters = value);
+    List<dynamic> list = mapChapters['chapters'];
+    for(var element in mapChapters['chapters']) {
+      if(element[chapter] == false) {
+        element[chapter] = true;
+      }
+    }
+
+    if(list.firstWhere((element) => element.containsValue(false), orElse: () => -1) == -1) {
+      finishedReading = 1;
+    }
+
+    return await bancoDeDados.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': finishedReading}, where: '$_bookName = ?', whereArgs: [bookName]);
+  }
+
+  deleteChapter(String bookName, String chapter) async {
+    final Database bancoDeDados = await getDatabase();
+    Map<String, dynamic> mapChapters = {};
+    await findByChapter(bookName).then((value) => mapChapters = value);
+    for(var element in mapChapters['chapters']) {
+      if(element[chapter] == true) {
+        element[chapter] = false;
+      }
+    }
+
+    return await bancoDeDados.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': 0}, where: '$_bookName = ?', whereArgs: [bookName]);
+  }
+
+  List<Map<String, dynamic>> setChapters(int chapters, int finishedReading) {
+    List<Map<String, dynamic>> list = [];
+    if(finishedReading == 0) {
+      for(var i = 0; i < chapters; i++) {
+        list.add({
+          '"${i + 1}"': false,
+        });
+      }
+    }else {
+      for(var i = 0; i < chapters; i++) {
+        list.add({
+          '"${i + 1}"': true,
+        });
+      }
+    }
+
+    return list;
   }
 
   delete(String bookName) async {
     final Database bancoDeDados = await getDatabase();
 
-    return bancoDeDados
-        .delete(_tablename, where: '$_bookName = ?', whereArgs: [bookName]);
+    return bancoDeDados.delete(_tablename, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   Future<List<Map<String, dynamic>>> findAll() async {
@@ -46,18 +110,22 @@ class BooksDao {
     return result;
   }
 
-  List<dynamic> toList(List<Map<String, dynamic>> mapaDeVersos) {
-    final List<dynamic> verses = [];
-    for (Map<String, dynamic> linha in mapaDeVersos) {
-      verses.add('${linha[_bookName]}\n${linha[_finishedReading]}');
-    }
+  Future<Map<String, dynamic>> findByChapter(String bookName) async {
+    var result = await find(bookName);
 
-    return verses;
+    if(result.isEmpty) {
+      await saveChapters(bookName);
+      result = await find(bookName);
+    }
+    final chapters = result[0]['chapters'].substring(1, result[0]['chapters'].length - 1);
+
+    return json.decode('{"chapters": [$chapters]}');
   }
 
-  Map<String, dynamic> toMap(String bookName, int finishedReading) {
+  Map<String, dynamic> toMap(String bookName, String chapters, int finishedReading) {
     final Map<String, dynamic> mapaDeVersos = {};
     mapaDeVersos[_bookName] = bookName;
+    mapaDeVersos[_chapters] = chapters;
     mapaDeVersos[_finishedReading] = finishedReading;
 
     return mapaDeVersos;

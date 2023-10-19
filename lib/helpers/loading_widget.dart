@@ -5,10 +5,10 @@ class LoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Padding(
             padding: EdgeInsets.all(8.0),
             child: CircularProgressIndicator(),

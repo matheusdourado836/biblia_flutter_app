@@ -1,5 +1,5 @@
 import 'package:biblia_flutter_app/data/database.dart';
-import 'package:biblia_flutter_app/models/annotation_model.dart';
+import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:sqflite/sqflite.dart';
 
 class AnnotationsDao {
@@ -21,7 +21,7 @@ class AnnotationsDao {
   static const String _verseStart = 'verseStart';
   static const String _verseEnd = 'verseEnd';
 
-  Future<int> save(AnnotationModel annotation) async {
+  Future<int> save(Annotation annotation) async {
     final Database bancoDeDados = await getDatabase();
     var itemExists = await find(annotation.annotationId);
     Map<String, dynamic> annotationMap = toMap(annotation);
@@ -62,12 +62,12 @@ class AnnotationsDao {
     return result;
   }
 
-  Future<List<AnnotationModel>?> findByTitle(String title) async {
+  Future<List<Annotation>?> findByTitle(String bookName, int chapter, int verse) async {
     final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result = await bancoDeDados.query(
       _tablename,
-      where: '$_title = ?',
-      whereArgs: [title],
+      where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
+      whereArgs: [bookName, chapter, verse],
     );
 
     if(result.isEmpty) {
@@ -77,12 +77,12 @@ class AnnotationsDao {
     return toList(result);
   }
 
-  Future<bool> checkByTitle(String title) async {
+  Future<bool> checkByTitle(String bookName, int chapter, int verse) async {
     final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result = await bancoDeDados.query(
       _tablename,
-      where: '$_title = ?',
-      whereArgs: [title],
+      where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
+      whereArgs: [bookName, chapter, verse],
     );
 
     if(result.isEmpty) {
@@ -92,7 +92,7 @@ class AnnotationsDao {
     return true;
   }
 
-  Future<List<AnnotationModel>> findAll() async {
+  Future<List<Annotation>> findAll() async {
     final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result =
     await bancoDeDados.query(_tablename);
@@ -100,17 +100,17 @@ class AnnotationsDao {
     return toList(result);
   }
 
-  List<AnnotationModel> toList(List<Map<String, dynamic>> mapaDeAnotacoes) {
-    final List<AnnotationModel> annotations = [];
+  List<Annotation> toList(List<Map<String, dynamic>> mapaDeAnotacoes) {
+    final List<Annotation> annotations = [];
     for (Map<String, dynamic> linha in mapaDeAnotacoes) {
-      final AnnotationModel annotation = AnnotationModel(annotationId: linha[_annotationId], title: linha[_title], content: linha[_content], book: linha[_book], chapter: linha[_chapter], verseStart: linha[_verseStart], verseEnd: linha[_verseEnd]);
+      final Annotation annotation = Annotation(annotationId: linha[_annotationId], title: linha[_title], content: linha[_content], book: linha[_book], chapter: linha[_chapter], verseStart: linha[_verseStart], verseEnd: linha[_verseEnd]);
       annotations.add(annotation);
     }
 
     return annotations;
   }
 
-  Map<String, dynamic> toMap(AnnotationModel annotation) {
+  Map<String, dynamic> toMap(Annotation annotation) {
     final Map<String, dynamic> mapaDeVersos = {};
     mapaDeVersos[_annotationId] = annotation.annotationId;
     mapaDeVersos[_title] = annotation.title;

@@ -61,8 +61,7 @@ class NotificationService {
   }
 
   checkForNotification() async {
-    final details =
-        await localNotificationsPlugin.getNotificationAppLaunchDetails();
+    final details = await localNotificationsPlugin.getNotificationAppLaunchDetails();
     if (details != null && details.didNotificationLaunchApp) {
       _onSelectedNotification(details.payload);
     }

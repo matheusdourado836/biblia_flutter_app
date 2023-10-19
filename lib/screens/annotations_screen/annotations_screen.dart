@@ -1,5 +1,7 @@
+import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/models/annotation_model.dart';
+import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +24,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
     versesProvider.getAnnotations();
     return Scaffold(
       appBar: AppBar(
@@ -122,13 +125,16 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
         child: Consumer<VersesProvider>(
           builder: (context, value, _) {
             if (value.listaAnnotations.isEmpty) {
-              return const Column(
-                mainAxisSize: MainAxisSize.max,
+              return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(image: AssetImage('assets/images/nothing_yet.png')),
-                  SizedBox(height: 32),
-                  Text('Nenhuma Anotação ainda...',
+                  Image.asset(
+                    'assets/images/nothing_yet.png',
+                    width: double.infinity,
+                    height: height * .55,
+                  ),
+                  const SizedBox(height: 32),
+                  const Text('Nenhuma Anotação ainda...',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
                       textAlign: TextAlign.center)
@@ -139,29 +145,18 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
             return ListView.builder(
                 itemCount: value.listaAnnotations.length,
                 itemBuilder: (context, index) {
-                  String annotationId =
-                      value.listaAnnotations[index].annotationId;
-                  String title = value.listaAnnotations[index].title;
-                  String content = value.listaAnnotations[index].content;
-                  String book = value.listaAnnotations[index].book;
-                  int chapter = value.listaAnnotations[index].chapter;
-                  int verseStart = value.listaAnnotations[index].verseStart;
-                  int? verseEnd = value.listaAnnotations[index].verseEnd;
+                  Annotation annotation = value.listaAnnotations[index];
+                  final List<dynamic> list = BibleData().data[0];
+                  final bookInfo = list.where((element) => element['name'] == annotation.book).toList();
+                  final List<dynamic> verses = bookInfo[0]['chapters'][annotation.chapter - 1];
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: InkWell(
                       onTap: (() {
-                        AnnotationModel annotation = AnnotationModel(
-                            annotationId: annotationId,
-                            title: title,
-                            content: content,
-                            book: book,
-                            chapter: chapter,
-                            verseStart: verseStart,
-                            verseEnd: verseEnd);
                         Navigator.pushNamed(context, 'annotation_widget',
                             arguments: {
                               'annotation': annotation,
+                              'verses': verses,
                               'isEditing': true
                             });
                       }),
@@ -225,7 +220,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                               SlidableAction(
                                 onPressed: (context) {
                                   value.share(
-                                      book, content, chapter, verseStart);
+                                      annotation.book, annotation.content, annotation.chapter, annotation.verseStart);
                                 },
                                 icon: Icons.share,
                                 label: 'Share',
@@ -237,7 +232,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                               SlidableAction(
                                 onPressed: (context) {
                                   value.copyText(
-                                      book, content, chapter, verseStart);
+                                      annotation.book, annotation.content, annotation.chapter, annotation.verseStart);
                                 },
                                 icon: Icons.copy,
                                 label: 'Copiar',
@@ -258,17 +253,33 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      title,
+                                      annotation.title,
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleLarge,
                                     ),
-                                    Text(
-                                      title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge,
-                                    ),
+                                    TextButton(
+                                      onPressed: (() {
+                                        versesProvider.clear();
+                                        GoToVerseScreen().goToVersePage(
+                                            annotation.book,
+                                            bookInfo[0]['abbrev'],
+                                            list.indexOf(bookInfo.first),
+                                            bookInfo[0]['chapters'].length,
+                                            annotation.chapter,
+                                            annotation.verseEnd ?? 1
+                                        );
+                                      }),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.onPrimary
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Text('Ler passagem  '),
+                                          Icon(Icons.menu_book)
+                                        ]
+                                      ),
+                                    )
                                   ],
                                 ),
                               ),
@@ -279,7 +290,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                   color: Theme.of(context).colorScheme.surface,
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Text(content,
+                                    child: Text(annotation.content,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyLarge),

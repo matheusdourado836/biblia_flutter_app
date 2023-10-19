@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
@@ -10,6 +11,7 @@ import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/saved_verses.dart';
 import 'package:biblia_flutter_app/screens/search_screen/search_screen.dart';
+import 'package:biblia_flutter_app/screens/settings_screen/settings.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/verses_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_with_background.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
@@ -21,18 +23,20 @@ import 'package:biblia_flutter_app/themes/light_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'data/bible_data.dart';
 import 'firebase_options.dart';
 
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
 late bool deviceConnectivity;
+ThemeMode? _themeMode;
 
 void main() async {
-  Animate.restartOnHotReload = true;
   WidgetsFlutterBinding.ensureInitialized();
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  _themeMode = (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
   await dotenv.load(fileName: ".env");
   await BibleData().loadBibleData(
       ['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
@@ -62,6 +66,7 @@ void main() async {
       providers: [
         Provider<NotificationService>(
             create: (context) => NotificationService()),
+        ChangeNotifierProvider(create: (context) => ChaptersProvider()),
         ChangeNotifierProvider(create: (context) => VersesProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => SearchVersesProvider()),
@@ -74,12 +79,13 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       navigatorKey: navigatorKey,
-      themeMode: themeProvider.themeMode,
+      themeMode: (themeProvider.themeMode == null) ? _themeMode : themeProvider.themeMode,
       darkTheme: darkTheme,
       title: 'BibleWise',
       debugShowCheckedModeBanner: false,
@@ -91,7 +97,8 @@ class MyApp extends StatelessWidget {
         "annotations_screen": (context) => const AnnotationsScreen(),
         "saved_verses": (context) => const SavedVerses(),
         "search_screen": (context) => const SearchScreen(),
-        "random_verse_screen": (context) => const RandomVerseScreen()
+        "random_verse_screen": (context) => const RandomVerseScreen(),
+        "settings": (context) => const SettingsScreen()
       },
       onGenerateRoute: (settings) {
         if (settings.name == 'chapter_screen') {
@@ -141,6 +148,7 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(builder: (context) {
             return AnnotationWidget(
               annotation: map?["annotation"],
+              verses: map?["verses"],
               isEditing: map?["isEditing"],
             );
           });

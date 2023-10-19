@@ -5,8 +5,8 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
-import 'package:biblia_flutter_app/models/annotation_model.dart';
-import 'package:biblia_flutter_app/models/verse_model.dart';
+import 'package:biblia_flutter_app/models/annotation.dart';
+import 'package:biblia_flutter_app/models/verse.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/alert_dialog.dart';
 import '../helpers/convert_colors.dart';
 import 'bible_data.dart';
@@ -24,7 +25,7 @@ class VersesProvider extends ChangeNotifier {
   final BibleData _bibleData = BibleData();
   BibleService service = BibleService();
   List<VerseModel> _lista = [];
-  List<AnnotationModel> _listAnnotations = [];
+  List<Annotation> _listAnnotations = [];
   List<Map<String, dynamic>> _listMapVerses = [];
   List<Map<String, dynamic>> _listMap = [];
   List<int> _versesFound = [];
@@ -33,6 +34,7 @@ class VersesProvider extends ChangeNotifier {
   int _qtdVerses = 0;
   int _qtdAnnotations = 0;
   int _versesFoundCounter = 1;
+  double _fontSize = 16;
   Map<String, dynamic> _verseInfo = {};
   Map<int, dynamic> _allVerses = {};
 
@@ -42,14 +44,15 @@ class VersesProvider extends ChangeNotifier {
 
   UnmodifiableListView<VerseModel> get lista => UnmodifiableListView(_lista);
 
-  UnmodifiableListView<AnnotationModel> get listaAnnotations =>
-      UnmodifiableListView(_listAnnotations);
+  UnmodifiableListView<Annotation> get listaAnnotations => UnmodifiableListView(_listAnnotations);
 
   int get qtdVerses => _qtdVerses;
 
   int get qtdAnnotations => _qtdAnnotations;
 
   int get versesFoundCounter => _versesFoundCounter;
+
+  double get fontSize => _fontSize;
 
   String get color => _color;
 
@@ -63,7 +66,25 @@ class VersesProvider extends ChangeNotifier {
 
   List<int> get versesFoundList => _versesFound;
 
-  Map<int, dynamic> get allVerses => _allVerses;
+  Map<int, dynamic>? get allVerses => _allVerses;
+
+  void newFontSize(double newSize, bool save) async {
+    if(save) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('fontsize', newSize);
+      _fontSize = newSize;
+      notifyListeners();
+      return;
+    }
+
+    notifyListeners();
+  }
+
+  void getFontSize() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.getDouble('fontsize') == null ? _fontSize = 16.0 : _fontSize = prefs.getDouble('fontsize')!;
+  }
 
   void openBottomSheet(bool value) {
     _bottomSheetOpened = value;
@@ -71,16 +92,12 @@ class VersesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<int, dynamic>> loadVerses(int bookIndex, String bookName,
-      {int versionIndex = 0}) async {
+  Future<Map<int, dynamic>> loadVerses(int bookIndex, String bookName, {int versionIndex = 0}) async {
     if (_listMapVerses.isEmpty) {
-      List<dynamic> chapters =
-          _bibleData.data[versionIndex][bookIndex]['chapters'];
+      List<dynamic> chapters = _bibleData.data[versionIndex][bookIndex]['chapters'];
       for (int i = 0; i < chapters.length; i++) {
         try {
-          await refreshFunction(bookName, bookIndex, i,
-                  versionIndex: versionIndex)
-              .whenComplete(() => _allVerses[i + 1] = _listMapVerses);
+          await refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex).whenComplete(() => _allVerses[i + 1] = _listMapVerses);
         } catch (e) {
           log('ESSE FOI O ERRO: $e');
         }
@@ -92,20 +109,16 @@ class VersesProvider extends ChangeNotifier {
     return _allVerses;
   }
 
-  Future<void> refreshFunction(String bookName, int bookIndex, int chapter,
-      {int versionIndex = 0}) async {
+  Future<void> refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) async {
     final listColorsDb = [];
     _listMapVerses = [];
-    final List<dynamic> versesByChapter =
-        _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
-    final List<dynamic> versesByChapterDefault =
-        _bibleData.data[0][bookIndex]['chapters'][chapter];
+    final List<dynamic> versesByChapter = _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
+    final List<dynamic> versesByChapterDefault = _bibleData.data[0][bookIndex]['chapters'][chapter];
+
     for (var i = 0; i < versesByChapterDefault.length; i++) {
       await VersesDao().find(versesByChapterDefault[i]).then((res) => {
-            if (res.isNotEmpty)
-              {
-                if (res[0].verse == versesByChapterDefault[i])
-                  {
+            if (res.isNotEmpty) {
+                if (res[0].verse == versesByChapterDefault[i]) {
                     listColorsDb.add({
                       "verse": versesByChapterDefault[i],
                       "version": res[0].version,
@@ -113,8 +126,7 @@ class VersesProvider extends ChangeNotifier {
                     }),
                   }
               }
-            else
-              {
+            else {
                 listColorsDb.add({
                   "verse": versesByChapterDefault[i],
                   "version": 0,
@@ -198,10 +210,6 @@ class VersesProvider extends ChangeNotifier {
     return allBooks;
   }
 
-  void share(String bookName, String verse, int chapter, int verseNumber) {
-    Share.share('$bookName $chapter:$verseNumber $verse');
-  }
-
   Future<void> shareImageAndText() async {
     try {
       final boundary =
@@ -211,7 +219,7 @@ class VersesProvider extends ChangeNotifier {
 
       if (byteData != null) {
         Uint8List pngBytes = byteData.buffer.asUint8List();
-        bytesToXFile(pngBytes).then((value) => Share.shareXFiles(value));
+        bytesToXFile(pngBytes).then((image) => Share.shareXFiles(image));
       }
     } catch (e) {
       alertDialog(
@@ -231,10 +239,48 @@ class VersesProvider extends ChangeNotifier {
     return files;
   }
 
-  void copyText(
-      String bookName, String verse, int chapter, int verseNumber) async {
+  void shareVerses(BuildContext context, List<Map<String, dynamic>> listMap, String bookName) {
+    String verse = '';
+    String book = '';
+    for (var element in listMap) {
+      book = '${element["bookName"]} ${element["chapter"]}';
+      if(element["isSelected"]) {
+        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+      }
+    }
+    Share.share('$book:$verse');
+  }
+
+  void share(String bookName, String verse, int chapter, int verseNumber) {
+    Share.share('$bookName $chapter:$verseNumber $verse');
+  }
+
+  void copyText(String bookName, String verse, int chapter, int verseNumber) async {
     await Clipboard.setData(
         ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
+  }
+
+  void copyVerses(BuildContext context, List<Map<String, dynamic>> listMap) async {
+    String verse = '';
+    String book = '';
+    for (var element in listMap) {
+      book = '${element["bookName"]} ${element["chapter"]}';
+      if(element["isSelected"]) {
+        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+      }
+    }
+    await Clipboard.setData(
+        ClipboardData(text: '$book:$verse'))
+        .then(
+          (value) => {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            duration: Duration(milliseconds: 1000),
+            content: Text('Texto copiado para área de transferência'),
+          ),
+        ),
+      },
+    );
   }
 
   Future<void> deleteVerse(String verse) async {
@@ -371,5 +417,19 @@ class VersesProvider extends ChangeNotifier {
     _versesFoundCounter = 1;
 
     notifyListeners();
+  }
+
+  void updateColors(List<Map<String, dynamic>> listMap, Color newColor, String bdColor) {
+    for (var element in listMap) {
+      if(element["isSelected"] == true) {
+        element["verseColor"] = newColor;
+        element["isSelected"] = false;
+        if(element["isEditing"] == true) {
+          VersesDao().updateColor(element["verseDefault"], bdColor);
+        }else {
+          VersesDao().save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
+        }
+      }
+    }
   }
 }

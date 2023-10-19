@@ -48,7 +48,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
     start.value = !start.value;
     if (!isSearching) {
       _versesProvider
-          .clearSelectedVerses(_versesProvider.allVerses[widget.chapter]);
+          .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
       _versesProvider.resetVersesFoundCounter();
       setState(() {
         listVerses = [];
@@ -71,7 +71,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
         child: IconButton(
           onPressed: (() {
             _versesProvider
-                .clearSelectedVerses(_versesProvider.allVerses[widget.chapter]);
+                .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
             _versesProvider.resetVersesFoundCounter();
             setState(() {
               textEditingController.text = '';
@@ -97,7 +97,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
               padding: const EdgeInsets.only(right: 8.0),
               child: Container(
                 height: 30,
-                width: width * 0.30,
+                width: width * .4,
                 decoration: BoxDecoration(
                     borderRadius:
                     const BorderRadius.all(Radius.circular(5.0) //
@@ -128,8 +128,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
             child: InkWell(
               onTap: () {
                 _versesProvider.refresh();
-                _versesProvider.clearSelectedVerses(
-                    _versesProvider.allVerses[widget.chapter]);
+                _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
                 Navigator.pushReplacementNamed(context, 'chapter_screen',
                     arguments: {
                       'bookName': widget.bookName,
@@ -213,7 +212,8 @@ class _VersesAppBarState extends State<VersesAppBar> {
                       end: dx,
                       curve: Curves.easeInOut,
                       duration: 1300.ms,
-                    )),
+                    )
+        ),
       ],
     );
   }

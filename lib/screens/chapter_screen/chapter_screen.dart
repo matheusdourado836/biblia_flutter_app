@@ -2,7 +2,12 @@ import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/widgets/chapters_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../data/chapters_provider.dart';
+import '../../data/theme_provider.dart';
 import '../../data/verses_provider.dart';
+
+late VersesProvider versesProvider;
+late ChaptersProvider chaptersProvider;
 
 class ChapterScreen extends StatefulWidget {
   final String bookName;
@@ -22,12 +27,12 @@ class ChapterScreen extends StatefulWidget {
 }
 
 class _ChapterScreenState extends State<ChapterScreen> {
+  final BooksDao booksDao = BooksDao();
   bool isSelected = false;
-  late VersesProvider _versesProvider;
 
   @override
   void initState() {
-    BooksDao().find(widget.bookName).then((value) {
+    booksDao.find(widget.bookName).then((value) {
       if (value.isNotEmpty) {
         if (value[0]["finishedReading"] == 1) {
           setState(() {
@@ -36,12 +41,16 @@ class _ChapterScreenState extends State<ChapterScreen> {
         }
       }
     });
+    booksDao.saveChapters(widget.bookName);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    _versesProvider = Provider.of<VersesProvider>(context);
+    versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider.getThemeMode();
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
@@ -52,14 +61,14 @@ class _ChapterScreenState extends State<ChapterScreen> {
             onPressed: () async {
               setState(() {
                 isSelected = !isSelected;
-                _versesProvider.bookIsReadCheckBox(isSelected);
+                versesProvider.bookIsReadCheckBox(isSelected);
               });
               if (isSelected) {
-                await BooksDao().save(widget.bookName, 1);
+                chaptersProvider.addAllChapters(widget.bookName, widget.chapters);
               } else {
-                await BooksDao().delete(widget.bookName);
+                chaptersProvider.removeAllChapters(widget.bookName, widget.chapters);
               }
-              _versesProvider.refresh();
+              versesProvider.refresh();
             },
             icon: isSelected
                 ? const Icon(

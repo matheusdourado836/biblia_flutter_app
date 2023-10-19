@@ -1,4 +1,7 @@
+import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../data/verses_provider.dart';
 
 class ThemeColors {
   static Color color1 = Colors.cyan[200]!;
@@ -19,4 +22,46 @@ class ThemeColors {
   static String colorString7 = 'Colors.green[200]!';
   static String colorString8 = 'Colors.pink[200]!';
 
+  TextStyle verseColor(bool isLightMode) {
+    if(isLightMode) {
+      return TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.black,
+          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+          fontWeight: FontWeight.w500
+      );
+    }
+
+    return TextStyle(
+        fontFamily: 'Poppins',
+        color: const Color.fromRGBO(255, 255, 255, 0.85),
+        fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+        fontWeight: FontWeight.w500
+    );
+  }
+
+  TextStyle coloredVerse() => TextStyle(
+      fontFamily: 'Poppins',
+      color: Colors.black,
+      fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+      fontWeight: FontWeight.bold
+  );
+
+  TextStyle verseNumberColor(bool isLightMode)  {
+    if(isLightMode) {
+      return TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.black,
+          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+          fontWeight: FontWeight.bold
+      );
+    }
+
+    return TextStyle(
+        fontFamily: 'Poppins',
+        color: const Color.fromRGBO(255, 255, 255, 0.85),
+        fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+        fontWeight: FontWeight.bold
+    );
+  }
 }

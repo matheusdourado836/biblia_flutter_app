@@ -11,8 +11,7 @@ class FirebaseMessagingService {
   FirebaseMessagingService(this._notificationService);
 
   Future<void> initialize() async {
-    await FirebaseMessaging.instance
-        .setForegroundNotificationPresentationOptions(
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
       badge: true,
       sound: true,
       alert: true,
@@ -63,10 +62,10 @@ class FirebaseMessagingService {
       GoToVerseScreen().goToVersePage(
           message.data["bookName"],
           message.data["abbrev"],
-          int.parse(message.data["chapters"]),
           int.parse(message.data["bookIndex"]),
+          int.parse(message.data["chapters"]),
           int.parse(message.data["chapter"]),
-          int.parse(message.data["verse"]));
+          int.parse(message.data["verseNumber"]));
     });
     FirebaseMessaging.instance.getInitialMessage().then((value) => {
           if (value != null)
@@ -74,24 +73,23 @@ class FirebaseMessagingService {
               GoToVerseScreen().goToVersePage(
                   value.data["bookName"],
                   value.data["abbrev"],
-                  int.parse(value.data["chapters"]),
                   int.parse(value.data["bookIndex"]),
+                  int.parse(value.data["chapters"]),
                   int.parse(value.data["chapter"]),
-                  int.parse(value.data["verse"]))
+                  int.parse(value.data["verseNumber"]))
             }
         });
   }
 
-  Future<void> _firebaseMessagingBackgroundHandler(
-      RemoteMessage? message) async {
+  Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage? message) async {
     if (message != null) {
       GoToVerseScreen().goToVersePage(
           message.data["bookName"],
           message.data["abbrev"],
-          int.parse(message.data["chapters"]),
           int.parse(message.data["bookIndex"]),
+          int.parse(message.data["chapters"]),
           int.parse(message.data["chapter"]),
-          int.parse(message.data["verse"]));
+          int.parse(message.data["verseNumber"]));
     }
   }
 
@@ -102,16 +100,16 @@ class FirebaseMessagingService {
     if (notification != null && android != null) {
       String bookName = message.data["bookName"];
       String abbrev = message.data["abbrev"];
-      String chapters = message.data["chapters"];
       String bookIndex = message.data["bookIndex"];
+      String chapters = message.data["chapters"];
       String chapter = message.data["chapter"];
-      String verse = message.data["verse"];
+      String verseNumber = message.data["verseNumber"];
       _notificationService.showNotification(
         CustomNotification(
           id: android.hashCode,
           title: notification.title!,
           body: notification.body!,
-          payload: '$bookName $abbrev $chapters $bookIndex $chapter $verse',
+          payload: '$bookName $abbrev $bookIndex $chapters $chapter $verseNumber',
         ),
       );
     }

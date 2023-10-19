@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +18,12 @@ class SearchingVerse extends StatefulWidget {
 
 class _SearchingVerseState extends State<SearchingVerse> {
   late VersesProvider _versesProvider;
+  late SearchVersesProvider _searchVersesProvider;
 
   @override
   void initState() {
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
     super.initState();
   }
 
@@ -33,18 +36,18 @@ class _SearchingVerseState extends State<SearchingVerse> {
         listVerses = [];
       });
     }else {
+      final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
       setState(() {
-        listVerses = (_versesProvider.allVerses[widget.chapter])
-            .toList()
-            .where((element) =>
-                element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim()))
-            .toList();
+        listVerses = allVerses.where((element) =>
+         element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
+        ).toList();
       });
     }
 
     for(var verse in listVerses) {
       contador.add(verse["verseNumber"] - 1);
       _versesProvider.versesFound(contador);
+      _searchVersesProvider.changeColorOfMatchedWord(text, verse["verse"].toString());
       itemScrollController.jumpTo(index: _versesProvider.versesFoundList[0]);
       _versesProvider.resetVersesFoundCounter();
     }
@@ -60,7 +63,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
           Expanded(
             child: TextField(
               controller: textEditingController,
-              style: const TextStyle(color: Colors.black),
+              style: Theme.of(context).textTheme.bodyMedium,
               autocorrect: false,
               decoration: const InputDecoration(
                 hintText: 'Pesquisar na página',

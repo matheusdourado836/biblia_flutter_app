@@ -5,7 +5,6 @@ import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../home_screen/widgets/random_verse_widget.dart';
 
 class VerseWithBackground extends StatefulWidget {

@@ -5,6 +5,52 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('Testando se da pra trocar a cor da palavra do verso encontrado', () {
+    const verse = 'No princípio terra criou Deus os céus e criou a terra';
+    const query = 'terra';
+
+    if(verse.contains(query)) {
+      final List<String> testeComCifrao = verse.replaceAll(query, '\$').split('\$');
+      List<TextSpan> verseFormated = [];
+      for(var i = 0; i < testeComCifrao.length; i++) {
+        if(testeComCifrao[i].isEmpty ) {
+          verseFormated.add(const TextSpan(
+                          text: query,
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold, color: Colors.red
+                          ),
+                        ),
+          );
+        }else {
+          verseFormated.add(TextSpan(
+            text: testeComCifrao[i],
+            style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.bold
+              ),
+            ),
+          );
+          if( i < testeComCifrao.length - 1 && !(i + 1 == testeComCifrao.length - 1 && testeComCifrao[i + 1].isEmpty)) {
+            verseFormated.add(const TextSpan(
+              text: query,
+              style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold, color: Colors.red
+              ),
+            ),
+            );
+          }
+        }
+      }
+      expect(testeComCifrao[2 + 1], equals(isEmpty));
+    }
+
+  });
+
   testWidgets('verses should load before page loads', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: VersesScreen(

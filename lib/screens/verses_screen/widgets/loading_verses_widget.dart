@@ -1,3 +1,5 @@
+import 'package:biblia_flutter_app/data/books_dao.dart';
+import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
@@ -8,8 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:uuid/uuid.dart';
 import '../../../data/bible_data_controller.dart';
-import '../../../data/verse_inherited.dart';
-import '../../../models/annotation_model.dart';
+import '../../../data/theme_provider.dart';
+import '../../../models/annotation.dart';
 import '../verses_screen.dart';
 
 bool versesSelected = false;
@@ -21,6 +23,7 @@ class LoadingVersesWidget extends StatefulWidget {
   final int bookIndex;
   final int chapter;
   final String verseColors;
+  final Map<int, dynamic> listVerses;
 
   const LoadingVersesWidget({
     Key? key,
@@ -28,7 +31,7 @@ class LoadingVersesWidget extends StatefulWidget {
     required this.abbrev,
     required this.chapter,
     required this.verseColors,
-    required this.bookIndex,
+    required this.bookIndex, required this.listVerses,
   }) : super(key: key);
 
   @override
@@ -37,7 +40,10 @@ class LoadingVersesWidget extends StatefulWidget {
 
 class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   List<Map<String, dynamic>> listMap = [];
+  final ThemeColors themeColors = ThemeColors();
   final BibleDataController bibleDataController = BibleDataController();
+  final BooksDao booksDao = BooksDao();
+  bool isChapterRead = false;
   int _chapter = 1;
 
   late VersesProvider _versesProvider;
@@ -45,16 +51,24 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   @override
   void initState() {
     _chapter = widget.chapter;
-    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
-        listen: false);
+    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     itemScrollController = ItemScrollController();
+    booksDao.findByChapter(widget.bookName).then((value) => {
+      for(var element in value['chapters']) {
+        if(element[_chapter.toString()] == true) {
+          setState(() {
+            isChapterRead = true;
+          })
+        }
+      },
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     setState(() {
-      listMap = _versesProvider.allVerses[_chapter];
+      listMap = widget.listVerses[_chapter];
     });
 
     return Padding(
@@ -63,15 +77,14 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
         initialScrollIndex: initialVerse - 1,
         itemScrollController: itemScrollController,
         physics: const BouncingScrollPhysics(),
-        itemCount: _versesProvider.allVerses[_chapter].length,
+        itemCount: listMap.length,
         itemBuilder: (BuildContext context, int index) {
-          bibleDataController
-              .annotationExists(
-                  '${widget.bookName} ${widget.chapter}:${index + 1}')
+          bibleDataController.annotationExists(widget.bookName, widget.chapter, index + 1)
               .then((value) => {listMap[index]["hasAnnotation"] = value});
           listMap[index]["index"] = index;
           listMap[index]["chapter"] = _chapter;
-          if ((index + 1) == _versesProvider.allVerses[_chapter].length) {
+          final Color verseColor = (listMap[index]["isSelected"]) ? Theme.of(context).highlightColor : listMap[index]["verseColor"];
+          if ((index + 1) == listMap.length) {
             return Column(
               children: [
                 InkWell(
@@ -84,17 +97,33 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                         ? '${widget.bookName} ${widget.chapter}:${index + 1}'
                         : null,
                     verseNumber: index + 1,
-                    verse: listMap[index]["verse"],
-                    verseColor: (listMap[index]["isSelected"])
-                        ? Theme.of(context).highlightColor
-                        : listMap[index]["verseColor"],
+                    verse: verseTextSpan(listMap[index]["verse"].toString().toLowerCase(), verseColor, index),
+                    verseColor: verseColor,
                     verseHasAnnotation:
                         (listMap[index]["hasAnnotation"] == null)
                             ? false
                             : listMap[index]["hasAnnotation"],
                   ),
                 ),
-                Container(height: 200,)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0, bottom: 180),
+                  child: ElevatedButton(
+                    onPressed: (() {
+                      if(!isChapterRead) {
+                        booksDao.saveChapter(widget.bookName, _chapter.toString());
+                      } else {
+                        booksDao.deleteChapter(widget.bookName, _chapter.toString());
+                      }
+                      setState(() {
+                        isChapterRead = !isChapterRead;
+                      });
+                    }),
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(MediaQuery.of(context).size.width * .75, 50)
+                    ),
+                    child: (isChapterRead) ? const Text('Desmarcar como lido') : const Text('Marcar como lido'),
+                  ),
+                )
               ],
             );
           }
@@ -110,10 +139,8 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                     ? '${widget.bookName} ${widget.chapter}:${index + 1}'
                     : null,
                 verseNumber: index + 1,
-                verse: listMap[index]["verse"],
-                verseColor: (listMap[index]["isSelected"])
-                    ? Theme.of(context).highlightColor
-                    : listMap[index]["verseColor"],
+                verse: verseTextSpan(listMap[index]["verse"].toString().toLowerCase(), verseColor, index),
+                verseColor: verseColor,
                 verseHasAnnotation: (listMap[index]["hasAnnotation"] == null)
                     ? false
                     : listMap[index]["hasAnnotation"],
@@ -123,6 +150,25 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
         },
       ),
     );
+  }
+  
+  List<TextSpan> verseTextSpan(String verse, Color verseColor, int index) {
+    final searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
+    List<TextSpan> versesListByQuery = [TextSpan(text: verse, style: (verseColor != Colors.transparent) ? themeColors.coloredVerse() : themeColors.verseColor(true))];
+    if(searchVersesProvider.highlightedWords.isNotEmpty) {
+      final verseFound = searchVersesProvider.highlightedWords.toList();
+      if (verseFound.isNotEmpty) {
+        for(var i = 0; i < verseFound.length; i++) {
+          if(verse.contains(verseFound[i].text!)) {
+            print('VERSO QUE TA SENDO ANALISADO E PASSOU $verse QUE TEM INDEX $index');
+            versesListByQuery = verseFound;
+          }
+        }
+      }else {
+        versesListByQuery = [TextSpan(text: verse, style: (verseColor != Colors.transparent) ? themeColors.coloredVerse() : themeColors.verseColor(true))];
+      }
+    }
+    return versesListByQuery;
   }
 
   void onTap(BuildContext context, int index) {
@@ -149,14 +195,13 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                   children: [
                     IconButton(
                       onPressed: (() {
-                        VerseInherited.of(context)
-                            .share(context, listMap, widget.bookName);
+                        _versesProvider.shareVerses(context, listMap, widget.bookName);
                       }),
                       icon: const Icon(Icons.share),
                     ),
                     IconButton(
                       onPressed: (() {
-                        VerseInherited.of(context).copyText(context, listMap);
+                        _versesProvider.copyVerses(context, listMap);
                       }),
                       icon: const Icon(Icons.copy),
                     ),
@@ -178,9 +223,12 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                     ),
                     IconButton(
                       onPressed: (() {
-                        bibleDataController.getStartAndEndIndex(
-                            listMap, listMap[index]["verseNumber"]);
-                        AnnotationModel innerAnnotation = AnnotationModel(
+                        final List<dynamic> verses = [];
+                        for(var element in listMap) {
+                          verses.add(element['verse']);
+                        }
+                        bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
+                        Annotation innerAnnotation = Annotation(
                             annotationId: const Uuid().v1(),
                             title:
                                 '${widget.bookName} ${widget.chapter}:${index + 1}',
@@ -188,27 +236,25 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                             book: widget.bookName,
                             chapter: widget.chapter,
                             verseStart: bibleDataController.startIndex,
-                            verseEnd: index + 1);
-                        bibleDataController
-                            .verifyAnnotationExists(
-                                '${widget.bookName} ${widget.chapter}:${index + 1}')
-                            .then((value) => {
-                                  if (value != null)
-                                    {
+                            verseEnd: bibleDataController.endIndex);
+                        bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
+                          .then((value) => {
+                                  if (value != null) {
                                       innerAnnotation = value[0],
                                       Navigator.pushNamed(
                                           context, 'annotation_widget',
                                           arguments: {
                                             'annotation': innerAnnotation,
+                                            'verses': verses,
                                             'isEditing': true
                                           })
                                     }
-                                  else
-                                    {
+                                  else {
                                       Navigator.pushNamed(
                                           context, 'annotation_widget',
                                           arguments: {
                                             'annotation': innerAnnotation,
+                                            'verses': verses,
                                             'isEditing': false
                                           })
                                     },
@@ -248,7 +294,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color2, ThemeColors.colorString2);
                         });
                         _versesProvider.refresh();
@@ -264,7 +310,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                                 Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            VerseInherited.of(context).updateColors(listMap,
+                            _versesProvider.updateColors(listMap,
                                 ThemeColors.color3, ThemeColors.colorString3);
                           });
                           _versesProvider.refresh();
@@ -279,7 +325,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color4, ThemeColors.colorString4);
                         });
                         _versesProvider.refresh();
@@ -295,7 +341,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color5, ThemeColors.colorString5);
                         });
                         _versesProvider.refresh();
@@ -311,7 +357,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color6, ThemeColors.colorString6);
                         });
                         _versesProvider.refresh();
@@ -327,7 +373,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color7, ThemeColors.colorString7);
                         });
                         _versesProvider.refresh();
@@ -343,7 +389,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color8, ThemeColors.colorString8);
                         });
                         _versesProvider.refresh();
@@ -359,7 +405,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               Colors.transparent) {
                             listMap[index]["isEditing"] = true;
                           }
-                          VerseInherited.of(context).updateColors(listMap,
+                          _versesProvider.updateColors(listMap,
                               ThemeColors.color1, ThemeColors.colorString1);
                         });
                         _versesProvider.refresh();
