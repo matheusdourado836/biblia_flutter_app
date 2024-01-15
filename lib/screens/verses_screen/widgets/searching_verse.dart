@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 final TextEditingController textEditingController = TextEditingController();
 List<Map<String, dynamic>> listVerses = [];
+List<Map<String, dynamic>> antListVerses = [];
+List<Map<int, dynamic>> allVersesTextSpan = [];
 
 class SearchingVerse extends StatefulWidget {
   final Function() function;
@@ -34,12 +36,18 @@ class _SearchingVerseState extends State<SearchingVerse> {
       _versesProvider.resetVersesFoundCounter();
       setState(() {
         listVerses = [];
+        antListVerses = [];
+        allVersesTextSpan = [];
       });
     }else {
+      allVersesTextSpan = [];
       final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
       setState(() {
         listVerses = allVerses.where((element) =>
          element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
+        ).toList();
+        antListVerses = allVerses.where((element) =>
+            !element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
         ).toList();
       });
     }
@@ -47,10 +55,25 @@ class _SearchingVerseState extends State<SearchingVerse> {
     for(var verse in listVerses) {
       contador.add(verse["verseNumber"] - 1);
       _versesProvider.versesFound(contador);
-      _searchVersesProvider.changeColorOfMatchedWord(text, verse["verse"].toString());
+      _searchVersesProvider.changeColorOfMatchedWord(text.toLowerCase(), verse["verse"].toString(), textOnColoredBackground: (verse["verseColor"] != Colors.transparent) ? true : false);
       itemScrollController.jumpTo(index: _versesProvider.versesFoundList[0]);
       _versesProvider.resetVersesFoundCounter();
+      final List<TextSpan> listTextSpan = [];
+      for (var element in _searchVersesProvider.highlightedWords) {
+        listTextSpan.add(element);
+      }
+      allVersesTextSpan.add({verse["verseNumber"]: listTextSpan});
     }
+
+    for(var antVerse in antListVerses) {
+      allVersesTextSpan.add({antVerse["verseNumber"]: [TextSpan(text: antVerse["verse"], style: TextStyle(fontSize: _versesProvider.fontSize))]});
+    }
+    if(contador.isEmpty) {
+      setState(() {
+        allVersesTextSpan = [];
+      });
+    }
+    allVersesTextSpan.sort((a, b) => a.keys.first.compareTo(b.keys.first));
   }
 
   @override
@@ -90,7 +113,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
                    ),
                    Text(
                      '${_versesProvider.versesFoundCounter} de ${listVerses.length}',
-                     style: const TextStyle(fontSize: 12, color: Colors.black),
+                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 12),
                    ),
                    Expanded(
                      child: IconButton(padding: const EdgeInsets.only(bottom: 10), onPressed: (() {

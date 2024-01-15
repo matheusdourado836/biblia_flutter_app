@@ -1,6 +1,4 @@
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/models/custom_notification.dart';
-import 'package:biblia_flutter_app/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../helpers/alert_dialog.dart';
@@ -37,8 +35,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 });
           },
           tooltip: 'Versículo Aleatório',
-          icon: const Icon(Icons.help_outline_rounded)
-          ,
+          icon: const Icon(Icons.help_outline_rounded),
         ),
       ],
     );

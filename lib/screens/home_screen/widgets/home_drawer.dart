@@ -116,7 +116,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
       onTap: (() {Navigator.pushNamed(context, 'saved_verses');}),
       leading: Icons.bookmark,
       title: 'Versículos Salvos',
-      trailing: Text('$qtdVerses'),
+      trailing: Text('$qtdVerses', style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 
@@ -125,7 +125,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
       onTap: (() {Navigator.pushNamed(context, 'annotations_screen');}),
       leading: Icons.create_rounded,
       title: 'Anotações',
-      trailing: Text('$qtdAnnotations'),
+      trailing: Text('$qtdAnnotations', style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 
@@ -141,17 +141,15 @@ class _HomeDrawerState extends State<HomeDrawer> {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.getThemeMode();
     return ListTile(
-       onTap: (() {themeProvider.toggleTheme();}),
+       onTap: (() => themeProvider.toggleTheme()),
        leading: Consumer<ThemeProvider>(
          builder: (context, themeValue, _) {
            return (themeValue.isOn)
-               ? Icon(
+               ? const Icon(
              Icons.light_mode_sharp,
-             color: Theme.of(context).colorScheme.primary,
            )
-               : Icon(
+               : const Icon(
              Icons.dark_mode_sharp,
-             color: Theme.of(context).colorScheme.primary,
            );
          },
        ),
@@ -182,7 +180,6 @@ class ListTileDrawer extends StatelessWidget {
       onTap: (() => onTap()),
       leading: Icon(
         leading,
-        color: Theme.of(context).colorScheme.primary,
       ),
       titleTextStyle: Theme.of(context).textTheme.bodyMedium,
       title: Text(title),
@@ -204,7 +201,7 @@ class _PortraitDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.tertiary,
       child: Column(
         children: [
           readingProgressWidget,

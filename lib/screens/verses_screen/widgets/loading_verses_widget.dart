@@ -1,8 +1,8 @@
 import 'package:biblia_flutter_app/data/books_dao.dart';
-import 'package:biblia_flutter_app/data/search_verses_provider.dart';
+import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +10,12 @@ import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:uuid/uuid.dart';
 import '../../../data/bible_data_controller.dart';
-import '../../../data/theme_provider.dart';
 import '../../../models/annotation.dart';
 import '../verses_screen.dart';
 
 bool versesSelected = false;
 late ItemScrollController itemScrollController;
+final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 
 class LoadingVersesWidget extends StatefulWidget {
   final String bookName;
@@ -47,11 +47,13 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   int _chapter = 1;
 
   late VersesProvider _versesProvider;
+  late ThemeProvider _themeProvider;
 
   @override
   void initState() {
     _chapter = widget.chapter;
-    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
+    _versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     itemScrollController = ItemScrollController();
     booksDao.findByChapter(widget.bookName).then((value) => {
       for(var element in value['chapters']) {
@@ -66,24 +68,28 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    setState(() {
-      listMap = widget.listVerses[_chapter];
-    });
+  void dispose() {
+    itemPositionsListener;
+    itemScrollController;
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    listMap = widget.listVerses[_chapter];
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ScrollablePositionedList.builder(
         initialScrollIndex: initialVerse - 1,
         itemScrollController: itemScrollController,
+        itemPositionsListener: itemPositionsListener,
         physics: const BouncingScrollPhysics(),
         itemCount: listMap.length,
         itemBuilder: (BuildContext context, int index) {
-          bibleDataController.annotationExists(widget.bookName, widget.chapter, index + 1)
-              .then((value) => {listMap[index]["hasAnnotation"] = value});
-          listMap[index]["index"] = index;
-          listMap[index]["chapter"] = _chapter;
           final Color verseColor = (listMap[index]["isSelected"]) ? Theme.of(context).highlightColor : listMap[index]["verseColor"];
+          final textOnColoredBackground = (verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(_themeProvider.isOn) : themeColors.coloredVerse(true);
+          final textStyle = (verseColor == Colors.transparent) ? themeColors.verseColor(_themeProvider.isOn) : textOnColoredBackground;
+          final List<TextSpan> versesDefault = (allVersesTextSpan.isEmpty) ? [TextSpan(text: listMap[index]["verse"], style: textStyle)] : allVersesTextSpan[index][index + 1];
           if ((index + 1) == listMap.length) {
             return Column(
               children: [
@@ -93,16 +99,10 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                   }),
                   child: VerseArea(
                     chapter: _chapter,
-                    title: (listMap[index]["hasAnnotation"] == true)
-                        ? '${widget.bookName} ${widget.chapter}:${index + 1}'
-                        : null,
                     verseNumber: index + 1,
-                    verse: verseTextSpan(listMap[index]["verse"].toString().toLowerCase(), verseColor, index),
+                    verse: versesDefault,
                     verseColor: verseColor,
-                    verseHasAnnotation:
-                        (listMap[index]["hasAnnotation"] == null)
-                            ? false
-                            : listMap[index]["hasAnnotation"],
+                    annotation: listMap[index]["annotation"],
                   ),
                 ),
                 Padding(
@@ -114,14 +114,15 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                       } else {
                         booksDao.deleteChapter(widget.bookName, _chapter.toString());
                       }
-                      setState(() {
-                        isChapterRead = !isChapterRead;
-                      });
+                      setState(() => isChapterRead = !isChapterRead);
                     }),
                     style: ElevatedButton.styleFrom(
-                      fixedSize: Size(MediaQuery.of(context).size.width * .75, 50)
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
+                      fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                     ),
-                    child: (isChapterRead) ? const Text('Desmarcar como lido') : const Text('Marcar como lido'),
+                    child: (isChapterRead) ? const Text('Desmarcar como lido', style: TextStyle(color: Colors.white)) : const Text('Marcar como lido', style: TextStyle(color: Colors.white)),
                   ),
                 )
               ],
@@ -130,45 +131,19 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
           return Padding(
             padding: const EdgeInsets.all(2.0),
             child: InkWell(
-              onTap: (() {
-                onTap(context, index);
-              }),
+              onTap: (() => onTap(context, index)),
               child: VerseArea(
                 chapter: _chapter,
-                title: (listMap[index]["hasAnnotation"] == true)
-                    ? '${widget.bookName} ${widget.chapter}:${index + 1}'
-                    : null,
                 verseNumber: index + 1,
-                verse: verseTextSpan(listMap[index]["verse"].toString().toLowerCase(), verseColor, index),
+                verse: versesDefault,
                 verseColor: verseColor,
-                verseHasAnnotation: (listMap[index]["hasAnnotation"] == null)
-                    ? false
-                    : listMap[index]["hasAnnotation"],
+                annotation: listMap[index]["annotation"],
               ),
             ),
           );
         },
       ),
     );
-  }
-  
-  List<TextSpan> verseTextSpan(String verse, Color verseColor, int index) {
-    final searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
-    List<TextSpan> versesListByQuery = [TextSpan(text: verse, style: (verseColor != Colors.transparent) ? themeColors.coloredVerse() : themeColors.verseColor(true))];
-    if(searchVersesProvider.highlightedWords.isNotEmpty) {
-      final verseFound = searchVersesProvider.highlightedWords.toList();
-      if (verseFound.isNotEmpty) {
-        for(var i = 0; i < verseFound.length; i++) {
-          if(verse.contains(verseFound[i].text!)) {
-            print('VERSO QUE TA SENDO ANALISADO E PASSOU $verse QUE TEM INDEX $index');
-            versesListByQuery = verseFound;
-          }
-        }
-      }else {
-        versesListByQuery = [TextSpan(text: verse, style: (verseColor != Colors.transparent) ? themeColors.coloredVerse() : themeColors.verseColor(true))];
-      }
-    }
-    return versesListByQuery;
   }
 
   void onTap(BuildContext context, int index) {
@@ -190,6 +165,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -212,7 +188,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                             context, 'verse_with_background',
                             arguments: {
                               "bookName": listMap[index]["bookName"],
-                              "chapter": listMap[index]["chapter"],
+                              "chapter": widget.chapter,
                               "verseNumber": listMap[index]["verseNumber"],
                               "content": listMap[index]["verse"]
                             });

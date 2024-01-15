@@ -30,7 +30,6 @@ import 'data/bible_data.dart';
 import 'firebase_options.dart';
 
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
-late bool deviceConnectivity;
 ThemeMode? _themeMode;
 
 void main() async {
@@ -40,27 +39,25 @@ void main() async {
   await dotenv.load(fileName: ".env");
   await BibleData().loadBibleData(
       ['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
-  deviceConnectivity = await BibleService().checkInternetConnectivity();
-  if (deviceConnectivity) {
-    NotificationService notificationService = NotificationService();
-    FirebaseMessagingService firebaseMessagingService =
-        FirebaseMessagingService(notificationService);
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
-    await firebaseMessaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-    await firebaseMessaging.subscribeToTopic("versiculo_diario");
-    await firebaseMessagingService.initialize();
-  }
+  BibleService().checkInternetConnectivity().then((value) async {
+    if(value) {
+      NotificationService notificationService = NotificationService();
+      FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
+      await firebaseMessaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      firebaseMessaging.subscribeToTopic("versiculo_diario");
+      firebaseMessagingService.initialize();
+    }
+  });
   runApp(
     MultiProvider(
       providers: [

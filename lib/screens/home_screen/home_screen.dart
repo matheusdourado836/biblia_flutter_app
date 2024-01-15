@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/book.dart';
 
+late VersesProvider versesProvider;
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -24,23 +26,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final BibleDataController bibleDataController = BibleDataController();
   late Future<List<Book>> futureListBooks;
-  late VersesProvider _versesProvider;
   List<Book>? listBooks;
   bool changeLayout = true;
 
   @override
   void initState() {
     futureListBooks = bibleDataController.getBooks();
-    _versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
-    _versesProvider.getFontSize();
-    _versesProvider.refresh();
-    _versesProvider.getImage();
+    versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
+    versesProvider.getFontSize();
+    versesProvider.refresh();
+    versesProvider.getImage();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    _versesProvider.refresh();
+    versesProvider.refresh();
     return Scaffold(
       appBar: const HomeAppBar(),
       drawer: const HomeDrawer(),
@@ -74,9 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       } else if (snapshot.hasError) {
                         return InkWell(
-                            onTap: (() {
-                              setState(() {});
-                            }),
+                            onTap: (() => setState(() {})),
                             child: Text('Erro Inesperado! ${snapshot.error}'));
                       }
                       return const LoadingWidget();
@@ -90,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
               bookIsRead: bookIsRead,
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).buttonTheme.colorScheme?.background,
+        backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: () {
           setState(() {
             listBooks;
@@ -111,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool bookIsRead(String bookName) {
     List<Map<String, dynamic>> listMap = [];
-    listMap = _versesProvider.listMap;
+    listMap = versesProvider.listMap;
     for (var element in listMap) {
       if (element["bookName"] == bookName && element['finishedReading'] == 1) {
         return true;

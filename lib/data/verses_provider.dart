@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/alert_dialog.dart';
 import '../helpers/convert_colors.dart';
 import 'bible_data.dart';
+import 'bible_data_controller.dart';
 import 'books_dao.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -111,40 +112,45 @@ class VersesProvider extends ChangeNotifier {
 
   Future<void> refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) async {
     final listColorsDb = [];
+    final versesDao = VersesDao();
+    final BibleDataController bibleDataController = BibleDataController();
     _listMapVerses = [];
     final List<dynamic> versesByChapter = _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
     final List<dynamic> versesByChapterDefault = _bibleData.data[0][bookIndex]['chapters'][chapter];
 
     for (var i = 0; i < versesByChapterDefault.length; i++) {
-      await VersesDao().find(versesByChapterDefault[i]).then((res) => {
-            if (res.isNotEmpty) {
-                if (res[0].verse == versesByChapterDefault[i]) {
-                    listColorsDb.add({
-                      "verse": versesByChapterDefault[i],
-                      "version": res[0].version,
-                      "color": ConvertColors().convertColors(res[0].verseColor)
-                    }),
-                  }
-              }
-            else {
-                listColorsDb.add({
-                  "verse": versesByChapterDefault[i],
-                  "version": 0,
-                  "color": Colors.transparent
-                }),
-              },
-          });
-      _listMapVerses.add({
-        "bookName": bookName,
-        "chapter": chapter + 1,
-        "verseNumber": i + 1,
-        "verse": versesByChapter[i],
-        "verseDefault": versesByChapterDefault[i],
-        "verseColor": listColorsDb[i]["color"],
-        "version": versionIndex,
-        "isSelected": false,
-        "isEditing": false
-      });
+      await versesDao.find(versesByChapterDefault[i]).then((res) => {
+          if (res.isNotEmpty) {
+            if (res[0].verse == versesByChapterDefault[i]) {
+              listColorsDb.add({
+                "verse": versesByChapterDefault[i],
+                "version": res[0].version,
+                "color": ConvertColors().convertColors(res[0].verseColor)
+              }),
+            }
+          }
+          else {
+            listColorsDb.add({
+              "verse": versesByChapterDefault[i],
+              "version": 0,
+              "color": Colors.transparent
+            }),
+          },
+        });
+      await bibleDataController.annotationExists(bookName, chapter + 1, i + 1)
+          .then((value) => _listMapVerses.add({
+              "bookName": bookName,
+              "chapter": chapter + 1,
+              "verseNumber": i + 1,
+              "verse": versesByChapter[i],
+              "verseDefault": versesByChapterDefault[i],
+              "verseColor": listColorsDb[i]["color"],
+              "version": versionIndex,
+              "isSelected": false,
+              "isEditing": false,
+              "annotation": value
+            })
+      );
     }
   }
 
@@ -164,8 +170,7 @@ class VersesProvider extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> getRandomVerse() async {
-    await service
-        .getRandomVerse()
+    await service.getRandomVerse()
         .then((value) => {
               _verseInfo["bookName"] = value["book"]["name"],
               _verseInfo["abbrev"] = value["book"]["abbrev"]["pt"],
@@ -173,13 +178,12 @@ class VersesProvider extends ChangeNotifier {
               _verseInfo["verseNumber"] = value["number"],
               _verseInfo["verse"] = value["text"]
             })
-        .catchError(
-      (error) {
-        var innerError = error as TimeoutException;
-        alertDialog(
+        .catchError((error) {
+          var innerError = error as TimeoutException;
+          alertDialog(
             title: 'Erro ${innerError.message}',
-            content:
-                'O servidor demorou pra responder. Tente novamente mais tarde.');
+            content: 'O servidor demorou pra responder. Tente novamente mais tarde.'
+          );
       },
       test: (error) => error is TimeoutException,
     ).catchError(

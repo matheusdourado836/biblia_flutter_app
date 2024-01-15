@@ -54,7 +54,7 @@ class _BookListState extends State<BookList> {
                               width: 50,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.background,
+                                color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                                 borderRadius: const BorderRadius.all(
                                   Radius.circular(100),
                                 ),

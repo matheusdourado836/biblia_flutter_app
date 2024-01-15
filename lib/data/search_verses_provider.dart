@@ -1,15 +1,18 @@
 import 'package:biblia_flutter_app/data/bible_data.dart';
+import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../screens/home_screen/home_screen.dart';
 
 class SearchVersesProvider extends ChangeNotifier {
   final BibleData bibleData = BibleData();
   List<TextSpan> highlightedWords = [];
 
-  Future<List<Map<String, dynamic>>> searchVerses(String query, int versionIndex, {String findIn = 'toda a biblia'}) async {
+  Future<List<Map<String, dynamic>>> searchVerses(String query, int versionIndex, {String findIn = 'toda a biblia', int findInBookIndex = 0}) async {
     List<Map<String, dynamic>> results = [];
     int qtdBooks = 66;
     int index = 0;
@@ -21,6 +24,11 @@ class SearchVersesProvider extends ChangeNotifier {
         index = 39;
         break;
     }
+    if(findInBookIndex != -1) {
+      index = findInBookIndex;
+      qtdBooks = findInBookIndex + 1;
+    }
+
     for (int i = index; i < qtdBooks; i++) {
       var book = bibleData.data[versionIndex][i]['name'];
       var abbrev = bibleData.data[versionIndex][i]['abbrev'];
@@ -53,30 +61,31 @@ class SearchVersesProvider extends ChangeNotifier {
     return results;
   }
 
-  void changeColorOfMatchedWord(String query, String verse) {
+  void changeColorOfMatchedWord(String query, String verse, {bool textOnColoredBackground = false}) {
     highlightedWords = [];
-    final index = verse.toLowerCase().indexOf(query);
+    final index = verse.toLowerCase().indexOf(query.toLowerCase());
     final matchString = verse.substring(index, index + query.length);
     final TextSpan highLightedText = TextSpan(
       text: matchString,
-      style: const TextStyle(
+      style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: 16,
-          fontWeight: FontWeight.bold, color: Colors.redAccent
+          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false).fontSize,
+          fontWeight: FontWeight.bold, 
+          color: Colors.redAccent
       ),
     );
     List<TextSpan> verseFormated = [];
     final List<String> verseSplitByQuery = verse.toLowerCase().split(query);
     for(var i = 0; i < verseSplitByQuery.length; i++) {
       if(verseSplitByQuery[i].isEmpty ) {
-        verseFormated.add(
-          highLightedText,
-        );
+        verseFormated.add(highLightedText);
       }else {
         verseFormated.add(
           TextSpan(
             text: verseSplitByQuery[i],
-            style: Theme.of(navigatorKey!.currentContext!).textTheme.bodyLarge,
+            style: (textOnColoredBackground)
+                ? const TextStyle(color: Colors.black)
+                : Theme.of(navigatorKey!.currentContext!).textTheme.bodyLarge!.copyWith(fontSize: versesProvider.fontSize),
           ),
         );
         verseFormated.add(

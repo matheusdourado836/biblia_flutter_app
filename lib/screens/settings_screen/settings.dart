@@ -72,6 +72,7 @@ class _OptionsState extends State<Options> {
                         onTap: (() {
                           showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) {
                             return AlertDialog(
+                              actionsAlignment: MainAxisAlignment.center,
                               title: Text('E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: _sliderValue, color: textColor)
@@ -81,15 +82,16 @@ class _OptionsState extends State<Options> {
                                 children: [
                                   Text(_sliderValue.toStringAsFixed(0), style: Theme.of(context).textTheme.bodyMedium,),
                                   Slider(
-                                      value: _sliderValue,
-                                      min: 8.0,
-                                      max: 50.0,
-                                      onChanged: (double value) {
-                                        setState(() {
-                                          _sliderValue = value;
-                                        });
-                                        versesValue.newFontSize(_sliderValue, false);
-                                      }),
+                                    inactiveColor: Theme.of(context).colorScheme.background,
+                                    value: _sliderValue,
+                                    min: 8.0,
+                                    max: 50.0,
+                                    onChanged: (double value) {
+                                      setState(() {
+                                        _sliderValue = value;
+                                      });
+                                      versesValue.newFontSize(_sliderValue, false);
+                                    }),
                                 ],
                               ),
                               actions: [
@@ -103,7 +105,7 @@ class _OptionsState extends State<Options> {
                                   style:ElevatedButton.styleFrom(
                                       backgroundColor: Theme.of(context).colorScheme.error
                                   ),
-                                  child: const Text('Cancelar'),
+                                  child: Text('Cancelar', style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 12)),
                                 ),
                                 ElevatedButton(onPressed: (() {
                                   versesValue.newFontSize(_sliderValue, true);
@@ -111,7 +113,7 @@ class _OptionsState extends State<Options> {
                                     _savedSliderValue = _sliderValue;
                                   });
                                   Navigator.pop(context);
-                                }), child: const Text('Salvar'),
+                                }), child: Text('Salvar', style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 12)),
                                 ),
                               ],
                             );
@@ -126,9 +128,7 @@ class _OptionsState extends State<Options> {
                           ),
                           child: Center(
                             child: Text(versesValue.fontSize.toStringAsFixed(0),
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 18),
                             ),
                           ),
                         ),
@@ -154,7 +154,7 @@ class _OptionsState extends State<Options> {
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
                       return SizedBox(
-                        width: 150,
+                        width: 145,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: LiteRollingSwitch(

@@ -6,6 +6,7 @@ import 'bible_data.dart';
 
 class BibleDataController {
   final BibleData _bibleData = BibleData();
+  final AnnotationsDao _annotationsDao = AnnotationsDao();
   String _annotationTitle = '';
   int _startIndex = 0;
   int _endIndex = 0;
@@ -19,12 +20,12 @@ class BibleDataController {
 
   List<Book> get books => _books;
 
-  Future<List<Annotation>?> verifyAnnotationExists(String bookName, int chapter, int verse) {
-    return AnnotationsDao().findByTitle(bookName, chapter, verse);
+  Future<List<Annotation>?> verifyAnnotationExists(String bookName, int chapter, int verse) async {
+    return await _annotationsDao.findByTitle(bookName, chapter, verse);
   }
 
-  Future<bool> annotationExists(String bookName, int chapter, int verse) async {
-    return AnnotationsDao().checkByTitle(bookName, chapter, verse);
+  Future<Annotation?> annotationExists(String bookName, int chapter, int verse) async {
+    return await _annotationsDao.checkByTitle(bookName, chapter, verse);
   }
 
   void getStartAndEndIndex(List<Map<String, dynamic>> listMap, int verseNumber) {
@@ -38,7 +39,6 @@ class BibleDataController {
       _annotationTitle = '${versosSelecionados.first['bookName']} ${versosSelecionados.first['chapter']}:$_endIndex';
       _startIndex = 0;
     }
-    log('STARt E END INDEX $_startIndex $_endIndex\nTITLE $_annotationTitle');
   }
 
   Future<List<Book>> getBooks() async {

@@ -1,9 +1,11 @@
+import 'package:biblia_flutter_app/screens/verses_screen/verses_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../data/verses_provider.dart';
 import '../../../data/version_provider.dart';
+import 'loading_verses_widget.dart';
 
 class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String bookName;
@@ -43,6 +45,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
 
   void toggleSearch() {
     setState(() {
+      allVersesTextSpan = [];
       isSearching = !isSearching;
     });
     start.value = !start.value;
@@ -78,13 +81,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
               listVerses = [];
             });
             _versesProvider.refresh();
-            Navigator.pushReplacementNamed(context, 'chapter_screen',
-                arguments: {
-                  "bookName": widget.bookName,
-                  "abbrev": widget.abbrev,
-                  "bookIndex": widget.bookIndex,
-                  "chapters": widget.chapters,
-                });
+            Navigator.pop(context);
           }),
           icon: const Icon(Icons.arrow_back),
         ),
@@ -99,13 +96,11 @@ class _VersesAppBarState extends State<VersesAppBar> {
                 height: 30,
                 width: width * .4,
                 decoration: BoxDecoration(
-                    borderRadius:
-                    const BorderRadius.all(Radius.circular(5.0) //
-                    ),
-                    border: Border.all(color: Colors.black, width: 2)),
+                    borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                    border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)),
                 child: InkWell(
                   onTap: (() {
-                    Navigator.pushReplacementNamed(context, 'home');
+                    Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
                   }),
                   child: Padding(
                     padding: const EdgeInsets.all(2.0),
@@ -123,19 +118,20 @@ class _VersesAppBarState extends State<VersesAppBar> {
             height: 30,
             width: width * 0.1,
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                border: Border.all(color: Colors.black, width: 2)),
+              borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+            ),
             child: InkWell(
               onTap: () {
                 _versesProvider.refresh();
                 _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
-                Navigator.pushReplacementNamed(context, 'chapter_screen',
-                    arguments: {
-                      'bookName': widget.bookName,
-                      'abbrev': widget.abbrev,
-                      'bookIndex': widget.bookIndex,
-                      'chapters': widget.chapters
-                    });
+                Navigator.pushNamedAndRemoveUntil(context, 'chapter_screen', (route) => false,
+                  arguments: {
+                    'bookName': widget.bookName,
+                    'abbrev': widget.abbrev,
+                    'bookIndex': widget.bookIndex,
+                    'chapters': widget.chapters
+                  });
               },
               child: Center(child: Text(widget.chapter.toString())),
             ),
@@ -147,7 +143,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
               height: 30,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                border: Border.all(color: Colors.black, width: 2),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
               ),
               child: Consumer<VersionProvider>(
                 builder: (context, value, _) {
@@ -178,9 +174,11 @@ class _VersesAppBarState extends State<VersesAppBar> {
                       _versesProvider.resetVersesFoundCounter();
                       setState(() {
                         listVerses = [];
+                        initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
                       });
                       _versesProvider.clear();
                       value.changeVersion(newValue!.toString());
+                      _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionIndex: value.options.indexOf(value.selectedOption));
                     },
                     selectedItemBuilder: (BuildContext context) {
                       return value.versionsList;

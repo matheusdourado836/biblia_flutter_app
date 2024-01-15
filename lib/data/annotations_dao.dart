@@ -77,7 +77,7 @@ class AnnotationsDao {
     return toList(result);
   }
 
-  Future<bool> checkByTitle(String bookName, int chapter, int verse) async {
+  Future<Annotation?> checkByTitle(String bookName, int chapter, int verse) async {
     final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result = await bancoDeDados.query(
       _tablename,
@@ -86,10 +86,10 @@ class AnnotationsDao {
     );
 
     if(result.isEmpty) {
-      return false;
+      return null;
     }
 
-    return true;
+    return toList(result).first;
   }
 
   Future<List<Annotation>> findAll() async {

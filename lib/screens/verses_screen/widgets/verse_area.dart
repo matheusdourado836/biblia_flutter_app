@@ -4,24 +4,21 @@ import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/bible_data.dart';
-import '../../../data/bible_data_controller.dart';
 
 class VerseArea extends StatefulWidget {
   final int chapter;
   final int verseNumber;
   final Color verseColor;
-  final String? title;
   final List<TextSpan> verse;
-  final bool verseHasAnnotation;
+  final Annotation? annotation;
 
   const VerseArea({
     Key? key,
     required this.verseNumber,
     required this.verse,
     required this.verseColor,
-    required this.verseHasAnnotation,
     required this.chapter,
-    this.title,
+    this.annotation,
   }) : super(key: key);
 
   @override
@@ -32,20 +29,12 @@ class _VerseAreaState extends State<VerseArea> {
   Color verseColor = Colors.transparent;
   final ThemeColors themeColors = ThemeColors();
   List<dynamic> verses = [];
-  late Annotation? annotation;
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    if(widget.verseHasAnnotation) {
-      BibleDataController()
-          .verifyAnnotationExists(widget.title!.split(' ')[0], widget.chapter, widget.verseNumber)
-          .then((value) {
-        annotation = value![0];
-      });
-    } else {
-      annotation = null;
-    }
+    final defaultColor = themeColors.verseNumberColor(themeProvider.isOn);
+    final textOnColoredBackground = (widget.verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(themeProvider.isOn) : themeColors.coloredVerse(true);
     return Container(
       color: widget.verseColor,
       padding: const EdgeInsets.all(6),
@@ -54,16 +43,16 @@ class _VerseAreaState extends State<VerseArea> {
           Text.rich(
             TextSpan(
               text: '${widget.verseNumber.toString()}  ',
-              style: (widget.verseColor == Colors.transparent) ? themeColors.verseNumberColor(themeProvider.isOn) : themeColors.coloredVerse(),
+              style: (widget.verseColor == Colors.transparent) ? defaultColor : textOnColoredBackground,
               children: widget.verse,
             ),
           ),
-          (widget.verseHasAnnotation) ? IconButton(onPressed: (() {
+          (widget.annotation != null) ? IconButton(onPressed: (() {
             final List<dynamic> list = BibleData().data[0];
-            final bookInfo = list.where((element) => element['name'] == annotation!.book).toList();
+            final bookInfo = list.where((element) => element['name'] == widget.annotation!.book).toList();
             verses = bookInfo[0]['chapters'][widget.chapter - 1];
             Navigator.pushNamed(context, 'annotation_widget', arguments: {
-              'annotation': annotation,
+              'annotation': widget.annotation,
               'verses': verses,
               'isEditing': true
             });

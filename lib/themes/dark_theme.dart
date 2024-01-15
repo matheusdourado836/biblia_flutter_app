@@ -6,15 +6,30 @@ ThemeData darkTheme = ThemeData(
   cardTheme: const CardTheme(
     color: Color.fromRGBO(51, 41, 64, 1)
   ),
-    dropdownMenuTheme: const DropdownMenuThemeData(
-      textStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600
-      ),
+  colorScheme: ColorScheme(
+    brightness: Brightness.dark,
+    primary: const Color.fromRGBO(86, 125,	244, 1),
+    onPrimary: Colors.yellow[400]!,
+    secondary: const Color.fromRGBO(59, 79, 254, 1),
+    onSecondary: Colors.black,
+    tertiary: const Color(0xff1c1b1f),
+    error: Colors.red,
+    onError: Colors.white,
+    background: const Color(0xff1c1b1f),
+    onBackground: Colors.black,
+    surface: const Color.fromRGBO(59, 79, 254, 1),
+    onSurface: Colors.white.withOpacity(.85)
+  ),
+  dropdownMenuTheme: const DropdownMenuThemeData(
+    textStyle: TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.w600
     ),
+  ),
   highlightColor: const Color.fromRGBO(89, 89, 89, 1.0),
   appBarTheme: const AppBarTheme(
+    backgroundColor: Color(0xff1c1b1f),
     elevation: 0.5,
     titleTextStyle: TextStyle(
       color: Colors.white,

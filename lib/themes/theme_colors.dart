@@ -22,12 +22,14 @@ class ThemeColors {
   static String colorString7 = 'Colors.green[200]!';
   static String colorString8 = 'Colors.pink[200]!';
 
+  final fontSize = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false).fontSize;
+
   TextStyle verseColor(bool isLightMode) {
     if(isLightMode) {
       return TextStyle(
           fontFamily: 'Poppins',
           color: Colors.black,
-          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+          fontSize: fontSize,
           fontWeight: FontWeight.w500
       );
     }
@@ -35,24 +37,17 @@ class ThemeColors {
     return TextStyle(
         fontFamily: 'Poppins',
         color: const Color.fromRGBO(255, 255, 255, 0.85),
-        fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+        fontSize: fontSize,
         fontWeight: FontWeight.w500
     );
   }
 
-  TextStyle coloredVerse() => TextStyle(
-      fontFamily: 'Poppins',
-      color: Colors.black,
-      fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
-      fontWeight: FontWeight.bold
-  );
-
-  TextStyle verseNumberColor(bool isLightMode)  {
+  TextStyle coloredVerse(bool isLightMode) {
     if(isLightMode) {
       return TextStyle(
           fontFamily: 'Poppins',
           color: Colors.black,
-          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+          fontSize: fontSize,
           fontWeight: FontWeight.bold
       );
     }
@@ -60,7 +55,25 @@ class ThemeColors {
     return TextStyle(
         fontFamily: 'Poppins',
         color: const Color.fromRGBO(255, 255, 255, 0.85),
-        fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!).fontSize,
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold
+    );
+  }
+
+  TextStyle verseNumberColor(bool isLightMode)  {
+    if(isLightMode) {
+      return TextStyle(
+          fontFamily: 'Poppins',
+          color: Colors.black,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold
+      );
+    }
+
+    return TextStyle(
+        fontFamily: 'Poppins',
+        color: const Color.fromRGBO(255, 255, 255, 0.85),
+        fontSize: fontSize,
         fontWeight: FontWeight.bold
     );
   }

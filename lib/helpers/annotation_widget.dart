@@ -59,12 +59,13 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
                 Text(title),
                 IconButton(onPressed: (() {
                   showDialog(context: context, builder: (BuildContext context) {
+                    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
                     return AlertDialog(
                       titlePadding: const EdgeInsets.all(0),
                       title: Container(
                           height: 90,
                           color: Theme.of(context).colorScheme.primary,
-                          child: Center(child: Text('${widget.annotation.book} capítulo ${widget.annotation.chapter}', style: themeColors.coloredVerse(),))),
+                          child: Center(child: Text('${widget.annotation.book} capítulo ${widget.annotation.chapter}', style: themeColors.coloredVerse(themeProvider.isOn),))),
                       actions: null,
                       content: Container(
                         height: MediaQuery.of(context).size.height * .5,
@@ -150,3 +151,638 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
     );
   }
 }
+
+Map<String, dynamic> obj = {
+  "denounceDTO": {
+    "id": 0,
+    "identifier": "string",
+    "name": "string",
+    "image": "string",
+    "idRepository": 0,
+    "externalContentLoc": "string",
+    "userOwner": {
+      "id": 0,
+      "identifier": "string",
+      "name": "string",
+      "image": "string",
+      "idRepository": 0,
+      "externalContentLoc": "string",
+      "userOwner": "string",
+      "contentName": "string",
+      "description": "string",
+      "institution": {
+        "id": 0,
+        "identifier": "string",
+        "name": "string",
+        "image": "string",
+        "idRepository": 0,
+        "externalContentLoc": "string",
+        "userOwner": "string",
+        "contentName": "string",
+        "description": "string",
+        "institution": "string",
+        "dtRegistration": "2023-10-24T17:20:59.982Z",
+        "qtAccess": 0,
+        "endLive": "2023-10-24T17:20:59.982Z",
+        "dayNextLive": "2023-10-24T17:20:59.982Z",
+        "dayTimeNextLive": "2023-10-24T17:20:59.982Z",
+        "timeStartLive": 0,
+        "timeEndLive": 0,
+        "startTimeAux": "string",
+        "status": "INACTIVE",
+        "liveStatus": "NOT_STARTED",
+        "playerThumbsGenerated": true,
+        "topics": [
+          {
+            "id": 0,
+            "vlStart": 0,
+            "dsTopic": "string",
+            "subTopic": true,
+            "startMinute": "string"
+          }
+        ],
+        "monitoring": true,
+        "idPlaylistReferer": 0,
+        "playlistTypeReferer": 0,
+        "idOwner": 0,
+        "idOwnerContents": [
+          0
+        ],
+        "privacy": 0,
+        "qtFollow": 0,
+        "qtPublications": 0,
+        "code": "string",
+        "entityId": "string",
+        "rnpCode": "string",
+        "friendlyUrl": "string",
+        "imageUploadedImage": true,
+        "imageRemoveThumbnail": true,
+        "thumbnailContextPath": "string",
+        "tpItem": "VIDEO",
+        "tpItemContext": {},
+        "hasChannelAssociation": true,
+        "metatagTitle": "string",
+        "metatagDescription": "string",
+        "reproved": true,
+        "statusCss": "string",
+        "thumbnailPath": "string",
+        "video": true,
+        "controlType": "PUBLIC",
+        "channelsIds": [
+          0
+        ]
+      },
+      "dtRegistration": "2023-10-24T17:20:59.982Z",
+      "qtAccess": 0,
+      "endLive": "2023-10-24T17:20:59.982Z",
+      "dayNextLive": "2023-10-24T17:20:59.982Z",
+      "dayTimeNextLive": "2023-10-24T17:20:59.982Z",
+      "timeStartLive": 0,
+      "timeEndLive": 0,
+      "startTimeAux": "string",
+      "status": "INACTIVE",
+      "liveStatus": "NOT_STARTED",
+      "playerThumbsGenerated": true,
+      "topics": [
+        {
+          "id": 0,
+          "vlStart": 0,
+          "dsTopic": "string",
+          "subTopic": true,
+          "startMinute": "string"
+        }
+      ],
+      "monitoring": true,
+      "idPlaylistReferer": 0,
+      "playlistTypeReferer": 0,
+      "idOwner": 0,
+      "idOwnerContents": [
+        0
+      ],
+      "privacy": 0,
+      "qtFollow": 0,
+      "qtPublications": 0,
+      "fullName": "string",
+      "surname": "string",
+      "email": "string",
+      "password": "string",
+      "passwordConfirm": "string",
+      "idInstitution": 0,
+      "imageUploaded": true,
+      "removeImage": true,
+      "imageByte": "string",
+      "thumbnailContextPath": "string",
+      "tpItem": "VIDEO",
+      "tpItemContext": {},
+      "hasChannelAssociation": true,
+      "metatagTitle": "string",
+      "metatagDescription": "string",
+      "reproved": true,
+      "statusCss": "string",
+      "thumbnailPath": "string",
+      "video": true,
+      "controlType": "PUBLIC",
+      "channelsIds": [
+        0
+      ]
+    },
+    "contentName": "string",
+    "description": "string",
+    "institution": {
+      "id": 0,
+      "identifier": "string",
+      "name": "string",
+      "image": "string",
+      "idRepository": 0,
+      "externalContentLoc": "string",
+      "userOwner": "string",
+      "contentName": "string",
+      "description": "string",
+      "institution": "string",
+      "dtRegistration": "2023-10-24T17:20:59.982Z",
+      "qtAccess": 0,
+      "endLive": "2023-10-24T17:20:59.983Z",
+      "dayNextLive": "2023-10-24T17:20:59.983Z",
+      "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+      "timeStartLive": 0,
+      "timeEndLive": 0,
+      "startTimeAux": "string",
+      "status": "INACTIVE",
+      "liveStatus": "NOT_STARTED",
+      "playerThumbsGenerated": true,
+      "topics": [
+        {
+          "id": 0,
+          "vlStart": 0,
+          "dsTopic": "string",
+          "subTopic": true,
+          "startMinute": "string"
+        }
+      ],
+      "monitoring": true,
+      "idPlaylistReferer": 0,
+      "playlistTypeReferer": 0,
+      "idOwner": 0,
+      "idOwnerContents": [
+        0
+      ],
+      "privacy": 0,
+      "qtFollow": 0,
+      "qtPublications": 0,
+      "code": "string",
+      "entityId": "string",
+      "rnpCode": "string",
+      "friendlyUrl": "string",
+      "imageUploadedImage": true,
+      "imageRemoveThumbnail": true,
+      "thumbnailContextPath": "string",
+      "tpItem": "VIDEO",
+      "tpItemContext": {},
+      "hasChannelAssociation": true,
+      "metatagTitle": "string",
+      "metatagDescription": "string",
+      "reproved": true,
+      "statusCss": "string",
+      "thumbnailPath": "string",
+      "video": true,
+      "controlType": "PUBLIC",
+      "channelsIds": [
+        0
+      ]
+    },
+    "dtRegistration": "2023-10-24T17:20:59.983Z",
+    "qtAccess": 0,
+    "endLive": "2023-10-24T17:20:59.983Z",
+    "dayNextLive": "2023-10-24T17:20:59.983Z",
+    "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+    "timeStartLive": 0,
+    "timeEndLive": 0,
+    "startTimeAux": "string",
+    "status": "INACTIVE",
+    "liveStatus": "NOT_STARTED",
+    "playerThumbsGenerated": true,
+    "topics": [
+      {
+        "id": 0,
+        "vlStart": 0,
+        "dsTopic": "string",
+        "subTopic": true,
+        "startMinute": "string"
+      }
+    ],
+    "monitoring": true,
+    "idPlaylistReferer": 0,
+    "playlistTypeReferer": 0,
+    "idOwner": 0,
+    "idOwnerContents": [
+      0
+    ],
+    "privacy": 0,
+    "channels": [
+      {
+        "id": 0,
+        "identifier": "string",
+        "name": "string",
+        "image": "string",
+        "idRepository": 0,
+        "externalContentLoc": "string",
+        "userOwner": {
+          "id": 0,
+          "identifier": "string",
+          "name": "string",
+          "image": "string",
+          "idRepository": 0,
+          "externalContentLoc": "string",
+          "userOwner": "string",
+          "contentName": "string",
+          "description": "string",
+          "institution": {
+            "id": 0,
+            "identifier": "string",
+            "name": "string",
+            "image": "string",
+            "idRepository": 0,
+            "externalContentLoc": "string",
+            "userOwner": "string",
+            "contentName": "string",
+            "description": "string",
+            "institution": "string",
+            "dtRegistration": "2023-10-24T17:20:59.983Z",
+            "qtAccess": 0,
+            "endLive": "2023-10-24T17:20:59.983Z",
+            "dayNextLive": "2023-10-24T17:20:59.983Z",
+            "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+            "timeStartLive": 0,
+            "timeEndLive": 0,
+            "startTimeAux": "string",
+            "status": "INACTIVE",
+            "liveStatus": "NOT_STARTED",
+            "playerThumbsGenerated": true,
+            "topics": [
+              {
+                "id": 0,
+                "vlStart": 0,
+                "dsTopic": "string",
+                "subTopic": true,
+                "startMinute": "string"
+              }
+            ],
+            "monitoring": true,
+            "idPlaylistReferer": 0,
+            "playlistTypeReferer": 0,
+            "idOwner": 0,
+            "idOwnerContents": [
+              0
+            ],
+            "privacy": 0,
+            "qtFollow": 0,
+            "qtPublications": 0,
+            "code": "string",
+            "entityId": "string",
+            "rnpCode": "string",
+            "friendlyUrl": "string",
+            "imageUploadedImage": true,
+            "imageRemoveThumbnail": true,
+            "thumbnailContextPath": "string",
+            "tpItem": "VIDEO",
+            "tpItemContext": {},
+            "hasChannelAssociation": true,
+            "metatagTitle": "string",
+            "metatagDescription": "string",
+            "reproved": true,
+            "statusCss": "string",
+            "thumbnailPath": "string",
+            "video": true,
+            "controlType": "PUBLIC",
+            "channelsIds": [
+              0
+            ]
+          },
+          "dtRegistration": "2023-10-24T17:20:59.983Z",
+          "qtAccess": 0,
+          "endLive": "2023-10-24T17:20:59.983Z",
+          "dayNextLive": "2023-10-24T17:20:59.983Z",
+          "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+          "timeStartLive": 0,
+          "timeEndLive": 0,
+          "startTimeAux": "string",
+          "status": "INACTIVE",
+          "liveStatus": "NOT_STARTED",
+          "playerThumbsGenerated": true,
+          "topics": [
+            {
+              "id": 0,
+              "vlStart": 0,
+              "dsTopic": "string",
+              "subTopic": true,
+              "startMinute": "string"
+            }
+          ],
+          "monitoring": true,
+          "idPlaylistReferer": 0,
+          "playlistTypeReferer": 0,
+          "idOwner": 0,
+          "idOwnerContents": [
+            0
+          ],
+          "privacy": 0,
+          "qtFollow": 0,
+          "qtPublications": 0,
+          "fullName": "string",
+          "surname": "string",
+          "email": "string",
+          "password": "string",
+          "passwordConfirm": "string",
+          "idInstitution": 0,
+          "imageUploaded": true,
+          "removeImage": true,
+          "imageByte": "string",
+          "thumbnailContextPath": "string",
+          "tpItem": "VIDEO",
+          "tpItemContext": {},
+          "hasChannelAssociation": true,
+          "metatagTitle": "string",
+          "metatagDescription": "string",
+          "reproved": true,
+          "statusCss": "string",
+          "thumbnailPath": "string",
+          "video": true,
+          "controlType": "PUBLIC",
+          "channelsIds": [
+            0
+          ]
+        },
+        "contentName": "string",
+        "description": "string",
+        "institution": {
+          "id": 0,
+          "identifier": "string",
+          "name": "string",
+          "image": "string",
+          "idRepository": 0,
+          "externalContentLoc": "string",
+          "userOwner": "string",
+          "contentName": "string",
+          "description": "string",
+          "institution": "string",
+          "dtRegistration": "2023-10-24T17:20:59.983Z",
+          "qtAccess": 0,
+          "endLive": "2023-10-24T17:20:59.983Z",
+          "dayNextLive": "2023-10-24T17:20:59.983Z",
+          "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+          "timeStartLive": 0,
+          "timeEndLive": 0,
+          "startTimeAux": "string",
+          "status": "INACTIVE",
+          "liveStatus": "NOT_STARTED",
+          "playerThumbsGenerated": true,
+          "topics": [
+            {
+              "id": 0,
+              "vlStart": 0,
+              "dsTopic": "string",
+              "subTopic": true,
+              "startMinute": "string"
+            }
+          ],
+          "monitoring": true,
+          "idPlaylistReferer": 0,
+          "playlistTypeReferer": 0,
+          "idOwner": 0,
+          "idOwnerContents": [
+            0
+          ],
+          "privacy": 0,
+          "qtFollow": 0,
+          "qtPublications": 0,
+          "code": "string",
+          "entityId": "string",
+          "rnpCode": "string",
+          "friendlyUrl": "string",
+          "imageUploadedImage": true,
+          "imageRemoveThumbnail": true,
+          "thumbnailContextPath": "string",
+          "tpItem": "VIDEO",
+          "tpItemContext": {},
+          "hasChannelAssociation": true,
+          "metatagTitle": "string",
+          "metatagDescription": "string",
+          "reproved": true,
+          "statusCss": "string",
+          "thumbnailPath": "string",
+          "video": true,
+          "controlType": "PUBLIC",
+          "channelsIds": [
+            0
+          ]
+        },
+        "dtRegistration": "2023-10-24T17:20:59.983Z",
+        "qtAccess": 0,
+        "endLive": "2023-10-24T17:20:59.983Z",
+        "dayNextLive": "2023-10-24T17:20:59.983Z",
+        "dayTimeNextLive": "2023-10-24T17:20:59.983Z",
+        "timeStartLive": 0,
+        "timeEndLive": 0,
+        "startTimeAux": "string",
+        "status": "INACTIVE",
+        "liveStatus": "NOT_STARTED",
+        "playerThumbsGenerated": true,
+        "topics": [
+          {
+            "id": 0,
+            "vlStart": 0,
+            "dsTopic": "string",
+            "subTopic": true,
+            "startMinute": "string"
+          }
+        ],
+        "monitoring": true,
+        "idPlaylistReferer": 0,
+        "playlistTypeReferer": 0,
+        "idOwner": 0,
+        "idOwnerContents": [
+          0
+        ],
+        "privacy": 0,
+        "titles": [
+          "string"
+        ],
+        "descriptions": [
+          "string"
+        ],
+        "keywordsAsString": [
+          "string"
+        ],
+        "friendlyUrl": "string",
+        "password": "string",
+        "domainsEmbed": "string",
+        "sendModeration": true,
+        "sendEmailToModerate": true,
+        "showSendModerationOption": true,
+        "idApplication": 0,
+        "dsExIdentifier": "string",
+        "dsExVersion": "string",
+        "nmFileSubtitle": "string",
+        "uploadedImage": true,
+        "fieldErrors": [
+          {
+            "codes": [
+              "string"
+            ],
+            "arguments": [
+              {}
+            ],
+            "defaultMessage": "string",
+            "objectName": "string",
+            "field": "string",
+            "rejectedValue": {},
+            "bindingFailure": true,
+            "code": "string"
+          }
+        ],
+        "globalErrors": [
+          {
+            "codes": [
+              "string"
+            ],
+            "arguments": [
+              {}
+            ],
+            "defaultMessage": "string",
+            "objectName": "string",
+            "code": "string"
+          }
+        ],
+        "itemTargetType": "NOT_MAPPED",
+        "mode": "string",
+        "removeThumbnail": true,
+        "approve": true,
+        "reproveComment": "string",
+        "idVideoLive": 0,
+        "idAudioLive": 0,
+        "geolocationControl": 0,
+        "type": "FAVORITE",
+        "imageByte": "string",
+        "tpControl": "PUBLIC",
+        "qtFollow": 0,
+        "qtPublications": 0,
+        "nuUp": 0,
+        "keywords": [
+          "string"
+        ],
+        "dtModification": "2023-10-24T17:20:59.984Z",
+        "coverImage": "string",
+        "contentsIds": [
+          "string"
+        ],
+        "viewMembersIds": [
+          "string"
+        ],
+        "publisherMembersIds": [
+          "string"
+        ],
+        "adminMembersIds": [
+          "string"
+        ],
+        "imageUploadedImage": true,
+        "imageRemoveThumbnail": true,
+        "coverImageUploadedImage": true,
+        "coverImageRemoveThumbnail": true,
+        "removeAllMembers": true,
+        "viewersToRemove": [
+          "string"
+        ],
+        "viewersToAdd": [
+          "string"
+        ],
+        "publishersToRemove": [
+          "string"
+        ],
+        "publishersToAdd": [
+          "string"
+        ],
+        "adminsToRemove": [
+          "string"
+        ],
+        "adminsToAdd": [
+          "string"
+        ],
+        "thumbnailContextPath": "string",
+        "tpItem": "VIDEO",
+        "tpItemContext": {},
+        "coverImagePath": "string",
+        "subjectDto": {
+          "id": 0,
+          "name": "string",
+          "knowledgeAreaDto": {
+            "id": 0,
+            "name": "string"
+          },
+          "listCourses": [
+            0
+          ]
+        },
+        "courseDto": {
+          "idCourse": 0,
+          "nmCourse": "string",
+          "knowledgeAreaDto": {
+            "id": 0,
+            "name": "string"
+          }
+        },
+        "knowledgeAreaDto": {
+          "id": 0,
+          "name": "string"
+        },
+        "levelDto": {
+          "idLevel": 0,
+          "nmLevel": "string"
+        },
+        "podcastsIds": [
+          0
+        ],
+        "edit": true,
+        "playlistIds": [
+          0
+        ],
+        "hasChannelAssociation": true,
+        "metatagTitle": "string",
+        "metatagDescription": "string",
+        "reproved": true,
+        "statusCss": "string",
+        "thumbnailPath": "string",
+        "video": true,
+        "controlType": "PUBLIC",
+        "channelsIds": [
+          0
+        ]
+      }
+    ],
+    "targetId": 0,
+    "comment": "string",
+    "userName": "string",
+    "email": "string",
+    "registrationDate": "2023-10-24T17:20:59.984Z",
+    "nuUp": 0,
+    "contentDesc": "string",
+    "contentType": "string",
+    "idDenounceType": 0,
+    "contextType": "string",
+    "ownerName": "string",
+    "ownerEmail": "string",
+    "tpItem": "VIDEO",
+    "tpItemContext": {},
+    "hasChannelAssociation": true,
+    "metatagTitle": "string",
+    "metatagDescription": "string",
+    "reproved": true,
+    "statusCss": "string",
+    "thumbnailPath": "string",
+    "video": true,
+    "controlType": "PUBLIC",
+    "channelsIds": [
+      0
+    ]
+  },
+  "userIp": "string"
+};

@@ -45,8 +45,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   Widget _nextPageButton() {
     return FloatingActionButton(
       heroTag: 'btn2',
-      backgroundColor:
-      Theme.of(context).buttonTheme.colorScheme?.background,
+      backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
       onPressed: (() {
         (widget.notScrolling &&
             versesProvider.versesSelected == false)
@@ -78,7 +77,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
       child: FloatingActionButton(
         heroTag: 'btn1',
         backgroundColor:
-        Theme.of(context).buttonTheme.colorScheme?.background,
+        Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: (() {
           (widget.notScrolling &&
               versesProvider.versesSelected == false)

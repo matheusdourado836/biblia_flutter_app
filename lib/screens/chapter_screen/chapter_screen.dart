@@ -3,7 +3,6 @@ import 'package:biblia_flutter_app/screens/chapter_screen/widgets/chapters_card.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/chapters_provider.dart';
-import '../../data/theme_provider.dart';
 import '../../data/verses_provider.dart';
 
 late VersesProvider versesProvider;
@@ -32,6 +31,8 @@ class _ChapterScreenState extends State<ChapterScreen> {
 
   @override
   void initState() {
+    versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
     booksDao.find(widget.bookName).then((value) {
       if (value.isNotEmpty) {
         if (value[0]["finishedReading"] == 1) {
@@ -47,18 +48,15 @@ class _ChapterScreenState extends State<ChapterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    versesProvider = Provider.of<VersesProvider>(context, listen: false);
-    chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    themeProvider.getThemeMode();
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        leading: IconButton(onPressed: (() => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)), icon: const Icon(Icons.arrow_back)),
         title: Text(widget.bookName),
         actions: [
           IconButton(
-            onPressed: () async {
+            onPressed: () {
               setState(() {
                 isSelected = !isSelected;
                 versesProvider.bookIsReadCheckBox(isSelected);

@@ -151,7 +151,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                                 Size(width * 0.7, 40),
                               ),
                             ),
-                            child: const Text('VOLTAR'),
+                            child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),
                         ),
                       ],

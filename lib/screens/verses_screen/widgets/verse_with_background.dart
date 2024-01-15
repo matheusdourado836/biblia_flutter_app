@@ -137,16 +137,11 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               Navigator.pop(context);
                             }),
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Colors.transparent),
-                              side: MaterialStateProperty.all<BorderSide>(
-                                const BorderSide(color: Colors.white, width: 2),
-                              ),
-                              fixedSize: MaterialStateProperty.all<Size>(
-                                Size(width * 0.7, 40),
-                              ),
+                              backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
+                              side: MaterialStateProperty.all<BorderSide>(const BorderSide(color: Colors.white, width: 2)),
+                              fixedSize: MaterialStateProperty.all<Size>(Size(width * 0.7, 40)),
                             ),
-                            child: const Text('VOLTAR'),
+                            child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),
                         ),
                       ],

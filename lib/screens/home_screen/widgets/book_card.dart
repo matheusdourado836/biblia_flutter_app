@@ -46,7 +46,7 @@ class _BookCardState extends State<BookCard> {
                   ),
                 ),
                 _oldTestamentCards(value.clear),
-                const SizedBox(height: 60,),
+                const SizedBox(height: 60),
                 const Padding(
                   padding: EdgeInsets.all(10.0),
                   child: Text(
@@ -55,7 +55,7 @@ class _BookCardState extends State<BookCard> {
                   ),
                 ),
                 _newTestamentCards(value.clear),
-                const SizedBox(height: 80,),
+                const SizedBox(height: 80),
               ],
             ),
           ],
@@ -108,7 +108,7 @@ class _BookCardState extends State<BookCard> {
                           color: Theme.of(context)
                               .buttonTheme
                               .colorScheme
-                              ?.background,
+                              ?.secondary,
                         )
                       : null),
             ],
@@ -133,13 +133,13 @@ class _BookCardState extends State<BookCard> {
             elevation: 1.0,
             child: InkWell(
               onTap: (() {
+                clear();
                 Navigator.pushNamed(context, 'chapter_screen', arguments: {
                   'bookName': booksMap["livrosNT"]![i].name,
                   'abbrev': booksMap["livrosNT"]![i].abbrev,
                   'bookIndex': i + 39,
                   'chapters': booksMap["livrosNT"]![i].chapters,
                 }).then((value) => setState(() {}));
-                clear();
               }),
               child: Center(
                 child: Padding(
@@ -155,10 +155,10 @@ class _BookCardState extends State<BookCard> {
           SizedBox(
               child: (widget.bookIsRead(booksMap["livrosNT"]![i].name))
                   ? Icon(
-                Icons.check_circle,
-                color:
-                Theme.of(context).buttonTheme.colorScheme?.background,
-              )
+                      Icons.check_circle,
+                      color:
+                      Theme.of(context).buttonTheme.colorScheme?.secondary,
+                    )
                   : null),
         ],
       ),

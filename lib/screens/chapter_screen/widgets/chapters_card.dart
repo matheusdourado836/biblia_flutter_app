@@ -48,7 +48,8 @@ class _ChapterCardState extends State<ChapterCard> {
                   child: InkWell(
                     onTap: (() {
                       versesProvider.openBottomSheet(false);
-                      Navigator.pushReplacementNamed(context, 'verses_screen',
+                      versesProvider.loadVerses(widget.bookIndex, widget.bookName);
+                      Navigator.pushNamed(context, 'verses_screen',
                           arguments: {
                             'bookName': widget.bookName,
                             "abbrev": widget.abbrev,
@@ -73,7 +74,7 @@ class _ChapterCardState extends State<ChapterCard> {
                       color: Theme.of(context)
                           .buttonTheme
                           .colorScheme
-                          ?.background,)
+                          ?.secondary)
                         : null),
               ],
             );
