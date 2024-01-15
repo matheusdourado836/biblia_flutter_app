@@ -67,13 +67,18 @@ class _SearchScreenState extends State<SearchScreen> {
           focusNode: _focusNode,
           style: Theme.of(context).textTheme.bodyMedium,
           onSubmitted: ((value) {
-            setState(() {
-              _searchVersesProvider
-                  .searchVerses(_textEditingController.text.trim(),
-                      versionProvider.options.indexOf(_selectedOption),
-                      findIn: _findInSelectedOption.toLowerCase())
-                  .then((value) => listResult = value);
-            });
+            List<dynamic> allBooks = _bibleData.data[0];
+            final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
+            final versionIndex = versionProvider.options.indexOf(_selectedOption);
+            _focusNode.unfocus();
+            if (_textEditingController.text != '') {
+              setState(() {
+                if(bookIndex != -1) {
+                  _findInSelectedOption = _findInOptions[0];
+                }
+                _searchVersesProvider.searchVerses(_textEditingController.text.trim(), versionIndex, findIn: _findInSelectedOption.toLowerCase(), findInBookIndex: bookIndex).then((value) => listResult = value);
+              });
+            }
           }),
           decoration: const InputDecoration(icon: Icon(Icons.search), hintText: 'Digite o versículo aqui...'),
 

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
@@ -46,22 +44,29 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                 title: Container(
                                   height: 80,
                                   decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-                                    color: Theme.of(context).colorScheme.error.withOpacity(0.8),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(28),
+                                        topRight: Radius.circular(28)),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .error
+                                        .withOpacity(0.8),
                                   ),
                                   child: Center(
                                     child: Text(
                                       'Alerta',
                                       textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.displayMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayMedium,
                                     ),
                                   ),
                                 ),
                                 content: Text(
-                                  'Tem certeza que deseja deletar todas as suas anotações?',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                ),
+                                    'Tem certeza que deseja deletar todas as suas anotações?',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
                                 actions: [
                                   Row(
                                     mainAxisAlignment:
@@ -69,23 +74,29 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                     children: [
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(context).highlightColor.withOpacity(0.4),
-                                          minimumSize: const Size(80, 36),
-                                          textStyle: const TextStyle(color: Colors.white)
-                                        ),
+                                            backgroundColor: Theme.of(context)
+                                                .highlightColor
+                                                .withOpacity(0.4),
+                                            minimumSize: const Size(80, 36),
+                                            textStyle: const TextStyle(
+                                                color: Colors.white)),
                                         onPressed: () =>
                                             Navigator.pop(context, 'Não'),
-                                        child: Text('Cancelar', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
+                                        child: Text('Cancelar',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium!
+                                                .copyWith(fontSize: 14)),
                                       ),
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                            textStyle: const TextStyle(color: Colors.white),
+                                            textStyle: const TextStyle(
+                                                color: Colors.white),
                                             minimumSize: const Size(80, 36),
                                             backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .error
-                                              .withOpacity(0.65)
-                                        ),
+                                                .colorScheme
+                                                .error
+                                                .withOpacity(0.65)),
                                         onPressed: () {
                                           versesProvider
                                               .deleteAllAnnotations()
@@ -94,7 +105,11 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                                     Navigator.pop(context)
                                                   });
                                         },
-                                        child: Text('Sim', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
+                                        child: Text('Sim',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium!
+                                                .copyWith(fontSize: 14)),
                                       ),
                                     ],
                                   )
@@ -137,8 +152,11 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                 itemBuilder: (context, index) {
                   Annotation annotation = value.listaAnnotations[index];
                   final List<dynamic> list = BibleData().data[0];
-                  final bookInfo = list.where((element) => element['name'] == annotation.book).toList();
-                  final List<dynamic> verses = bookInfo[0]['chapters'][annotation.chapter - 1];
+                  final bookInfo = list
+                      .where((element) => element['name'] == annotation.book)
+                      .toList();
+                  final List<dynamic> verses =
+                      bookInfo[0]['chapters'][annotation.chapter - 1];
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: InkWell(
@@ -210,7 +228,10 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                               SlidableAction(
                                 onPressed: (context) {
                                   value.share(
-                                      annotation.book, annotation.content, annotation.chapter, annotation.verseStart);
+                                      annotation.book,
+                                      annotation.content,
+                                      annotation.chapter,
+                                      annotation.verseStart);
                                 },
                                 icon: Icons.share,
                                 label: 'Share',
@@ -222,7 +243,10 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                               SlidableAction(
                                 onPressed: (context) {
                                   value.copyText(
-                                      annotation.book, annotation.content, annotation.chapter, annotation.verseStart);
+                                      annotation.book,
+                                      annotation.content,
+                                      annotation.chapter,
+                                      annotation.verseStart);
                                 },
                                 icon: Icons.copy,
                                 label: 'Copiar',
@@ -235,7 +259,8 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                             ],
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20.0, vertical: 12),
                             child: Column(
                               children: [
                                 Row(
@@ -251,25 +276,31 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                     TextButton(
                                       onPressed: (() {
                                         versesProvider.clear();
-                                        versesProvider.loadVerses(list.indexOf(bookInfo.first), annotation.book);
+                                        versesProvider.loadVerses(
+                                            list.indexOf(bookInfo.first),
+                                            annotation.book);
                                         GoToVerseScreen().goToVersePage(
-                                          annotation.book,
-                                          bookInfo[0]['abbrev'],
-                                          list.indexOf(bookInfo.first),
-                                          bookInfo[0]['chapters'].length,
-                                          annotation.chapter,
-                                          annotation.verseEnd ?? 1
-                                        );
+                                            annotation.book,
+                                            bookInfo[0]['abbrev'],
+                                            list.indexOf(bookInfo.first),
+                                            bookInfo[0]['chapters'].length,
+                                            annotation.chapter,
+                                            annotation.verseEnd ?? 1);
                                       }),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: Theme.of(context).colorScheme.onPrimary
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Text('Ler passagem  ',style: Theme.of(context).textTheme.titleLarge),
-                                          Icon(Icons.menu_book, color: Theme.of(context).colorScheme.onError)
-                                        ]
-                                      ),
+                                          foregroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary),
+                                      child: Row(children: [
+                                        Text('Ler passagem  ',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleLarge),
+                                        Icon(Icons.menu_book,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onError)
+                                      ]),
                                     )
                                   ],
                                 ),
@@ -279,9 +310,10 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                   padding: const EdgeInsets.all(12.0),
                                   margin: const EdgeInsets.only(bottom: 16),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.background,
-                                    borderRadius: BorderRadius.circular(8)
-                                  ),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .background,
+                                      borderRadius: BorderRadius.circular(8)),
                                   child: Text(annotation.content,
                                       style: Theme.of(context)
                                           .textTheme

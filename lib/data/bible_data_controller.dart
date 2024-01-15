@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:biblia_flutter_app/models/book.dart';
 import 'annotations_dao.dart';
