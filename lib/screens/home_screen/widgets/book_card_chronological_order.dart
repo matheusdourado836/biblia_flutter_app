@@ -88,7 +88,6 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                 child: InkWell(
                   onTap: (() {
                     clear();
-                    print('INDEX CLICADO $i INDEX REAL ${booksMap["livrosVT"]!.indexOf(orderedList["livrosVT"]![i])}');
                     Navigator.pushNamed(context, 'chapter_screen', arguments: {
                       'bookName': orderedList["livrosVT"]![i].name,
                       'abbrev': orderedList["livrosVT"]![i].abbrev,
@@ -114,7 +113,7 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                     color: Theme.of(context)
                         .buttonTheme
                         .colorScheme
-                        ?.background,
+                        ?.secondary,
                   )
                       : null),
             ],
@@ -162,7 +161,7 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                   ? Icon(
                 Icons.check_circle,
                 color:
-                Theme.of(context).buttonTheme.colorScheme?.background,
+                Theme.of(context).buttonTheme.colorScheme?.secondary,
               )
                   : null),
         ],

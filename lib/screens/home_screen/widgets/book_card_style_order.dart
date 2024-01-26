@@ -95,7 +95,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                       color: Theme.of(context)
                           .buttonTheme
                           .colorScheme
-                          ?.background,
+                          ?.secondary,
                     )
                         : null),
               ],
@@ -146,7 +146,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                     ? Icon(
                   Icons.check_circle,
                   color:
-                  Theme.of(context).buttonTheme.colorScheme?.background,
+                  Theme.of(context).buttonTheme.colorScheme?.secondary,
                 )
                     : null),
           ],

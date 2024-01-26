@@ -28,6 +28,20 @@ class ChaptersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void saveChapter(String bookName, String chapter) {
+    final index = int.parse(chapter) - 1;
+    readChapters[index] = true;
+    BooksDao().saveChapter(bookName, chapter);
+    notifyListeners();
+  }
+
+  void deleteChapter(String bookName, String chapter) {
+    final index = int.parse(chapter) - 1;
+    readChapters[index] = false;
+    BooksDao().deleteChapter(bookName, chapter);
+    notifyListeners();
+  }
+
   void addAllChapters(String bookName, int chapters) async {
     await BooksDao().save(bookName, chapters, 1);
     await BooksDao().findByChapter(bookName).then((value) => {

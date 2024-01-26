@@ -10,7 +10,9 @@ import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card_style_o
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_list.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/home_app_bar.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/home_drawer.dart';
+import 'package:biblia_flutter_app/services/ad_mob_service.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import '../../models/book.dart';
 
@@ -24,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  BannerAd? _bannerAd;
   final BibleDataController bibleDataController = BibleDataController();
   late Future<List<Book>> futureListBooks;
   List<Book>? listBooks;
@@ -36,7 +39,17 @@ class _HomeScreenState extends State<HomeScreen> {
     versesProvider.getFontSize();
     versesProvider.refresh();
     versesProvider.getImage();
+    _createBannerAd();
     super.initState();
+  }
+
+  void _createBannerAd() {
+    _bannerAd = BannerAd(
+      size: AdSize.banner,
+      adUnitId: AdMobService.bannerAdUnitId!,
+      listener: AdMobService.bannerAdListener,
+      request: const AdRequest()
+    )..load();
   }
 
   @override
@@ -105,6 +118,14 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
         ),
       ),
+      bottomNavigationBar:
+        (_bannerAd != null)
+            ? Container(
+                margin: const EdgeInsets.only(bottom: 6.0),
+                height: 52,
+                child: AdWidget(ad: _bannerAd!),
+              )
+            : null,
     );
   }
 

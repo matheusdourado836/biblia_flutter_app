@@ -65,70 +65,103 @@ class _OptionsState extends State<Options> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tamanho da fonte:', style: TextStyle(fontSize: 18)),
+                    const Text('Tamanho da fonte:',
+                        style: TextStyle(fontSize: 18)),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: InkWell(
                         onTap: (() {
-                          showDialog(barrierDismissible: false, context: context, builder: (BuildContext context) {
-                            return AlertDialog(
-                              actionsAlignment: MainAxisAlignment.center,
-                              title: Text('E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: _sliderValue, color: textColor)
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_sliderValue.toStringAsFixed(0), style: Theme.of(context).textTheme.bodyMedium,),
-                                  Slider(
-                                    inactiveColor: Theme.of(context).colorScheme.background,
-                                    value: _sliderValue,
-                                    min: 8.0,
-                                    max: 50.0,
-                                    onChanged: (double value) {
-                                      setState(() {
-                                        _sliderValue = value;
-                                      });
-                                      versesValue.newFontSize(_sliderValue, false);
-                                    }),
-                                ],
-                              ),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: (() {
-                                    setState(() {
-                                      _sliderValue = _savedSliderValue;
-                                    });
-                                    Navigator.pop(context);
-                                  }),
-                                  style:ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.error
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  actionsAlignment: MainAxisAlignment.center,
+                                  title: Text(
+                                      'E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: _sliderValue,
+                                          color: textColor)),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _sliderValue.toStringAsFixed(0),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                      Slider(
+                                          inactiveColor: Theme.of(context)
+                                              .colorScheme
+                                              .background,
+                                          value: _sliderValue,
+                                          min: 8.0,
+                                          max: 50.0,
+                                          onChanged: (double value) {
+                                            setState(() {
+                                              _sliderValue = value;
+                                            });
+                                            versesValue.newFontSize(
+                                                _sliderValue, false);
+                                          }),
+                                    ],
                                   ),
-                                  child: Text('Cancelar', style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 12)),
-                                ),
-                                ElevatedButton(onPressed: (() {
-                                  versesValue.newFontSize(_sliderValue, true);
-                                  setState(() {
-                                    _savedSliderValue = _sliderValue;
-                                  });
-                                  Navigator.pop(context);
-                                }), child: Text('Salvar', style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 12)),
-                                ),
-                              ],
-                            );
-                          });
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: (() {
+                                        setState(() {
+                                          _sliderValue = _savedSliderValue;
+                                        });
+                                        Navigator.pop(context);
+                                      }),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Theme.of(context).colorScheme.error,
+                                        fixedSize: const Size(110, 42)
+                                      ),
+                                      child: Text('Cancelar',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displayMedium!
+                                              .copyWith(fontSize: 14)),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                                        fixedSize: const Size(110, 42)
+                                      ),
+                                      onPressed: (() {
+                                        versesValue.newFontSize(
+                                            _sliderValue, true);
+                                        setState(() {
+                                          _savedSliderValue = _sliderValue;
+                                        });
+                                        Navigator.pop(context);
+                                      }),
+                                      child: Text('Salvar',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displayMedium!
+                                              .copyWith(fontSize: 14)),
+                                    ),
+                                  ],
+                                );
+                              });
                         }),
                         child: Container(
                           height: 50,
                           width: 50,
                           decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(14.0)
-                          ),
+                              borderRadius: BorderRadius.circular(14.0)),
                           child: Center(
-                            child: Text(versesValue.fontSize.toStringAsFixed(0),
-                              style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 18),
+                            child: Text(
+                              versesValue.fontSize.toStringAsFixed(0),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayMedium!
+                                  .copyWith(fontSize: 18),
                             ),
                           ),
                         ),
@@ -142,7 +175,10 @@ class _OptionsState extends State<Options> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Ordem dos livros:', style: TextStyle(fontSize: 18),),
+                    Text(
+                      'Ordem dos livros:',
+                      style: TextStyle(fontSize: 18),
+                    ),
                     OrderByDropDown()
                   ],
                 ),
@@ -150,7 +186,10 @@ class _OptionsState extends State<Options> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Preferência de Tema:', style: TextStyle(fontSize: 18),),
+                  const Text(
+                    'Preferência de Tema:',
+                    style: TextStyle(fontSize: 18),
+                  ),
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
                       return SizedBox(
@@ -165,7 +204,8 @@ class _OptionsState extends State<Options> {
                             colorOff: Theme.of(context).colorScheme.primary,
                             iconOn: Icons.dark_mode_sharp,
                             iconOff: Icons.light_mode_sharp,
-                            animationDuration: const Duration(milliseconds: 600),
+                            animationDuration:
+                                const Duration(milliseconds: 600),
                             textSize: 16.0,
                             onChanged: (bool state) {
                               themeValue.toggleTheme();
@@ -207,7 +247,8 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
 
   @override
   Widget build(BuildContext context) {
-    final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
+    final chaptersProvider =
+        Provider.of<ChaptersProvider>(context, listen: false);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SizedBox(
@@ -232,14 +273,19 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
             'Cronológica',
             'por estilo\n(pentateuco, históricos, proféticos)',
           ].map<DropdownMenuItem<String>>((String value) {
-            reducedValues.add(
-              Center(
-                child: (value.startsWith('por')) ? Text(value.substring(0, 10)) : Text(value),
-              )
-            );
+            reducedValues.add(Center(
+              child: (value.startsWith('por'))
+                  ? Text(value.substring(0, 10))
+                  : Text(value),
+            ));
             return DropdownMenuItem<String>(
               value: value,
-              child: Center(child: Text(value, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center,)),
+              child: Center(
+                  child: Text(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              )),
             );
           }).toList(),
           selectedItemBuilder: (BuildContext context) {
@@ -253,20 +299,24 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
   void getOrderStyle() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if(prefs.getInt('orderStyle') != null) {
+    if (prefs.getInt('orderStyle') != null) {
       final orderIndex = prefs.getInt('orderStyle');
-      switch(orderIndex) {
-        case 0: {
-          _selectedOption = 'Padrão';
-          break;
-        }
-        case 1: {
-          _selectedOption = 'Cronológica';
-          break;
-        }
-        case 2: {
-          _selectedOption = 'por estilo\n(pentateuco, históricos, proféticos)';
-        }
+      switch (orderIndex) {
+        case 0:
+          {
+            _selectedOption = 'Padrão';
+            break;
+          }
+        case 1:
+          {
+            _selectedOption = 'Cronológica';
+            break;
+          }
+        case 2:
+          {
+            _selectedOption =
+                'por estilo\n(pentateuco, históricos, proféticos)';
+          }
       }
 
       setState(() {
@@ -275,4 +325,3 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
     }
   }
 }
-

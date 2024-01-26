@@ -1,6 +1,7 @@
 import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
@@ -110,9 +111,9 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                   child: ElevatedButton(
                     onPressed: (() {
                       if(!isChapterRead) {
-                        booksDao.saveChapter(widget.bookName, _chapter.toString());
+                        chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
                       } else {
-                        booksDao.deleteChapter(widget.bookName, _chapter.toString());
+                        chaptersProvider.deleteChapter(widget.bookName, _chapter.toString());
                       }
                       setState(() => isChapterRead = !isChapterRead);
                     }),

@@ -6,19 +6,18 @@ ThemeData lightTheme = ThemeData(
   splashColor: const Color.fromRGBO(55, 143, 174, 1),
   primarySwatch: Colors.brown,
   colorScheme: ColorScheme(
-    brightness: Brightness.light,
-    primary: Colors.brown,
-    onPrimary: Colors.yellow[400]!,
-    secondary: const Color.fromRGBO(191, 170, 140, 1),
-    onSecondary: Colors.black,
-    tertiary: const Color.fromRGBO(242, 231, 191, 1),
-    error: Colors.red,
-    onError: Colors.white,
-    background: Colors.white,
-    onBackground: Colors.black,
-    surface: Colors.white,
-    onSurface: Colors.black
-  ),
+      brightness: Brightness.light,
+      primary: Colors.brown,
+      onPrimary: Colors.yellow[400]!,
+      secondary: const Color.fromRGBO(191, 170, 140, 1),
+      onSecondary: Colors.black,
+      tertiary: const Color.fromRGBO(242, 231, 191, 1),
+      error: Colors.red,
+      onError: Colors.white,
+      background: Colors.white,
+      onBackground: Colors.black,
+      surface: Colors.white,
+      onSurface: Colors.black),
   cardTheme: const CardTheme(
     color: Colors.brown,
   ),
@@ -37,15 +36,9 @@ ThemeData lightTheme = ThemeData(
       fontSize: 16,
     ),
   ),
-
   iconButtonTheme: IconButtonThemeData(
-    style: IconButton.styleFrom(
-      foregroundColor: Colors.black
-    )
-  ),
-  listTileTheme: const ListTileThemeData(
-    iconColor: Colors.brown
-  ),
+      style: IconButton.styleFrom(foregroundColor: Colors.black)),
+  listTileTheme: const ListTileThemeData(iconColor: Colors.brown),
   textTheme: TextTheme(
       titleLarge: const TextStyle(
           color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
