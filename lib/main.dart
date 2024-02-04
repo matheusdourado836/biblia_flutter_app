@@ -36,6 +36,7 @@ ThemeMode? _themeMode;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
+  MobileAds.instance.updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   _themeMode = (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
   await dotenv.load(fileName: ".env");

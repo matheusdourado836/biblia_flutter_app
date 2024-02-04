@@ -95,7 +95,7 @@ class _BookCardState extends State<BookCard> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         booksMap["livrosVT"]![i].abbrev,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 17),
                       ),
                     ),
                   ),
@@ -146,7 +146,7 @@ class _BookCardState extends State<BookCard> {
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     booksMap["livrosNT"]![i].abbrev,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 17),
                   ),
                 ),
               ),

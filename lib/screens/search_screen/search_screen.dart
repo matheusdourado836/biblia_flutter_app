@@ -258,6 +258,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Card(
                             child: Slidable(
                               endActionPane: ActionPane(
+                                extentRatio: .55,
                                 motion: const ScrollMotion(),
                                 children: [
                                   SlidableAction(
@@ -278,6 +279,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         .background,
                                   ),
                                   SlidableAction(
+                                    borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
                                     onPressed: (context) {
                                       _searchVersesProvider.copyText(
                                           listResult![index]['book'],

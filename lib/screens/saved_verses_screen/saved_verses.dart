@@ -236,10 +236,11 @@ class _SavedVersesState extends State<SavedVerses> {
             child: Card(
               child: Slidable(
                 startActionPane: ActionPane(
-                  extentRatio: 0.25,
+                  extentRatio: 0.3,
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
                       onPressed: (context) {
                         showDialog<void>(
                             context: context,
@@ -280,6 +281,7 @@ class _SavedVersesState extends State<SavedVerses> {
                   ],
                 ),
                 endActionPane: ActionPane(
+                  extentRatio: .55,
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
@@ -293,6 +295,7 @@ class _SavedVersesState extends State<SavedVerses> {
                           Theme.of(context).buttonTheme.colorScheme!.background,
                     ),
                     SlidableAction(
+                      borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
                       onPressed: (context) {
                         _versesProvider.copyText(
                             book, verse, chapter, verseNumber);

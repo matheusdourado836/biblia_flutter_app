@@ -171,10 +171,11 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                       child: Card(
                         child: Slidable(
                           startActionPane: ActionPane(
-                            extentRatio: 0.25,
+                            extentRatio: 0.3,
                             motion: const ScrollMotion(),
                             children: [
                               SlidableAction(
+                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
                                 onPressed: (context) {
                                   showDialog<void>(
                                       context: context,
@@ -223,15 +224,16 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                             ],
                           ),
                           endActionPane: ActionPane(
+                            extentRatio: .55,
                             motion: const ScrollMotion(),
                             children: [
                               SlidableAction(
                                 onPressed: (context) {
                                   value.share(
-                                      annotation.book,
-                                      annotation.content,
-                                      annotation.chapter,
-                                      annotation.verseStart);
+                                    annotation.book,
+                                    annotation.content,
+                                    annotation.chapter,
+                                    annotation.verseStart);
                                 },
                                 icon: Icons.share,
                                 label: 'Share',
@@ -241,6 +243,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                     .background,
                               ),
                               SlidableAction(
+                                borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
                                 onPressed: (context) {
                                   value.copyText(
                                       annotation.book,
