@@ -14,7 +14,6 @@ import '../../../data/bible_data_controller.dart';
 import '../../../models/annotation.dart';
 import '../verses_screen.dart';
 
-bool versesSelected = false;
 late ItemScrollController itemScrollController;
 final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 

@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _createBannerAd() {
     _bannerAd = BannerAd(
-      size: AdSize.banner,
+      size: AdSize.fullBanner,
       adUnitId: AdMobService.bannerAdUnitId!,
       listener: AdMobService.bannerAdListener,
       request: const AdRequest()
@@ -121,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar:
         (_bannerAd != null)
             ? Container(
-                margin: const EdgeInsets.only(bottom: 6.0),
-                height: 52,
+                margin: const EdgeInsets.only(left: 8, right: 8),
+                height: 60,
                 child: AdWidget(ad: _bannerAd!),
               )
             : null,

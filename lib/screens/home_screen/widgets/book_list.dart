@@ -17,6 +17,7 @@ class BookList extends StatefulWidget {
 class _BookListState extends State<BookList> {
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size.height;
     String abbrev = '';
     String bookName = '';
     return Consumer<ChaptersProvider>(
@@ -51,8 +52,8 @@ class _BookListState extends State<BookList> {
                         child: Row(
                           children: [
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: (screenSize > 800) ? 80 : 50,
+                              height: (screenSize > 800) ? 80 : 50,
                               decoration: BoxDecoration(
                                 color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                                 borderRadius: const BorderRadius.all(

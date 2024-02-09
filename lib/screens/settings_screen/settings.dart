@@ -118,7 +118,7 @@ class _OptionsState extends State<Options> {
                                       }),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Theme.of(context).colorScheme.error,
-                                        fixedSize: const Size(110, 42)
+                                        minimumSize: const Size(110, 42)
                                       ),
                                       child: Text('Cancelar',
                                           style: Theme.of(context)
@@ -129,7 +129,7 @@ class _OptionsState extends State<Options> {
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Theme.of(context).colorScheme.secondary,
-                                        fixedSize: const Size(110, 42)
+                                        minimumSize: const Size(110, 42)
                                       ),
                                       onPressed: (() {
                                         versesValue.newFontSize(
@@ -252,13 +252,13 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SizedBox(
-        width: 130,
+        width: 140,
         child: DropdownButton<String>(
           underline: Container(
             height: 0,
             color: Colors.transparent,
           ),
-          itemHeight: 100,
+          itemHeight: 150,
           style: Theme.of(context).dropdownMenuTheme.textStyle,
           isExpanded: true,
           value: _selectedOption,
@@ -271,7 +271,7 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
           items: <String>[
             'Padrão',
             'Cronológica',
-            'por estilo\n(pentateuco, históricos, proféticos)',
+            'Por estilo\n(pentateuco, históricos, proféticos)',
           ].map<DropdownMenuItem<String>>((String value) {
             reducedValues.add(Center(
               child: (value.startsWith('por'))

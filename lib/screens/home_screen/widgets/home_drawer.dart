@@ -50,14 +50,15 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Widget _readingProgressWidget(BuildContext context, int readBooks) {
+    final screenSize = MediaQuery.of(context).size.height;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: Container(
-        height: 240,
+        height: MediaQuery.of(context).size.height * .3191,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary,
-          boxShadow: kElevationToShadow[3],
-          borderRadius: const BorderRadius.only(bottomRight: Radius.circular(10)),
+          boxShadow: kElevationToShadow[4],
+          borderRadius: const BorderRadius.only(bottomRight: Radius.circular(14)),
         ),
         child: Stack(
           children: [
@@ -65,7 +66,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
               top: 30,
               right: 0,
               child: IconButton(
-                  iconSize: 28,
+                  iconSize: (screenSize > 800) ? 48 : 28,
                   tooltip: 'Reportar um bug',
                   onPressed: (() {Navigator.pushNamed(context, 'email_screen');}),
                   icon: const Icon(Icons.bug_report),
@@ -76,14 +77,14 @@ class _HomeDrawerState extends State<HomeDrawer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24.0, 16.0, 0.0, 12.0),
+                  padding: EdgeInsets.fromLTRB(24.0, 16.0, 0.0, (screenSize > 800) ? 72 : 12.0),
                   child: Row(
                     children: [
                       SizedBox(
-                        height: 80,
-                        width: 80,
+                        height: (screenSize > 800) ? 150 : 80,
+                        width: (screenSize > 800) ? 150 : 80,
                         child: CircularProgressIndicator(
-                          strokeWidth: 8.0,
+                          strokeWidth: (screenSize > 800) ? 10.0 : 8.0,
                           backgroundColor: Theme.of(context).colorScheme.surface,
                           color: Theme.of(context).colorScheme.onSurface,
                           value: readBooks / 66,
@@ -200,9 +201,13 @@ class _PortraitDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size.height;
     return Drawer(
+      width: MediaQuery.of(context).size.width * .85,
       backgroundColor: Theme.of(context).colorScheme.tertiary,
-      child: Column(
+      child: (screenSize > 800)
+                ? tabletLayout()
+                : Column(
         children: [
           readingProgressWidget,
           savedVersesWidget,
@@ -215,6 +220,29 @@ class _PortraitDrawer extends StatelessWidget {
       ),
     );
   }
+
+  Widget tabletLayout() => Column(
+    children: [
+      readingProgressWidget,
+      Padding(
+        padding: const EdgeInsets.only(top: 32.0),
+        child: SizedBox(
+          height: 600,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              savedVersesWidget,
+              annotationsWidget,
+              searchPassagesWidget,
+              toggleModeWidget,
+            ],
+          ),
+        ),
+      ),
+      const Spacer(),
+      settingsWidget,
+    ],
+  );
 }
 
 class _LandscapeDrawer extends StatelessWidget {
