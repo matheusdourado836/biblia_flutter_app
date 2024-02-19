@@ -249,7 +249,7 @@ class VersesProvider extends ChangeNotifier {
     for (var element in listMap) {
       book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
       }
     }
     Share.share('$book:$verse');
@@ -260,6 +260,7 @@ class VersesProvider extends ChangeNotifier {
   }
 
   void copyText(String bookName, String verse, int chapter, int verseNumber) async {
+    print('VERSE NUMBER QUE CHEGOU $verseNumber');
     await Clipboard.setData(
         ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
   }
@@ -270,7 +271,7 @@ class VersesProvider extends ChangeNotifier {
     for (var element in listMap) {
       book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
       }
     }
     await Clipboard.setData(

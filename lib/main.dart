@@ -6,7 +6,6 @@ import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/annotation_widget.dart';
 import 'package:biblia_flutter_app/screens/annotations_screen/annotations_screen.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
-import 'package:biblia_flutter_app/screens/email_screen/email_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/saved_verses.dart';
@@ -93,7 +92,6 @@ class MyApp extends StatelessWidget {
       initialRoute: "home",
       routes: {
         "home": (context) => const HomeScreen(),
-        "email_screen": (context) => const EmailScreen(),
         "annotations_screen": (context) => const AnnotationsScreen(),
         "saved_verses": (context) => const SavedVerses(),
         "search_screen": (context) => const SearchScreen(),

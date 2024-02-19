@@ -5,6 +5,7 @@ import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AnnotationsScreen extends StatefulWidget {
   const AnnotationsScreen({Key? key}) : super(key: key);
@@ -229,11 +230,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                             children: [
                               SlidableAction(
                                 onPressed: (context) {
-                                  value.share(
-                                    annotation.book,
-                                    annotation.content,
-                                    annotation.chapter,
-                                    annotation.verseStart);
+                                  Share.share('Veja que interessante essa reflexão:\n${annotation.title} ${annotation.content}');
                                 },
                                 icon: Icons.share,
                                 label: 'Share',
@@ -249,7 +246,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                       annotation.book,
                                       annotation.content,
                                       annotation.chapter,
-                                      annotation.verseStart);
+                                      annotation.verseEnd!);
                                 },
                                 icon: Icons.copy,
                                 label: 'Copiar',

@@ -17,7 +17,10 @@ class BookList extends StatefulWidget {
 class _BookListState extends State<BookList> {
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size.height;
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
+    final bool condition1 = screenSize > 500 && screenOrientation == Orientation.portrait;
+    final bool condition2 = screenSize > 500 && screenOrientation == Orientation.landscape;
     String abbrev = '';
     String bookName = '';
     return Consumer<ChaptersProvider>(
@@ -52,8 +55,8 @@ class _BookListState extends State<BookList> {
                         child: Row(
                           children: [
                             Container(
-                              width: (screenSize > 800) ? 80 : 50,
-                              height: (screenSize > 800) ? 80 : 50,
+                              width: (condition1 || condition2) ? 80 : 50,
+                              height: (condition1 || condition2) ? 80 : 50,
                               decoration: BoxDecoration(
                                 color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                                 borderRadius: const BorderRadius.all(
@@ -116,6 +119,10 @@ class _ChronologicalOrderState extends State<ChronologicalOrder> {
 
   @override
   Widget build(BuildContext context) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
+    final bool condition1 = screenSize > 500 && screenOrientation == Orientation.portrait;
+    final bool condition2 = screenSize > 500 && screenOrientation == Orientation.landscape;
     String abbrev = '';
     String bookName = '';
     return Container(
@@ -137,10 +144,10 @@ class _ChronologicalOrderState extends State<ChronologicalOrder> {
               child: Row(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: (condition1 || condition2) ? 80 : 50,
+                    height: (condition1 || condition2) ? 80 : 50,
                     decoration: BoxDecoration(
-                      color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.background,
+                      color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                       borderRadius: const BorderRadius.all(
                         Radius.circular(100),
                       ),
@@ -241,6 +248,10 @@ class BookItens extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
+    final bool condition1 = screenSize > 500 && screenOrientation == Orientation.portrait;
+    final bool condition2 = screenSize > 500 && screenOrientation == Orientation.landscape;
     String abbrev = '';
     String bookName = '';
     return SliverList.builder(itemCount: qtdBooks, itemBuilder: (context, index) {
@@ -256,10 +267,10 @@ class BookItens extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: (condition1 || condition2) ? 80 : 50,
+                height: (condition1 || condition2) ? 80 : 50,
                 decoration: BoxDecoration(
-                  color: (bookIndex < 29) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.background,
+                  color: (bookIndex < 29) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                   borderRadius: const BorderRadius.all(
                     Radius.circular(100),
                   ),

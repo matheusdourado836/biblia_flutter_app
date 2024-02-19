@@ -274,7 +274,7 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
             'Por estilo\n(pentateuco, históricos, proféticos)',
           ].map<DropdownMenuItem<String>>((String value) {
             reducedValues.add(Center(
-              child: (value.startsWith('por'))
+              child: (value.startsWith('Por'))
                   ? Text(value.substring(0, 10))
                   : Text(value),
             ));
@@ -315,7 +315,7 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
         case 2:
           {
             _selectedOption =
-                'por estilo\n(pentateuco, históricos, proféticos)';
+                'Por estilo\n(pentateuco, históricos, proféticos)';
           }
       }
 

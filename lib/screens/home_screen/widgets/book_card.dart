@@ -65,14 +65,15 @@ class _BookCardState extends State<BookCard> {
   }
 
   Widget _oldTestamentCards(Function clear) {
-    final screenSize = MediaQuery.of(context).size.height;
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     return GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: 39,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: (screenSize > 800) ? 100 : 80.0,
-          crossAxisSpacing: 5.0,
+          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+          crossAxisSpacing: 10.0,
           mainAxisSpacing: 10.0,
           childAspectRatio: 1/1
         ),
@@ -96,7 +97,7 @@ class _BookCardState extends State<BookCard> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         booksMap["livrosVT"]![i].abbrev,
-                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 17),
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                       ),
                     ),
                   ),
@@ -118,14 +119,15 @@ class _BookCardState extends State<BookCard> {
   }
 
   Widget _newTestamentCards(Function clear) {
-    final screenSize = MediaQuery.of(context).size.height;
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     return GridView.builder(
       physics: const BouncingScrollPhysics(),
       shrinkWrap: true,
       itemCount: 27,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: (screenSize > 800) ? 100 : 80.0,
-        crossAxisSpacing: 5.0,
+        maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+        crossAxisSpacing: 10.0,
         mainAxisSpacing: 10.0,
         childAspectRatio: 1/1
       ),
@@ -148,7 +150,7 @@ class _BookCardState extends State<BookCard> {
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     booksMap["livrosNT"]![i].abbrev,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 17),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                   ),
                 ),
               ),

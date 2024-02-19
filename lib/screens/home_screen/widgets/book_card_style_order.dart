@@ -51,16 +51,20 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
   }
 
   Widget _oldTestamentCards(Function clear, int qtdItens, int startIndex) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
+    print('ORIENTATION $screenOrientation SIZE WIDTH $screenSize');
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           itemCount: qtdItens,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 70.0,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 20.0,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+            crossAxisSpacing: 10.0,
+            mainAxisSpacing: 10.0,
+            childAspectRatio: 1/1
           ),
           itemBuilder: (context, i) {
             return Stack(
@@ -82,7 +86,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           booksMap["livrosVT"]![i + startIndex].abbrev,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                         ),
                       ),
                     ),
@@ -105,16 +109,19 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
   }
 
   Widget _newTestamentCards(Function clear, int qtdItens, int startIndex) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: GridView.builder(
         physics: const BouncingScrollPhysics(),
         shrinkWrap: true,
         itemCount: qtdItens,
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 70.0,
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 20.0,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+          crossAxisSpacing: 10.0,
+          mainAxisSpacing: 10.0,
+          childAspectRatio: 1/1
         ),
         itemBuilder: (context, i) => Stack(
           children: [
@@ -135,7 +142,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
                       booksMap["livrosNT"]![i + startIndex].abbrev,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                     ),
                   ),
                 ),
