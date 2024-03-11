@@ -20,6 +20,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
   @override
   void initState() {
     versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    versesProvider.loadUserData();
     super.initState();
   }
 

@@ -39,6 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
     versionProvider = Provider.of<VersionProvider>(context, listen: false);
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    _versesProvider.loadUserData();
     _selectedOption = 'NVI (Nova Versão Internacional)';
     _findInSelectedOption = _findInOptions[0];
     _findInBooks.add('Todos');

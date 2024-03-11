@@ -2,7 +2,6 @@ import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
-import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/annotation_widget.dart';
 import 'package:biblia_flutter_app/screens/annotations_screen/annotations_screen.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
@@ -22,8 +21,10 @@ import 'package:biblia_flutter_app/themes/light_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/bible_data.dart';
@@ -82,6 +83,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    Provider.of<VersesProvider>(context, listen: false).loadUserData();
     return MaterialApp(
       navigatorKey: navigatorKey,
       themeMode: (themeProvider.themeMode == null) ? _themeMode : themeProvider.themeMode,
@@ -91,7 +93,6 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       initialRoute: "home",
       routes: {
-        "home": (context) => const HomeScreen(),
         "annotations_screen": (context) => const AnnotationsScreen(),
         "saved_verses": (context) => const SavedVerses(),
         "search_screen": (context) => const SearchScreen(),
@@ -99,36 +100,37 @@ class MyApp extends StatelessWidget {
         "settings": (context) => const SettingsScreen()
       },
       onGenerateRoute: (settings) {
+        if(settings.name == 'home') {
+          return PageTransition(child: const HomeScreen(), type: PageTransitionType.bottomToTop, duration: 800.ms);
+        }
         if (settings.name == 'chapter_screen') {
           Map<String, dynamic>? routeArgs =
               settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (context) {
-            return ChapterScreen(
+          return PageTransition(
+            child: ChapterScreen(
               bookName: routeArgs?['bookName'] as String,
               abbrev: routeArgs?['abbrev'],
               bookIndex: routeArgs?['bookIndex'],
               chapters: routeArgs?['chapters'],
-            );
-          });
+            ),
+            duration: 500.ms,
+            type: PageTransitionType.rightToLeftWithFade,
+          );
         } else if (settings.name == 'verses_screen') {
           Map<String, dynamic>? map =
               settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (context) {
-            try {
-              return VersesScreen(
-                bookName: map?["bookName"],
-                abbrev: map?["abbrev"],
-                bookIndex: map?["bookIndex"],
-                chapters: map?["chapters"],
-                chapter: map?["chapter"],
-                verseNumber: map?["verseNumber"],
-              );
-            } catch (e) {
-              return alertDialog(
-                  content:
-                      'Não foi possível carregar o versículo\nErro: ${e.toString()}');
-            }
-          });
+          return PageTransition(
+            child: VersesScreen(
+              bookName: map?["bookName"],
+              abbrev: map?["abbrev"],
+              bookIndex: map?["bookIndex"],
+              chapters: map?["chapters"],
+              chapter: map?["chapter"],
+              verseNumber: map?["verseNumber"],
+            ),
+            type: PageTransitionType.rightToLeftWithFade,
+            duration: 500.ms
+          );
         } else if(settings.name == 'verse_with_background') {
           Map<String, dynamic> map =
           settings.arguments as Map<String, dynamic>;

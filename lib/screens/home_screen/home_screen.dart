@@ -54,8 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('HEIGHT ${MediaQuery.of(context).size.height} WIDTH ${MediaQuery.of(context).size.width}');
     versesProvider.refresh();
+    versesProvider.loadUserData();
     return Scaffold(
       appBar: const HomeAppBar(),
       drawer: const HomeDrawer(),

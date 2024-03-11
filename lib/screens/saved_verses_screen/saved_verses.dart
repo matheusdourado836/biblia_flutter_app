@@ -51,6 +51,7 @@ class _SavedVersesState extends State<SavedVerses> {
   void initState() {
     _selectedOption = _options[0];
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    _versesProvider.loadUserData();
     _versionProvider = Provider.of<VersionProvider>(context, listen: false);
     _versesProvider.getAllBooks().then((value) => setState(() => allBooksList = value));
     super.initState();
