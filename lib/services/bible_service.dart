@@ -29,16 +29,6 @@ class BibleService {
     }
   }
 
-  Future<Map<String, dynamic>> getBookDetail(String abbrev) async {
-    http.Response response = await client.get(Uri.parse('${url}books/$abbrev'),
-        headers: {"Authorization": "Bearer $token"});
-    if (response.statusCode != 200) {
-      throw HttpException(response.body);
-    }
-
-    return json.decode(response.body);
-  }
-
   Future<Map<String, dynamic>> getRandomVerse() async {
     http.Response response = await client.get(
         Uri.parse('${url}verses/nvi/random'),

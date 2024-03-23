@@ -53,7 +53,6 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
   Widget _oldTestamentCards(Function clear, int qtdItens, int startIndex) {
     final screenOrientation = MediaQuery.of(context).orientation;
     final screenSize = MediaQuery.of(context).size.width;
-    print('ORIENTATION $screenOrientation SIZE WIDTH $screenSize');
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: GridView.builder(

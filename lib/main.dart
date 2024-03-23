@@ -32,6 +32,8 @@ import 'firebase_options.dart';
 
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
 ThemeMode? _themeMode;
+BibleData bibleData = BibleData();
+int screenWidth = 0;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,8 +42,9 @@ void main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   _themeMode = (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
   await dotenv.load(fileName: ".env");
-  await BibleData().loadBibleData(
-      ['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
+  await bibleData.loadBibleData(
+    ['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']
+  );
   BibleService().checkInternetConnectivity().then((value) async {
     if(value) {
       NotificationService notificationService = NotificationService();
@@ -82,6 +85,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    screenWidth = MediaQuery.of(context).size.width.round();
     final themeProvider = Provider.of<ThemeProvider>(context);
     Provider.of<VersesProvider>(context, listen: false).loadUserData();
     return MaterialApp(

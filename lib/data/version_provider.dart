@@ -22,6 +22,10 @@ class VersionProvider extends ChangeNotifier {
 
   List<Widget> get versionsList => _versionsList;
 
+  set changeSelectedOption(String newOption) {
+    _selectedOption = newOption;
+  }
+
   List<Widget> setListItem(String versionOption) {
     _versionsList.add(
       Center(

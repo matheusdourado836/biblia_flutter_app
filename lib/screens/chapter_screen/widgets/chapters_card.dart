@@ -31,15 +31,16 @@ class _ChapterCardState extends State<ChapterCard> {
   
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenOrientation = MediaQuery.of(context).orientation;
     return Consumer<ChaptersProvider>(builder: (context, value, _) {
       return GridView.builder(
           physics: const BouncingScrollPhysics(),
           shrinkWrap: true,
           itemCount: widget.chapters,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: (screenSize > 800) ? 100 : 80.0,
-            crossAxisSpacing: 5.0,
+            maxCrossAxisExtent: (screenWidth > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+            crossAxisSpacing: 10.0,
             mainAxisSpacing: 10.0,
             childAspectRatio: 1/1
           ),

@@ -40,7 +40,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     _versesProvider.loadUserData();
-    _selectedOption = 'NVI (Nova Versão Internacional)';
+    _selectedOption = versionProvider.selectedOption;
     _findInSelectedOption = _findInOptions[0];
     _findInBooks.add('Todos');
     _selectedBook = 'Todos';
@@ -60,6 +60,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    versionProvider.changeSelectedOption = _selectedOption;
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 24,

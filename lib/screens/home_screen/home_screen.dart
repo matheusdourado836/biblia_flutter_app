@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final BibleDataController bibleDataController = BibleDataController();
   late Future<List<Book>> futureListBooks;
   List<Book>? listBooks;
+  late AdSize width;
   bool changeLayout = true;
 
   @override
@@ -44,8 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _createBannerAd() {
+    width = AdSize.getInlineAdaptiveBannerAdSize(screenWidth , 60);
     _bannerAd = BannerAd(
-      size: AdSize.fullBanner,
+      size: width,
       adUnitId: AdMobService.bannerAdUnitId!,
       listener: AdMobService.bannerAdListener,
       request: const AdRequest()
@@ -121,8 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar:
         (_bannerAd != null)
-            ? Container(
-                margin: const EdgeInsets.only(left: 8, right: 8),
+            ? SizedBox(
                 height: 60,
                 child: AdWidget(ad: _bannerAd!),
               )

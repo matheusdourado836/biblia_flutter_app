@@ -1,4 +1,5 @@
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -17,15 +18,18 @@ class RandomVerseScreen extends StatefulWidget {
 class _RandomVerseScreenState extends State<RandomVerseScreen> {
   late VersesProvider versesProvider;
   late Future<Map<String, dynamic>> futureRandomVerses;
+  String abbrev = '';
   String bookName = '';
+  int bookIndex = 0;
   String verse = '';
+  int chapters = 0;
   int chapter = 0;
   int verseNumber = 0;
 
   @override
   void initState() {
-    versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
-        listen: false);
+    versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    Provider.of<VersionProvider>(context, listen: false).changeSelectedOption = 'NVI (Nova Versão Internacional)';
     futureRandomVerses = versesProvider.getRandomVerse();
     super.initState();
   }
@@ -41,10 +45,15 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
             return const LoadingWidget();
           }
           else if(snapshot.data!["bookName"] != null) {
+            abbrev = snapshot.data!["abbrev"];
             bookName = snapshot.data!["bookName"];
             chapter = snapshot.data!["chapter"];
             verseNumber = snapshot.data!["verseNumber"];
             verse = snapshot.data!["verse"];
+            final List<dynamic> bookReference = bibleData.data[0];
+            final book = bookReference.where((element) => element["abbrev"] == abbrev).first;
+            bookIndex = bookReference.indexOf(book);
+            chapters = book["chapters"].length;
             return Stack(
               children: [
                 Positioned.fill(
@@ -106,35 +115,44 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Padding(
-                              padding:
-                              const EdgeInsets.only(right: 32, bottom: 6.0),
-                              child: IconButton(
-                                onPressed: (() {
-                                  versesProvider.shareImageAndText();
-                                }),
-                                icon: const Icon(Icons.share),
-                                iconSize: 32,
-                                color: Colors.white,
-                              ),
+                            IconButton(
+                              onPressed: (() {
+                                versesProvider.shareImageAndText();
+                              }),
+                              icon: const Icon(Icons.share),
+                              iconSize: 32,
+                              color: Colors.white,
                             ),
-                            Padding(
-                              padding:
-                              const EdgeInsets.only(left: 32, bottom: 6.0),
-                              child: IconButton(
-                                onPressed: (() {
-                                  versesProvider.copyText(
-                                      bookName, verse, chapter, verseNumber);
-                                }),
-                                icon: const Icon(Icons.copy),
-                                iconSize: 32,
-                                color: Colors.white,
-                              ),
+                            IconButton(
+                              onPressed: (() {
+                                versesProvider.clear();
+                                versesProvider.loadVerses(bookIndex, bookName);
+                                Navigator.pushNamed(context, 'verses_screen', arguments: {
+                                  "bookName": bookName,
+                                  "abbrev": abbrev,
+                                  "bookIndex": bookIndex,
+                                  "chapters": chapters,
+                                  "chapter": chapter,
+                                  "verseNumber": verseNumber
+                                });
+                              }),
+                              icon: const Icon(Icons.menu_book_outlined),
+                              iconSize: 32,
+                              color: Colors.white,
+                            ),
+                            IconButton(
+                              onPressed: (() {
+                                versesProvider.copyText(
+                                    bookName, verse, chapter, verseNumber);
+                              }),
+                              icon: const Icon(Icons.copy),
+                              iconSize: 32,
+                              color: Colors.white,
                             ),
                           ],
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: const EdgeInsets.only(bottom: 16.0, top: 8),
                           child: ElevatedButton(
                             onPressed: (() {
                               versesProvider.clear();
