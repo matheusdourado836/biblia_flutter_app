@@ -19,6 +19,10 @@ class BibleDataController {
 
   List<Book> get books => _books;
 
+  Future<List<Annotation>> getAllAnnotations() async {
+    return await _annotationsDao.findAll();
+  }
+
   Future<List<Annotation>?> verifyAnnotationExists(String bookName, int chapter, int verse) async {
     return await _annotationsDao.findByTitle(bookName, chapter, verse);
   }

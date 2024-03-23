@@ -29,19 +29,25 @@ class NotificationService {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await localNotificationsPlugin.initialize(
       const InitializationSettings(android: android),
-      onSelectNotification: _onSelectedNotification,
+      onDidReceiveNotificationResponse: _onSelectedNotification,
     );
   }
 
-  _onSelectedNotification(String? payload) {
-    if (payload != null && payload.isNotEmpty) {
-      GoToVerseScreen().goToVersePage(
-          payload.split(' ')[0],
-          payload.split(' ')[1],
-          int.parse(payload.split(' ')[2]),
-          int.parse(payload.split(' ')[3]),
-          int.parse(payload.split(' ')[4]),
-          int.parse(payload.split(' ')[5]));
+  _onSelectedNotification(NotificationResponse? notificationResponse) {
+    if(notificationResponse != null) {
+      if (notificationResponse.payload != null && notificationResponse.payload!.isNotEmpty) {
+        final payload = notificationResponse.payload;
+        if(payload !=  null) {
+          GoToVerseScreen().goToVersePage(
+              payload.split(' ')[0],
+              payload.split(' ')[1],
+              int.parse(payload.split(' ')[2]),
+              int.parse(payload.split(' ')[3]),
+              int.parse(payload.split(' ')[4]),
+              int.parse(payload.split(' ')[5])
+          );
+        }
+      }
     }
   }
 
@@ -63,7 +69,7 @@ class NotificationService {
   checkForNotification() async {
     final details = await localNotificationsPlugin.getNotificationAppLaunchDetails();
     if (details != null && details.didNotificationLaunchApp) {
-      _onSelectedNotification(details.payload);
+      _onSelectedNotification(details.notificationResponse!);
     }
   }
 }

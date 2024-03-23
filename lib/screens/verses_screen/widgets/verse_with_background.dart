@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
@@ -22,9 +24,12 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
   BibleService service = BibleService();
   late VersesProvider versesProvider;
   late Future<String> futureBackground;
+  Color? _selectedColor;
+  List<Color> _generatedColors = [];
 
   @override
   void initState() {
+    _generatedColors = List<Color>.generate(10, (index) => Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1));
     versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
         listen: false);
     futureBackground = service.getRandomImage();
@@ -50,14 +55,14 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                     child: Container(
                         width: width,
                         decoration: BoxDecoration(
-                          image: DecorationImage(
+                          color: (_selectedColor == null) ? null : _selectedColor,
+                          image: (_selectedColor == null) ? DecorationImage(
                             colorFilter: ColorFilter.mode(
                                 Colors.black.withOpacity(0.5), BlendMode.darken),
                             opacity: 0.8,
-                            image:
-                            CachedNetworkImageProvider(snapshot.data!),
+                            image: CachedNetworkImageProvider(snapshot.data!),
                             fit: BoxFit.cover,
-                          ),
+                          ) : null,
                         ),
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 40.0),
@@ -144,6 +149,33 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),
                         ),
+                        SizedBox(
+                          height: 60,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: 10,
+                            itemBuilder: (context, index) {
+                              if(index == 0) {
+                                return NewImageContainer(onTap: (() => setState(() {
+                                    _selectedColor = null;
+                                    futureBackground = service.getRandomImage();
+                                  }))
+                                );
+                              }
+                              if(index == 9) {
+                                return AddMoreContainer(onTap: (() => setState(() {
+                                  _generatedColors = [];
+                                  _generatedColors = List<Color>.generate(10, (index) => Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1));
+                                })),
+                                );
+                              }
+                              return ColorContainer(
+                                color: _selectedColor,
+                                listColors: _generatedColors[index],
+                                onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
+                              );
+                          }),
+                        )
                       ],
                     ),
                   ),
@@ -179,3 +211,75 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
     );
   }
 }
+
+class ColorContainer extends StatelessWidget {
+  final Color? color;
+  final Color listColors;
+  final Function() onTap;
+  const ColorContainer({super.key, required this.color, required this.listColors, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            width: 60,
+            height: 60,
+            color: listColors,
+          ),
+        ),
+        ((color != listColors))
+            ? Container()
+            : InkWell(
+          onTap: onTap,
+          child: Container(
+            width: 60,
+            height: 60,
+            color: Colors.black.withOpacity(.45),
+            child: const Icon(Icons.check, color: Colors.white, size: 32,),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AddMoreContainer extends StatelessWidget {
+  final Function() onTap;
+  const AddMoreContainer({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 60,
+      color: Colors.white,
+      child: IconButton(
+          onPressed: onTap, icon: const Icon(Icons.add)
+      ),
+    );
+  }
+}
+
+class NewImageContainer extends StatelessWidget {
+  final Function() onTap;
+  const NewImageContainer({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 60,
+        height: 60,
+        color: Colors.white,
+        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),)),
+      ),
+    );
+  }
+}
+
+
+

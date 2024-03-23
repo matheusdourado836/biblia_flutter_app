@@ -105,9 +105,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
                   child: Padding(
                     padding: const EdgeInsets.all(2.0),
                     child: Center(
-                      child: (widget.bookName.length < 15)
-                          ? Text(widget.bookName)
-                          : Text('${widget.bookName.substring(0, 11)}...'),
+                      child: Text(widget.bookName),
                     ),
                   ),
                 ),

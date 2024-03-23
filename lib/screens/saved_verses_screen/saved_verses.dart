@@ -51,6 +51,7 @@ class _SavedVersesState extends State<SavedVerses> {
   void initState() {
     _selectedOption = _options[0];
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    _versesProvider.loadUserData();
     _versionProvider = Provider.of<VersionProvider>(context, listen: false);
     _versesProvider.getAllBooks().then((value) => setState(() => allBooksList = value));
     super.initState();
@@ -210,9 +211,7 @@ class _SavedVersesState extends State<SavedVerses> {
         String version = bibleDataController.getVersionName(list[index].version);
         int verseNumber = objetosFiltrados[index].verseNumber;
         String verseColor = objetosFiltrados[index].verseColor;
-        if(objetosFiltrados.length > 5 && (index + 1) == objetosFiltrados.length) {
-          return const SizedBox(height: 100);
-        }
+
         return Padding(
           padding: const EdgeInsets.all(12.0),
           child: InkWell(

@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/app_bar.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../helpers/loading_widget.dart';
 
 int initialVerse = 0;
+ThemeProvider? themeProvider;
 
 class VersesScreen extends StatefulWidget {
   final String bookName;
@@ -45,6 +47,8 @@ class _VersesScreenState extends State<VersesScreen> {
     _chapters = widget.chapters;
     initialVerse = widget.verseNumber;
     allVersesTextSpan = [];
+    themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider!.getThemeMode();
     super.initState();
   }
 

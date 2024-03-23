@@ -1,9 +1,8 @@
-import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../data/bible_data.dart';
+import '../verses_screen.dart';
 
 class VerseArea extends StatefulWidget {
   final int chapter;
@@ -32,9 +31,8 @@ class _VerseAreaState extends State<VerseArea> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final defaultColor = themeColors.verseNumberColor(themeProvider.isOn);
-    final textOnColoredBackground = (widget.verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(themeProvider.isOn) : themeColors.coloredVerse(true);
+    final defaultColor = themeColors.verseNumberColor(themeProvider!.isOn);
+    final textOnColoredBackground = (widget.verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(themeProvider!.isOn) : themeColors.coloredVerse(true);
     return Container(
       color: widget.verseColor,
       padding: const EdgeInsets.all(6),

@@ -14,7 +14,6 @@ import '../../../data/bible_data_controller.dart';
 import '../../../models/annotation.dart';
 import '../verses_screen.dart';
 
-bool versesSelected = false;
 late ItemScrollController itemScrollController;
 final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 
@@ -48,13 +47,11 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   int _chapter = 1;
 
   late VersesProvider _versesProvider;
-  late ThemeProvider _themeProvider;
 
   @override
   void initState() {
     _chapter = widget.chapter;
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     itemScrollController = ItemScrollController();
     booksDao.findByChapter(widget.bookName).then((value) => {
       for(var element in value['chapters']) {
@@ -78,26 +75,63 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   @override
   Widget build(BuildContext context) {
     listMap = widget.listVerses[_chapter];
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ScrollablePositionedList.builder(
-        initialScrollIndex: initialVerse - 1,
-        itemScrollController: itemScrollController,
-        itemPositionsListener: itemPositionsListener,
-        physics: const BouncingScrollPhysics(),
-        itemCount: listMap.length,
-        itemBuilder: (BuildContext context, int index) {
-          final Color verseColor = (listMap[index]["isSelected"]) ? Theme.of(context).highlightColor : listMap[index]["verseColor"];
-          final textOnColoredBackground = (verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(_themeProvider.isOn) : themeColors.coloredVerse(true);
-          final textStyle = (verseColor == Colors.transparent) ? themeColors.verseColor(_themeProvider.isOn) : textOnColoredBackground;
-          final List<TextSpan> versesDefault = (allVersesTextSpan.isEmpty) ? [TextSpan(text: listMap[index]["verse"], style: textStyle)] : allVersesTextSpan[index][index + 1];
-          if ((index + 1) == listMap.length) {
-            return Column(
-              children: [
-                InkWell(
-                  onTap: (() {
-                    onTap(context, index);
-                  }),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeValue, _) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ScrollablePositionedList.builder(
+            initialScrollIndex: initialVerse - 1,
+            itemScrollController: itemScrollController,
+            itemPositionsListener: itemPositionsListener,
+            physics: const BouncingScrollPhysics(),
+            itemCount: listMap.length,
+            itemBuilder: (BuildContext context, int index) {
+              final Color verseColor = (listMap[index]["isSelected"]) ? Theme.of(context).highlightColor : listMap[index]["verseColor"];
+              final textOnColoredBackground = (verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(themeValue.isOn) : themeColors.coloredVerse(true);
+              final textStyle = (verseColor == Colors.transparent) ? themeColors.verseColor(themeValue.isOn) : textOnColoredBackground;
+              final List<TextSpan> versesDefault = (allVersesTextSpan.isEmpty) ? [TextSpan(text: listMap[index]["verse"], style: textStyle)] : allVersesTextSpan[index][index + 1];
+              if ((index + 1) == listMap.length) {
+                return Column(
+                  children: [
+                    InkWell(
+                      onTap: (() {
+                        onTap(context, index);
+                      }),
+                      child: VerseArea(
+                        chapter: _chapter,
+                        verseNumber: index + 1,
+                        verse: versesDefault,
+                        verseColor: verseColor,
+                        annotation: listMap[index]["annotation"],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 180),
+                      child: ElevatedButton(
+                        onPressed: (() {
+                          if(!isChapterRead) {
+                            chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
+                          } else {
+                            chaptersProvider.deleteChapter(widget.bookName, _chapter.toString());
+                          }
+                          setState(() => isChapterRead = !isChapterRead);
+                        }),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Theme.of(context).colorScheme.surface,
+                            fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                        ),
+                        child: (isChapterRead) ? const Text('Desmarcar como lido', style: TextStyle(color: Colors.white)) : const Text('Marcar como lido', style: TextStyle(color: Colors.white)),
+                      ),
+                    )
+                  ],
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: InkWell(
+                  onTap: (() => onTap(context, index)),
                   child: VerseArea(
                     chapter: _chapter,
                     verseNumber: index + 1,
@@ -106,44 +140,11 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                     annotation: listMap[index]["annotation"],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0, bottom: 180),
-                  child: ElevatedButton(
-                    onPressed: (() {
-                      if(!isChapterRead) {
-                        chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
-                      } else {
-                        chaptersProvider.deleteChapter(widget.bookName, _chapter.toString());
-                      }
-                      setState(() => isChapterRead = !isChapterRead);
-                    }),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.surface,
-                      fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                    ),
-                    child: (isChapterRead) ? const Text('Desmarcar como lido', style: TextStyle(color: Colors.white)) : const Text('Marcar como lido', style: TextStyle(color: Colors.white)),
-                  ),
-                )
-              ],
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.all(2.0),
-            child: InkWell(
-              onTap: (() => onTap(context, index)),
-              child: VerseArea(
-                chapter: _chapter,
-                verseNumber: index + 1,
-                verse: versesDefault,
-                verseColor: verseColor,
-                annotation: listMap[index]["annotation"],
-              ),
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

@@ -71,14 +71,17 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
   }
 
   Widget _oldTestamentCards(Function clear) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     return GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: 39,
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 70.0,
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 20.0,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+          crossAxisSpacing: 10.0,
+          mainAxisSpacing: 10.0,
+          childAspectRatio: 1/1
         ),
         itemBuilder: (context, i) {
           return Stack(
@@ -100,7 +103,7 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         orderedList["livrosVT"]![i].abbrev,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                       ),
                     ),
                   ),
@@ -122,14 +125,17 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
   }
 
   Widget _newTestamentCards(Function clear) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     return GridView.builder(
       physics: const BouncingScrollPhysics(),
       shrinkWrap: true,
       itemCount: 27,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 70.0,
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 20.0,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+        crossAxisSpacing: 10.0,
+        mainAxisSpacing: 10.0,
+        childAspectRatio: 1/1
       ),
       itemBuilder: (context, i) => Stack(
         children: [
@@ -150,7 +156,7 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     booksMap["livrosNT"]![i].abbrev,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                   ),
                 ),
               ),

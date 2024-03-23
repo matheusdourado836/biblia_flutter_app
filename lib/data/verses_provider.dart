@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
@@ -26,7 +25,9 @@ class VersesProvider extends ChangeNotifier {
   final BibleData _bibleData = BibleData();
   BibleService service = BibleService();
   List<VerseModel> _lista = [];
+  List<VerseModel> _listaBd = [];
   List<Annotation> _listAnnotations = [];
+  List<Annotation> _listAnnotationsDb = [];
   List<Map<String, dynamic>> _listMapVerses = [];
   List<Map<String, dynamic>> _listMap = [];
   List<int> _versesFound = [];
@@ -45,7 +46,11 @@ class VersesProvider extends ChangeNotifier {
 
   UnmodifiableListView<VerseModel> get lista => UnmodifiableListView(_lista);
 
+  List<VerseModel> get listaBd => _listaBd;
+
   UnmodifiableListView<Annotation> get listaAnnotations => UnmodifiableListView(_listAnnotations);
+
+  List<Annotation> get listaAnnotationsDb => _listAnnotationsDb;
 
   int get qtdVerses => _qtdVerses;
 
@@ -68,6 +73,17 @@ class VersesProvider extends ChangeNotifier {
   List<int> get versesFoundList => _versesFound;
 
   Map<int, dynamic>? get allVerses => _allVerses;
+
+  void loadUserData() async {
+    _listaBd = [];
+    _listAnnotationsDb = [];
+    final versesDao = VersesDao();
+    final BibleDataController bibleDataController = BibleDataController();
+    await Future.wait([
+      versesDao.findAll().then((verses) => _listaBd = verses),
+      bibleDataController.getAllAnnotations().then((annotations) => _listAnnotationsDb = annotations)
+    ]);
+  }
 
   void newFontSize(double newSize, bool save) async {
     if(save) {
@@ -97,11 +113,12 @@ class VersesProvider extends ChangeNotifier {
     if (_listMapVerses.isEmpty) {
       List<dynamic> chapters = _bibleData.data[versionIndex][bookIndex]['chapters'];
       for (int i = 0; i < chapters.length; i++) {
-        try {
-          await refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex).whenComplete(() => _allVerses[i + 1] = _listMapVerses);
-        } catch (e) {
-          log('ESSE FOI O ERRO: $e');
-        }
+        refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
+        // try {
+        //   refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
+        // } catch (e) {
+        //   log('ESSE FOI O ERRO: $e');
+        // }
       }
       notifyListeners();
       return _allVerses;
@@ -110,48 +127,74 @@ class VersesProvider extends ChangeNotifier {
     return _allVerses;
   }
 
-  Future<void> refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) async {
+  void refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) {
     final listColorsDb = [];
-    final versesDao = VersesDao();
-    final BibleDataController bibleDataController = BibleDataController();
     _listMapVerses = [];
     final List<dynamic> versesByChapter = _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
     final List<dynamic> versesByChapterDefault = _bibleData.data[0][bookIndex]['chapters'][chapter];
 
     for (var i = 0; i < versesByChapterDefault.length; i++) {
-      await versesDao.find(versesByChapterDefault[i]).then((res) => {
-          if (res.isNotEmpty) {
-            if (res[0].verse == versesByChapterDefault[i]) {
-              listColorsDb.add({
-                "verse": versesByChapterDefault[i],
-                "version": res[0].version,
-                "color": ConvertColors().convertColors(res[0].verseColor)
-              }),
-            }
-          }
-          else {
-            listColorsDb.add({
-              "verse": versesByChapterDefault[i],
-              "version": 0,
-              "color": Colors.transparent
-            }),
-          },
+      if(_listaBd.isNotEmpty && _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).isNotEmpty) {
+        final verseFound = _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).first;
+        listColorsDb.add({
+          "verse": versesByChapterDefault[i],
+          "version": verseFound.version,
+          "color": ConvertColors().convertColors(verseFound.verseColor)
         });
-      await bibleDataController.annotationExists(bookName, chapter + 1, i + 1)
-          .then((value) => _listMapVerses.add({
-              "bookName": bookName,
-              "chapter": chapter + 1,
-              "verseNumber": i + 1,
-              "verse": versesByChapter[i],
-              "verseDefault": versesByChapterDefault[i],
-              "verseColor": listColorsDb[i]["color"],
-              "version": versionIndex,
-              "isSelected": false,
-              "isEditing": false,
-              "annotation": value
-            })
-      );
+      }else {
+        listColorsDb.add({
+          "verse": versesByChapterDefault[i],
+          "version": 0,
+          "color": Colors.transparent
+        });
+      }
+      final annotationFound = _listAnnotationsDb.where((annotation) => annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1);
+      _listMapVerses.add({
+        "bookName": bookName,
+        "chapter": chapter + 1,
+        "verseNumber": i + 1,
+        "verse": versesByChapter[i],
+        "verseDefault": versesByChapterDefault[i],
+        "verseColor": listColorsDb[i]["color"],
+        "version": versionIndex,
+        "isSelected": false,
+        "isEditing": false,
+        "annotation": annotationFound.isEmpty ? null : annotationFound.first
+      });
+      // await versesDao.find(versesByChapterDefault[i]).then((res) => {
+      //     if (res.isNotEmpty) {
+      //       if (res[0].verse == versesByChapterDefault[i]) {
+      //         listColorsDb.add({
+      //           "verse": versesByChapterDefault[i],
+      //           "version": res[0].version,
+      //           "color": ConvertColors().convertColors(res[0].verseColor)
+      //         }),
+      //       }
+      //     }
+      //     else {
+      //       listColorsDb.add({
+      //         "verse": versesByChapterDefault[i],
+      //         "version": 0,
+      //         "color": Colors.transparent
+      //       }),
+      //     },
+      //   });
+      // await bibleDataController.annotationExists(bookName, chapter + 1, i + 1)
+      //     .then((value) => _listMapVerses.add({
+      //         "bookName": bookName,
+      //         "chapter": chapter + 1,
+      //         "verseNumber": i + 1,
+      //         "verse": versesByChapter[i],
+      //         "verseDefault": versesByChapterDefault[i],
+      //         "verseColor": listColorsDb[i]["color"],
+      //         "version": versionIndex,
+      //         "isSelected": false,
+      //         "isEditing": false,
+      //         "annotation": value
+      //       })
+      // );
     }
+    _allVerses[chapter + 1] = _listMapVerses;
   }
 
   void clear() {
@@ -249,7 +292,7 @@ class VersesProvider extends ChangeNotifier {
     for (var element in listMap) {
       book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
       }
     }
     Share.share('$book:$verse');
@@ -270,7 +313,7 @@ class VersesProvider extends ChangeNotifier {
     for (var element in listMap) {
       book = '${element["bookName"]} ${element["chapter"]}';
       if(element["isSelected"]) {
-        verse = '$verse ${element["index"] + 1} ${element["verse"]}';
+        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
       }
     }
     await Clipboard.setData(

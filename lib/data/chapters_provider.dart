@@ -69,7 +69,7 @@ class ChaptersProvider extends ChangeNotifier {
   void setOrderStyle(String value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if(value.startsWith('por')) {
+    if(value.startsWith('Por')) {
       await prefs.setInt('orderStyle', 2);
       _orderStyle = 2;
     }else if(value == 'Padrão') {
