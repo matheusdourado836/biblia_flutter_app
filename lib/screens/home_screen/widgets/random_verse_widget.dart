@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
@@ -152,7 +154,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                           ],
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0, top: 8),
+                          padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 32, top: 8) : const EdgeInsets.only(bottom: 16.0, top: 8),
                           child: ElevatedButton(
                             onPressed: (() {
                               versesProvider.clear();
