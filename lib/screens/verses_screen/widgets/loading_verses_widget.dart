@@ -162,7 +162,9 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
     if (selectedVersesExist) {
       _versesProvider.openBottomSheet(true);
       showBottomSheet(
+          enableDrag: false,
           context: context,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           builder: (BuildContext ctx) {
             return Column(
               mainAxisSize: MainAxisSize.min,

@@ -157,6 +157,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: 10,
+                              shrinkWrap: true,
                               itemBuilder: (context, index) {
                                 if(index == 0) {
                                   return NewImageContainer(onTap: (() => setState(() {

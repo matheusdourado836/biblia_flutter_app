@@ -17,6 +17,7 @@ class RoundContainer extends StatelessWidget {
         borderRadius: const BorderRadius.all(
           Radius.circular(100),
         ),
+        border: Border.all(color: Colors.black, width: 1.5)
       ),
     );
   }

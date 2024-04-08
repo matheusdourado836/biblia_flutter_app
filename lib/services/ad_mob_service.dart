@@ -7,7 +7,7 @@ class AdMobService {
     if(Platform.isAndroid) {
       return 'ca-app-pub-8180030689126961/3284191155';
     }else {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return 'ca-app-pub-8180030689126961/2494838145';
     }
   }
 
@@ -15,7 +15,7 @@ class AdMobService {
     if(Platform.isAndroid) {
       return 'ca-app-pub-8180030689126961/1302430618';
     }else {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return 'ca-app-pub-8180030689126961/1263331730';
     }
   }
 

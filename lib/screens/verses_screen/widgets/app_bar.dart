@@ -73,6 +73,9 @@ class _VersesAppBarState extends State<VersesAppBar> {
         padding: const EdgeInsets.only(right: 32.0),
         child: IconButton(
           onPressed: (() {
+            if(_versesProvider.bottomSheetOpened) {
+              Navigator.pop(context);
+            }
             _versesProvider
                 .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
             _versesProvider.resetVersesFoundCounter();
@@ -168,6 +171,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
                     onChanged: (newValue) {
                       if (_versesProvider.bottomSheetOpened) {
                         Navigator.pop(context);
+                        _versesProvider.openBottomSheet(false);
                       }
                       _versesProvider.resetVersesFoundCounter();
                       setState(() {
