@@ -202,9 +202,13 @@ class _PortraitDrawer extends StatelessWidget {
                 : Column(
         children: [
           readingProgressWidget,
+          const SizedBox(height: 15),
           savedVersesWidget,
+          const SizedBox(height: 15),
           annotationsWidget,
+          const SizedBox(height: 15),
           searchPassagesWidget,
+          const SizedBox(height: 15),
           toggleModeWidget,
           const Spacer(),
           settingsWidget,

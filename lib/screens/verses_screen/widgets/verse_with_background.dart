@@ -230,8 +230,8 @@ class ColorContainer extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 65,
+            height: 65,
             color: listColors,
           ),
         ),
@@ -240,8 +240,8 @@ class ColorContainer extends StatelessWidget {
             : InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 65,
+            height: 65,
             color: Colors.black.withOpacity(.45),
             child: const Icon(Icons.check, color: Colors.white, size: 32,),
           ),
@@ -258,8 +258,8 @@ class AddMoreContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 65,
+      height: 65,
       color: Colors.white,
       child: IconButton(
           onPressed: onTap, icon: const Icon(Icons.add, color: Colors.black,)
@@ -277,10 +277,10 @@ class NewImageContainer extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 60,
-        height: 60,
+        width: 65,
+        height: 65,
         color: Colors.white,
-        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),)),
+        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black),)),
       ),
     );
   }

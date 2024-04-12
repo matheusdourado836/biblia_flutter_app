@@ -39,7 +39,7 @@ class _ChapterCardState extends State<ChapterCard> {
           shrinkWrap: true,
           itemCount: widget.chapters,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: (screenWidth > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+            maxCrossAxisExtent: (screenWidth > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
             crossAxisSpacing: 10.0,
             mainAxisSpacing: 10.0,
             childAspectRatio: 1/1

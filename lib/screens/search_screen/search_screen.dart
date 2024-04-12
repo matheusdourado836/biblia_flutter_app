@@ -2,6 +2,7 @@ import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
               });
             }
           }),
-          decoration: const InputDecoration(icon: Icon(Icons.search), hintText: 'Digite o versículo aqui...'),
+          decoration: const InputDecoration(icon: Icon(Icons.search), hintText: 'Digite o versículo aqui...', ),
 
         ),
         actions: [
@@ -117,6 +118,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Container(
         color: Theme.of(context).primaryColor,
+        padding: const EdgeInsets.fromLTRB(12, 12 ,12 ,0),
         child: CustomScrollView(
           slivers: <Widget>[
             SliverAppBar(
@@ -126,79 +128,81 @@ class _SearchScreenState extends State<SearchScreen> {
               collapsedHeight: 168,
               expandedHeight: 168,
               flexibleSpace: FlexibleSpaceBar(
-                background: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Versão:'),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.30,
-                              height: 30,
-                              child: DropdownButton(
-                                underline: Container(
-                                  height: 0,
-                                  color: Colors.transparent,
-                                ),
-                                style: Theme.of(context).dropdownMenuTheme.textStyle,
-                                isExpanded: true,
-                                itemHeight: 80.0,
-                                value: versionProvider.selectedOption,
-                                items: versionProvider.options.map((option) {
-                                  versionProvider.setListItem(option.split(' ')[0]);
-                                  return DropdownMenuItem(
-                                    value: option,
-                                    child: Text(
-                                      option,
-                                      style: Theme.of(context).textTheme.titleSmall,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    _selectedOption = newValue!;
-                                    versionProvider.changeVersion(newValue.toString());
-                                  });
-                                },
-                                selectedItemBuilder: (BuildContext context) {
-                                  return versionProvider.versionsList;
-                                },
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                      Row(
+                background: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Buscar em:'),
-                          DropdownButton(
-                            alignment: Alignment.centerRight,
-                            underline: Container(
-                              height: 0,
-                              color: Colors.transparent,
+                          const Text('Versão:'),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.30,
+                            height: 30,
+                            child: DropdownButton(
+                              underline: Container(
+                                height: 0,
+                                color: Colors.transparent,
+                              ),
+                              style: Theme.of(context).dropdownMenuTheme.textStyle,
+                              isExpanded: true,
+                              itemHeight: 80.0,
+                              value: versionProvider.selectedOption,
+                              items: versionProvider.options.map((option) {
+                                versionProvider.setListItem(option.split(' ')[0]);
+                                return DropdownMenuItem(
+                                  value: option,
+                                  child: Text(
+                                    option,
+                                    style: Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _selectedOption = newValue!;
+                                  versionProvider.changeVersion(newValue.toString());
+                                });
+                              },
+                              selectedItemBuilder: (BuildContext context) {
+                                return versionProvider.versionsList;
+                              },
                             ),
-                            value: _findInSelectedOption,
-                            items: _findInOptions.map((option) {
-                              return DropdownMenuItem(
-                                value: option,
-                                child: Text(option, style: Theme.of(context).textTheme.bodyLarge),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) => setState(() => _findInSelectedOption = newValue!),
                           )
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Livro:'),
-                          DropdownButton(
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Buscar em:'),
+                        DropdownButton(
+                          alignment: Alignment.centerRight,
+                          underline: Container(
+                            height: 0,
+                            color: Colors.transparent,
+                          ),
+                          value: _findInSelectedOption,
+                          items: _findInOptions.map((option) {
+                            return DropdownMenuItem(
+                              value: option,
+                              child: Text(option, style: Theme.of(context).textTheme.bodyLarge),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) => setState(() => _findInSelectedOption = newValue!),
+                        )
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Livro:'),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * .78,
+                          child: DropdownButton(
                             alignment: Alignment.centerRight,
+                            padding: EdgeInsets.zero,
+                            isExpanded: true,
                             underline: Container(
                               height: 0,
                               color: Colors.transparent,
@@ -207,17 +211,25 @@ class _SearchScreenState extends State<SearchScreen> {
                             items: _findInBooks.map((option) {
                               return DropdownMenuItem(
                                 value: option,
-                                child: Text(option, style: Theme.of(context).textTheme.bodyLarge),
+                                child: Text(option, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyLarge),
                               );
                             }).toList(),
+                            selectedItemBuilder: (context) {
+                              return _findInBooks.map((book) {
+                                return DropdownMenuItem(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(book, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyLarge),
+                                );
+                              }).toList();
+                            },
                             onChanged: (newValue) {
                               setState(() => _selectedBook = newValue!);
                             },
-                          )
-                        ],
-                      ),
-                    ],
-                  ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),

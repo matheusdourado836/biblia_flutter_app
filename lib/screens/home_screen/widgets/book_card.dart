@@ -72,7 +72,7 @@ class _BookCardState extends State<BookCard> {
         shrinkWrap: true,
         itemCount: 39,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
           crossAxisSpacing: 10.0,
           mainAxisSpacing: 10.0,
           childAspectRatio: 1/1
@@ -126,7 +126,7 @@ class _BookCardState extends State<BookCard> {
       shrinkWrap: true,
       itemCount: 27,
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 80.0,
+        maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
         crossAxisSpacing: 10.0,
         mainAxisSpacing: 10.0,
         childAspectRatio: 1/1

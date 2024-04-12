@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
       },
       onGenerateRoute: (settings) {
         if(settings.name == 'home') {
-          return PageTransition(child: const HomeScreen(), type: PageTransitionType.bottomToTop, duration: 800.ms);
+          return PageTransition(child: const HomeScreen(), type: PageTransitionType.bottomToTop, duration: 400.ms);
         }
         if (settings.name == 'chapter_screen') {
           Map<String, dynamic>? routeArgs =

@@ -55,8 +55,8 @@ class _BookListState extends State<BookList> {
                         child: Row(
                           children: [
                             Container(
-                              width: (condition1 || condition2) ? 80 : 50,
-                              height: (condition1 || condition2) ? 80 : 50,
+                              width: (condition1 || condition2) ? 80 : 60,
+                              height: (condition1 || condition2) ? 80 : 60,
                               decoration: BoxDecoration(
                                 color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
                                 borderRadius: const BorderRadius.all(
@@ -70,11 +70,12 @@ class _BookListState extends State<BookList> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Text(bookName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18),),
+                              ),
                             ),
-                            const Spacer(),
                             SizedBox(
                               child: (widget.bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
                             )
