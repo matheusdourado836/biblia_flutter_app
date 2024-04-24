@@ -37,53 +37,50 @@ class _BookListState extends State<BookList> {
               }else if(chapterValue.orderStyle == 2) {
                 return ByTheme(listBooks: widget.listBooks, bookIsRead: widget.bookIsRead, clear: value.clear);
               }
-              return SizedBox(
-                height: MediaQuery.of(context).size.height,
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: widget.listBooks.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    bookName = widget.listBooks[index].name;
-                    abbrev = widget.listBooks[index].abbrev;
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: InkWell(
-                        onTap: (() {
-                          value.clear();
-                          Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': widget.listBooks[index].name, 'abbrev': widget.listBooks[index].abbrev, 'bookIndex': index, 'chapters': widget.listBooks[index].chapters,});
-                        }),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: (condition1 || condition2) ? 80 : 50,
-                              height: (condition1 || condition2) ? 80 : 50,
-                              decoration: BoxDecoration(
-                                color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(100),
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  abbrev,
-                                  style: (index < 39) ? Theme.of(context).textTheme.titleLarge : Theme.of(context).textTheme.bodyLarge,
-                                ),
+              return ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemCount: widget.listBooks.length,
+                itemBuilder: (BuildContext context, int index) {
+                  bookName = widget.listBooks[index].name;
+                  final abbrevRaw = widget.listBooks[index].abbrev;
+                  abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0, left: 8, top: 16),
+                    child: InkWell(
+                      onTap: (() {
+                        value.clear();
+                        Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': widget.listBooks[index].name, 'abbrev': widget.listBooks[index].abbrev, 'bookIndex': index, 'chapters': widget.listBooks[index].chapters,});
+                      }),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: (condition1 || condition2) ? 80 : 55,
+                            height: (condition1 || condition2) ? 80 : 55,
+                            decoration: BoxDecoration(
+                              color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(100),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                            alignment: Alignment.center,
+                            child: Text(
+                              abbrev,
+                              style: (index < 39) ? Theme.of(context).textTheme.titleLarge!.copyWith(fontSize: 18) : Theme.of(context).textTheme.bodyLarge,
                             ),
-                            const Spacer(),
-                            SizedBox(
-                              child: (widget.bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
-                            )
-                          ],
-                        ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            child: (widget.bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
+                          )
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               );
             });
       },
@@ -133,7 +130,8 @@ class _ChronologicalOrderState extends State<ChronologicalOrder> {
         itemCount: listBooks.length,
         itemBuilder: (BuildContext context, int index) {
           bookName = listBooks[index].name;
-          abbrev = listBooks[index].abbrev;
+          final abbrevRaw = listBooks[index].abbrev;
+          abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: InkWell(
@@ -194,15 +192,15 @@ class ByTheme extends StatelessWidget {
           ),
         ),
         const BookSection(section: 'Pentateuco'),
-        BookItens(listBooks: listBooks, qtdBooks: 5, bookIndex: 0, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 5, bookIndex: 0, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Livros Históricos'),
-        BookItens(listBooks: listBooks, qtdBooks: 12, bookIndex: 5, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 12, bookIndex: 5, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Livros Poéticos'),
-        BookItens(listBooks: listBooks, qtdBooks: 5, bookIndex: 17, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 5, bookIndex: 17, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Profetas Maiores'),
-        BookItens(listBooks: listBooks, qtdBooks: 5, bookIndex: 22, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 5, bookIndex: 22, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Profetas Menores'),
-        BookItens(listBooks: listBooks, qtdBooks: 12, bookIndex: 27, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 12, bookIndex: 27, clear: clear, bookIsRead: bookIsRead),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
@@ -210,13 +208,13 @@ class ByTheme extends StatelessWidget {
           ),
         ),
         const BookSection(section: 'Evangelhos'),
-        BookItens(listBooks: listBooks, qtdBooks: 4, bookIndex: 39, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 4, bookIndex: 39, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Históricos'),
-        BookItens(listBooks: listBooks, qtdBooks: 1, bookIndex: 43, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 1, bookIndex: 43, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Cartas'),
-        BookItens(listBooks: listBooks, qtdBooks: 21, bookIndex: 44, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 21, bookIndex: 44, clear: clear, bookIsRead: bookIsRead),
         const BookSection(section: 'Revelação'),
-        BookItens(listBooks: listBooks, qtdBooks: 1, bookIndex: 65, clear: clear, bookIsRead: bookIsRead),
+        BookItems(listBooks: listBooks, qtdBooks: 1, bookIndex: 65, clear: clear, bookIsRead: bookIsRead),
       ],
     );
   }
@@ -238,13 +236,13 @@ class BookSection extends StatelessWidget {
 }
 
 
-class BookItens extends StatelessWidget {
+class BookItems extends StatelessWidget {
   final List<Book> listBooks;
   final int qtdBooks;
   final int bookIndex;
   final Function clear;
   final Function bookIsRead;
-  const BookItens({super.key, required this.listBooks, required this.qtdBooks, required this.clear, required this.bookIsRead, required this.bookIndex});
+  const BookItems({super.key, required this.listBooks, required this.qtdBooks, required this.clear, required this.bookIsRead, required this.bookIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +254,8 @@ class BookItens extends StatelessWidget {
     String bookName = '';
     return SliverList.builder(itemCount: qtdBooks, itemBuilder: (context, index) {
       bookName = listBooks[index + bookIndex].name;
-      abbrev = listBooks[index + bookIndex].abbrev;
+      final abbrevRaw = listBooks[index + bookIndex].abbrev;
+      abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: InkWell(

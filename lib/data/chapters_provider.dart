@@ -1,14 +1,26 @@
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/book.dart';
 import 'books_dao.dart';
 
 class ChaptersProvider extends ChangeNotifier {
   List<bool> _readChapters = [];
   int _orderStyle = 0;
 
+  List<Book> innerList = [];
+
   int get orderStyle => _orderStyle;
 
   List<bool> get readChapters => _readChapters;
+
+  bool _isSearching = false;
+
+  bool get isSearching => _isSearching;
+
+  void toggleSearch(bool value) {
+    _isSearching = value;
+    notifyListeners();
+  }
 
   void setChaptersRead(String bookName, int chapters) async {
     for(var i = 0; i < chapters; i++) {
@@ -87,5 +99,10 @@ class ChaptersProvider extends ChangeNotifier {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _orderStyle = prefs.getInt('orderStyle') ?? 0;
 
+  }
+
+  void updateSearch(List<Book> books, String query) {
+    innerList = books.where((item) => item.name.toLowerCase().startsWith(query.toLowerCase()) || item.name.toLowerCase().contains(query.toLowerCase())).toList();
+    notifyListeners();
   }
 }

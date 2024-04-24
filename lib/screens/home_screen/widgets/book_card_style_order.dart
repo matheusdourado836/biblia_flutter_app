@@ -66,6 +66,8 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
             childAspectRatio: 1/1
           ),
           itemBuilder: (context, i) {
+            String abbrevRaw = booksMap["livrosVT"]![i + startIndex].abbrev;
+            String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
             return Stack(
               children: <Widget>[
                 Card(
@@ -75,7 +77,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                       clear();
                       Navigator.pushNamed(context, 'chapter_screen', arguments: {
                         'bookName': booksMap["livrosVT"]![i + startIndex].name,
-                        'abbrev': booksMap["livrosVT"]![i + startIndex].abbrev,
+                        'abbrev': abbrev,
                         'bookIndex': i + startIndex,
                         'chapters': booksMap["livrosVT"]![i + startIndex].chapters,
                       }).then((value) => setState(() {}));
@@ -84,7 +86,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          booksMap["livrosVT"]![i + startIndex].abbrev,
+                          abbrev,
                           style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                         ),
                       ),
@@ -122,41 +124,45 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
           mainAxisSpacing: 10.0,
           childAspectRatio: 1/1
         ),
-        itemBuilder: (context, i) => Stack(
-          children: [
-            Card(
-              elevation: 1.0,
-              child: InkWell(
-                onTap: (() {
-                  Navigator.pushNamed(context, 'chapter_screen', arguments: {
-                    'bookName': booksMap["livrosNT"]![i + startIndex].name,
-                    'abbrev': booksMap["livrosNT"]![i + startIndex].abbrev,
-                    'bookIndex': i + startIndex + 39,
-                    'chapters': booksMap["livrosNT"]![i + startIndex].chapters,
-                  }).then((value) => setState(() {}));
-                  clear();
-                }),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      booksMap["livrosNT"]![i + startIndex].abbrev,
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
+        itemBuilder: (context, i) {
+          String abbrevRaw = booksMap["livrosNT"]![i + startIndex].abbrev;
+          String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
+          return Stack(
+            children: [
+              Card(
+                elevation: 1.0,
+                child: InkWell(
+                  onTap: (() {
+                    Navigator.pushNamed(context, 'chapter_screen', arguments: {
+                      'bookName': booksMap["livrosNT"]![i + startIndex].name,
+                      'abbrev': abbrev,
+                      'bookIndex': i + startIndex + 39,
+                      'chapters': booksMap["livrosNT"]![i + startIndex].chapters,
+                    }).then((value) => setState(() {}));
+                    clear();
+                  }),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        abbrev,
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(
-                child: (widget.bookIsRead(booksMap["livrosNT"]![i + startIndex].name))
-                    ? Icon(
-                  Icons.check_circle,
-                  color:
-                  Theme.of(context).buttonTheme.colorScheme?.secondary,
-                )
-                    : null),
-          ],
-        ),
+              SizedBox(
+                  child: (widget.bookIsRead(booksMap["livrosNT"]![i + startIndex].name))
+                      ? Icon(
+                    Icons.check_circle,
+                    color:
+                    Theme.of(context).buttonTheme.colorScheme?.secondary,
+                  )
+                      : null),
+            ],
+          );
+        },
       ),
     );
   }

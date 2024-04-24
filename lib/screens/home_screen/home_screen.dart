@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card_chronological_order.dart';
@@ -10,11 +8,12 @@ import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card_style_o
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_list.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/home_app_bar.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/home_drawer.dart';
+import 'package:biblia_flutter_app/screens/home_screen/widgets/search_book_widget.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
-import '../../models/book.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 late VersesProvider versesProvider;
 
@@ -28,14 +27,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   BannerAd? _bannerAd;
   final BibleDataController bibleDataController = BibleDataController();
-  late Future<List<Book>> futureListBooks;
-  List<Book>? listBooks;
   late AdSize width;
   bool changeLayout = true;
 
   @override
   void initState() {
-    futureListBooks = bibleDataController.getBooks();
+    bibleDataController.getBooks();
+    getLayout();
+    final chapterProvider = Provider.of<ChaptersProvider>(context, listen: false);
+    chapterProvider.innerList = bibleDataController.books;
     versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     versesProvider.getFontSize();
     versesProvider.refresh();
@@ -54,65 +54,73 @@ class _HomeScreenState extends State<HomeScreen> {
     )..load();
   }
 
+  void getLayout() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? userLayout = prefs.getBool("cardLayout");
+    if(userLayout == null) {
+      prefs.setBool("cardLayout", false);
+      return;
+    }
+
+    setState(() => changeLayout = userLayout);
+  }
+
+  void setLayout(bool layoutType) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool("cardLayout", layoutType);
+  }
+
+  @override
+  void dispose() {
+    _bannerAd!.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     versesProvider.refresh();
     versesProvider.loadUserData();
     return Scaffold(
-      appBar: const HomeAppBar(),
+      appBar: HomeAppBar(books: bibleDataController.books),
       drawer: const HomeDrawer(),
       backgroundColor: Theme.of(context).primaryColor,
-      body: (changeLayout)
-          ? Consumer<ChaptersProvider>(
-              builder: (context, value, _) {
-                value.getOrderStyle();
-                return Container(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FutureBuilder<List<Book>>(
-                    future: futureListBooks,
-                    builder: (context, snapshot) {
-                      if (snapshot.data != null) {
-                        if (snapshot.data!.isNotEmpty) {
-                          listBooks = snapshot.data!;
-                          if (value.orderStyle == 0) {
-                            return BookCard(
-                                bookIsRead: bookIsRead,
-                                database: bibleDataController.books);
-                          }else if(value.orderStyle == 1) {
-                            return BookCardChronologicalOrder(
-                                bookIsRead: bookIsRead,
-                                database: bibleDataController.books
-                            );
-                          }
-                          return BookCardStyleOrder(
-                            bookIsRead: bookIsRead,
-                            database: bibleDataController.books,
-                          );
-                        }
-                      } else if (snapshot.hasError) {
-                        return InkWell(
-                            onTap: (() => setState(() {})),
-                            child: Text('Erro Inesperado! ${snapshot.error}'));
-                      }
-                      return const LoadingWidget();
-                    },
-                  ),
+      body: Container(
+        padding: const EdgeInsets.all(8.0),
+        child: Consumer<ChaptersProvider>(
+          builder: (context, value, _) {
+            value.getOrderStyle();
+            if(value.isSearching) {
+              return SearchBookWidget(books: value.innerList);
+            }
+            if(changeLayout) {
+              if (value.orderStyle == 0) {
+                return BookCard(
+                    bookIsRead: bookIsRead,
+                    database: bibleDataController.books);
+              }else if(value.orderStyle == 1) {
+                return BookCardChronologicalOrder(
+                    bookIsRead: bookIsRead,
+                    database: bibleDataController.books
                 );
-              },
-            )
-          : BookList(
+              }
+              return BookCardStyleOrder(
+                  bookIsRead: bookIsRead,
+                  database: bibleDataController.books
+              );
+            }
+
+            return BookList(
               listBooks: bibleDataController.books,
               bookIsRead: bookIsRead,
-            ),
+            );
+          },
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: () {
-          setState(() {
-            listBooks;
-            if (listBooks != null) {
-              changeLayout = !changeLayout;
-            }
-          });
+          setState(() => changeLayout = !changeLayout);
+          setLayout(changeLayout);
         },
         tooltip: 'Mudar Layout',
         child: Icon(

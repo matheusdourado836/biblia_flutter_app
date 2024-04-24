@@ -163,6 +163,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
       _versesProvider.openBottomSheet(true);
       showBottomSheet(
           context: context,
+          enableDrag: false,
           builder: (BuildContext ctx) {
             return Column(
               mainAxisSize: MainAxisSize.min,

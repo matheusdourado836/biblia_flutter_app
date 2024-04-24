@@ -36,6 +36,7 @@ BibleData bibleData = BibleData();
 int screenWidth = 0;
 
 void main() async {
+  Animate.restartOnHotReload = true;
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   MobileAds.instance.updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));

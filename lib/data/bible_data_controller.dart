@@ -44,7 +44,7 @@ class BibleDataController {
     }
   }
 
-  Future<List<Book>> getBooks() async {
+  List<Book> getBooks() {
     _books = [];
     String testament = '';
     for (int i = 0; i < _bibleData.data[0].length; i++) {
