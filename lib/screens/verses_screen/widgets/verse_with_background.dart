@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
@@ -12,9 +11,10 @@ import '../../home_screen/widgets/random_verse_widget.dart';
 class VerseWithBackground extends StatefulWidget {
   final String bookName;
   final int chapter;
-  final int verseNumber;
-  final String content;
-  const VerseWithBackground({Key? key, required this.bookName, required this.content, required this.chapter, required this.verseNumber}) : super(key: key);
+  final int verseStart;
+  final int? verseEnd;
+  final List<Map<String, dynamic>> content;
+  const VerseWithBackground({Key? key, required this.bookName, required this.content, required this.chapter, required this.verseStart, this.verseEnd}) : super(key: key);
 
   @override
   State<VerseWithBackground> createState() => _VerseWithBackgroundState();
@@ -26,10 +26,62 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
   late Future<String> futureBackground;
   Color? _selectedColor;
   List<Color> _generatedColors = [];
+  bool realign = false;
+  int length = 0;
+  String reference = '';
+
+  double calculateFontSize() {
+    double calculatedFontSize = 20;
+
+    print('OLHA O LENGTH $length');
+    if(length <= 360) {
+     calculatedFontSize = 20;
+    }else if(length > 360 && length <= 600) {
+      calculatedFontSize = 15;
+    }else if(length > 600 && length <= 900) {
+      calculatedFontSize = 12;
+    }else {
+      calculatedFontSize = 10;
+    }
+
+    return calculatedFontSize;
+  }
+
+  Color generateRandomColor() {
+    final Random random = Random();
+    const int maxRGBValue = 255;
+
+    // Loop para garantir que a cor tenha um contraste adequado com o branco
+    while (true) {
+      // Gera valores aleatórios para os componentes RGB
+      int red = random.nextInt(maxRGBValue);
+      int green = random.nextInt(maxRGBValue);
+      int blue = random.nextInt(maxRGBValue);
+
+      // Calcula a luminância da cor
+      double luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+
+      // Se a luminância for menor que 0.5, a cor é escura e o texto será branco
+      // Se for maior ou igual a 0.5, a cor é clara e o texto será preto
+      if (luminance < 0.5) {
+        // Cria a cor com base nos componentes RGB gerados
+        Color color = Color.fromARGB(255, red, green, blue);
+        return color;
+      }
+    }
+  }
+
 
   @override
   void initState() {
-    _generatedColors = List<Color>.generate(10, (index) => Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1));
+    for(var text in widget.content) {
+      length += text["verse"].toString().length;
+    }
+    reference = '${widget.bookName} ${widget.chapter}:${widget.verseStart}\n';
+    if(widget.verseStart != widget.verseEnd) {
+      reference = '${widget.bookName} ${widget.chapter}:${widget.verseStart}-${widget.verseEnd!}\n';
+    }
+    _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
     versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!,
         listen: false);
     futureBackground = service.getRandomImage();
@@ -53,47 +105,47 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                   child: RepaintBoundary(
                     key: globalKey,
                     child: Container(
-                        width: width,
                         decoration: BoxDecoration(
                           color: (_selectedColor == null) ? null : _selectedColor,
                           image: (_selectedColor == null) ? DecorationImage(
                             colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5), BlendMode.darken),
+                                Colors.black.withOpacity(0.5), BlendMode.darken
+                            ),
                             opacity: 0.8,
                             image: CachedNetworkImageProvider(snapshot.data!),
                             fit: BoxFit.cover,
                           ) : null,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 40.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 48.0),
-                                child: Text(
-                                  'BibleWise',
-                                  style: Theme.of(context).textTheme.displayLarge,
-                                ),
+                        child: Column(
+                          mainAxisAlignment: (length < 360) ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 48.0),
+                              child: Text(
+                                'BibleWise',
+                                style: Theme.of(context).textTheme.displayLarge,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 16.0, right: 16.0, bottom: 40.0),
-                                child: Text.rich(
-                                  TextSpan(
-                                      text: '${widget.bookName} ${widget.chapter}:${widget.verseNumber}\n\n',
-                                      style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
-                                      children: <TextSpan>[
-                                        TextSpan(
-                                            text: widget.content,
-                                            style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, color: Colors.white))
-                                      ]),
-                                  textAlign: TextAlign.center,
-                                ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 56.0, top: (length < 360) ? 0 : 40),
+                              child: Column(
+                                children: [
+                                  Text(reference, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
+                                  for(var i = 0; i <  widget.content.length; i++)
+                                    Text(
+                                        widget.content[i]["verse"],
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                            fontSize: calculateFontSize()
+                                        )
+                                    ),
+                                ],
                               ),
-                              const SizedBox()
-                            ],
-                          ),
+                            ),
+                            const SizedBox()
+                          ],
                         )),
                   ),
                 ),
@@ -113,6 +165,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               const EdgeInsets.only(right: 32, bottom: 6.0),
                               child: IconButton(
                                 onPressed: (() {
+                                  setState(() => realign = true);
                                   versesProvider.shareImageAndText();
                                 }),
                                 icon: const Icon(Icons.share),
@@ -125,8 +178,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               const EdgeInsets.only(left: 32, bottom: 6.0),
                               child: IconButton(
                                 onPressed: (() {
-                                  versesProvider.copyText(
-                                      widget.bookName, widget.content, widget.chapter, widget.verseNumber);
+                                  versesProvider.copyVerses(widget.content);
                                 }),
                                 icon: const Icon(Icons.copy),
                                 iconSize: 32,
@@ -165,7 +217,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               if(index == 9) {
                                 return AddMoreContainer(onTap: (() => setState(() {
                                   _generatedColors = [];
-                                  _generatedColors = List<Color>.generate(10, (index) => Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1));
+                                  _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
                                 })),
                                 );
                               }

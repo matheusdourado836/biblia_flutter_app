@@ -153,13 +153,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
     final verseColor = listMap[index]["verseColor"];
     final bool isEditing = verseColor != Colors.transparent;
 
-    setState(() {
-      listMap[index]["isSelected"] = isSelected;
-      listMap[index]["isEditing"] = isEditing;
-    });
-
-    final selectedVersesExist = _versesProvider.verseSelectedExists(listMap);
-    if (selectedVersesExist) {
+    if(listMap.where((element) => element["isSelected"]).isEmpty) {
       _versesProvider.openBottomSheet(true);
       showBottomSheet(
           context: context,
@@ -180,20 +174,33 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                     ),
                     IconButton(
                       onPressed: (() {
-                        _versesProvider.copyVerses(context, listMap);
+                        _versesProvider.copyVerses(listMap);
                       }),
                       icon: const Icon(Icons.copy),
                     ),
                     IconButton(
                       onPressed: (() {
                         Navigator.pop(context);
+                        final verses = listMap.where((element) => element["isSelected"]).toList();
+                        if(verses.length > 5) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Selecione até 5 versículos', textAlign: TextAlign.center)
+                              )
+                          );
+                          _versesProvider.openBottomSheet(false);
+                          _versesProvider.clearSelectedVerses(listMap);
+                          return;
+                        }
+                        bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
                         Navigator.pushNamed(
                             context, 'verse_with_background',
                             arguments: {
                               "bookName": listMap[index]["bookName"],
                               "chapter": widget.chapter,
-                              "verseNumber": listMap[index]["verseNumber"],
-                              "content": listMap[index]["verse"]
+                              "verseStart": listMap[index]["verseNumber"],
+                              "verseEnd": bibleDataController.endIndex,
+                              "content": listMap.where((element) => element["isSelected"]).toList()
                             });
                         _versesProvider.openBottomSheet(false);
                         _versesProvider.clearSelectedVerses(listMap);
@@ -210,34 +217,34 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                         Annotation innerAnnotation = Annotation(
                             annotationId: const Uuid().v1(),
                             title:
-                                '${widget.bookName} ${widget.chapter}:${index + 1}',
+                            '${widget.bookName} ${widget.chapter}:${index + 1}',
                             content: '',
                             book: widget.bookName,
                             chapter: widget.chapter,
                             verseStart: bibleDataController.startIndex,
                             verseEnd: bibleDataController.endIndex);
                         bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
-                          .then((value) => {
-                                  if (value != null) {
-                                      innerAnnotation = value[0],
-                                      Navigator.pushNamed(
-                                          context, 'annotation_widget',
-                                          arguments: {
-                                            'annotation': innerAnnotation,
-                                            'verses': verses,
-                                            'isEditing': true
-                                          })
-                                    }
-                                  else {
-                                      Navigator.pushNamed(
-                                          context, 'annotation_widget',
-                                          arguments: {
-                                            'annotation': innerAnnotation,
-                                            'verses': verses,
-                                            'isEditing': false
-                                          })
-                                    },
-                                });
+                            .then((value) => {
+                          if (value != null) {
+                            innerAnnotation = value[0],
+                            Navigator.pushNamed(
+                                context, 'annotation_widget',
+                                arguments: {
+                                  'annotation': innerAnnotation,
+                                  'verses': verses,
+                                  'isEditing': true
+                                })
+                          }
+                          else {
+                            Navigator.pushNamed(
+                                context, 'annotation_widget',
+                                arguments: {
+                                  'annotation': innerAnnotation,
+                                  'verses': verses,
+                                  'isEditing': false
+                                })
+                          },
+                        });
                       }),
                       icon: const Icon(Icons.edit_rounded),
                     ),
@@ -400,9 +407,14 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
               ],
             );
           });
-    } else {
-      Navigator.pop(context);
+    }else if(listMap.where((element) => element["isSelected"]).length == 1 && !isSelected) {
       _versesProvider.openBottomSheet(false);
+      Navigator.pop(context);
     }
+
+    setState(() {
+      listMap[index]["isSelected"] = isSelected;
+      listMap[index]["isEditing"] = isEditing;
+    });
   }
 }

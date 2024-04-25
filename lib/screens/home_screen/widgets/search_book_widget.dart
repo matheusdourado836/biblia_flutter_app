@@ -1,4 +1,5 @@
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/book.dart';
@@ -26,7 +27,9 @@ class SearchBookWidget extends StatelessWidget {
             onTap: (() {
               final versesProvider = Provider.of<VersesProvider>(context, listen: false);
               versesProvider.clear();
-              Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': bookName, 'abbrev': abbrev, 'bookIndex': index, 'chapters': books[index].chapters,});
+              final book = bibleData.data[0].where((element) => element["name"] == bookName).first;
+              final bookIndex = bibleData.data[0].indexOf(book);
+              Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': bookName, 'abbrev': abbrev, 'bookIndex': bookIndex, 'chapters': books[index].chapters,});
             }),
             child: Row(
               children: [

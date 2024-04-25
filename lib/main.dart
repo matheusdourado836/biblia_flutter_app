@@ -137,14 +137,15 @@ class MyApp extends StatelessWidget {
             duration: 500.ms
           );
         } else if(settings.name == 'verse_with_background') {
-          Map<String, dynamic> map =
-          settings.arguments as Map<String, dynamic>;
+          Map<String, dynamic>? map =
+          settings.arguments as Map<String, dynamic>?;
           return MaterialPageRoute(builder: (context) {
             return VerseWithBackground(
-                bookName: map["bookName"],
-                chapter: map["chapter"],
-                verseNumber: map["verseNumber"],
-                content: map["content"]
+                bookName: map?["bookName"],
+                chapter: map?["chapter"],
+                verseStart: map?["verseStart"],
+                verseEnd: map?["verseEnd"],
+                content: map?["content"]
             );
           });
         } else if (settings.name == 'annotation_widget') {

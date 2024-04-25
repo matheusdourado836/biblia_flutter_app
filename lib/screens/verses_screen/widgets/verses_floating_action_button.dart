@@ -29,7 +29,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       height:
-      (widget.notScrolling && versesProvider.versesSelected == false)
+      (widget.notScrolling && versesProvider.bottomSheetOpened == false)
           ? 56
           : 0,
       child: Row(
@@ -48,7 +48,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
       backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
       onPressed: (() {
         (widget.notScrolling &&
-            versesProvider.versesSelected == false)
+            versesProvider.bottomSheetOpened == false)
             ? setState(() {
           if (_chapter < _chapters) {
             _chapter++;
@@ -62,7 +62,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
       child: Icon(
         Icons.arrow_forward_ios_rounded,
         size: (widget.notScrolling &&
-            versesProvider.versesSelected == false)
+            versesProvider.bottomSheetOpened == false)
             ? 22
             : 0,
         color:
@@ -80,7 +80,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: (() {
           (widget.notScrolling &&
-              versesProvider.versesSelected == false)
+              versesProvider.bottomSheetOpened == false)
               ? setState(() {
             if (_chapter > 1) {
               _chapter--;
@@ -95,7 +95,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         child: Icon(
           Icons.arrow_back_ios_rounded,
           size: (widget.notScrolling &&
-              versesProvider.versesSelected == false)
+              versesProvider.bottomSheetOpened == false)
               ? 22
               : 0,
           color: Theme.of(context)

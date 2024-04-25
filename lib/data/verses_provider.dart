@@ -31,7 +31,6 @@ class VersesProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _listMapVerses = [];
   List<Map<String, dynamic>> _listMap = [];
   List<int> _versesFound = [];
-  bool _versesSelected = false;
   bool _bottomSheetOpened = false;
   int _qtdVerses = 0;
   int _qtdAnnotations = 0;
@@ -61,8 +60,6 @@ class VersesProvider extends ChangeNotifier {
   double get fontSize => _fontSize;
 
   String get color => _color;
-
-  bool get versesSelected => _versesSelected;
 
   Map<String, dynamic> get verseInfo => _verseInfo;
 
@@ -307,7 +304,7 @@ class VersesProvider extends ChangeNotifier {
         ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
   }
 
-  void copyVerses(BuildContext context, List<Map<String, dynamic>> listMap) async {
+  void copyVerses(List<Map<String, dynamic>> listMap) async {
     String verse = '';
     String book = '';
     for (var element in listMap) {
@@ -316,18 +313,7 @@ class VersesProvider extends ChangeNotifier {
         verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
       }
     }
-    await Clipboard.setData(
-        ClipboardData(text: '$book:$verse'))
-        .then(
-          (value) => {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            duration: Duration(milliseconds: 1000),
-            content: Text('Texto copiado para área de transferência'),
-          ),
-        ),
-      },
-    );
+    await Clipboard.setData(ClipboardData(text: '$book:$verse'));
   }
 
   Future<void> deleteVerse(String verse) async {
@@ -388,19 +374,6 @@ class VersesProvider extends ChangeNotifier {
         break;
     }
     notifyListeners();
-  }
-
-  bool verseSelectedExists(List<Map<String, dynamic>> listMap) {
-    for (var element in listMap) {
-      if (element["isSelected"] == true) {
-        _versesSelected = true;
-        notifyListeners();
-        return true;
-      }
-    }
-    notifyListeners();
-    _versesSelected = false;
-    return false;
   }
 
   bool bookIsReadCheckBox(bool isChecked) {

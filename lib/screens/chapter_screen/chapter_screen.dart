@@ -33,6 +33,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
   void initState() {
     versesProvider = Provider.of<VersesProvider>(context, listen: false);
     chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
+    chaptersProvider.toggleSearch(false);
     booksDao.find(widget.bookName).then((value) {
       if (value.isNotEmpty) {
         if (value[0]["finishedReading"] == 1) {

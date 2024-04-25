@@ -104,6 +104,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      autofocus: true,
                       decoration: const InputDecoration(
                         hintText: 'Digite o livro aqui...'
                       ),
@@ -111,7 +112,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                         if(start.value && _controller.text.isNotEmpty) {
                           provider.toggleSearch(true);
                         }
-                        provider.updateSearch(widget.books, value);
+                        provider.updateSearch(widget.books, value.trim());
                       },
                     ),
                   ).animate().fade(),
