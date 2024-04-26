@@ -50,6 +50,7 @@ class _ChapterCardState extends State<ChapterCard> {
                 Card(
                   child: InkWell(
                     onTap: (() {
+                      value.toggleSearch(false);
                       final versionProvider = Provider.of<VersionProvider>(context, listen: false);
                       versesProvider.openBottomSheet(false);
                       versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionIndex: versionProvider.options.indexOf(versionProvider.selectedOption));

@@ -33,7 +33,6 @@ class _ChapterScreenState extends State<ChapterScreen> {
   void initState() {
     versesProvider = Provider.of<VersesProvider>(context, listen: false);
     chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
-    chaptersProvider.toggleSearch(false);
     booksDao.find(widget.bookName).then((value) {
       if (value.isNotEmpty) {
         if (value[0]["finishedReading"] == 1) {
@@ -53,7 +52,10 @@ class _ChapterScreenState extends State<ChapterScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leading: IconButton(onPressed: (() => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)), icon: const Icon(Icons.arrow_back)),
+        leading: IconButton(onPressed: (() {
+          chaptersProvider.toggleSearch(false);
+          Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
+        }), icon: const Icon(Icons.arrow_back)),
         title: Text(widget.bookName),
         actions: [
           IconButton(
