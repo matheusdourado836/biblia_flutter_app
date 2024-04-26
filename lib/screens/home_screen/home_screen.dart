@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
@@ -131,8 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar:
         (_bannerAd != null)
-            ? SizedBox(
+            ? Container(
                 height: 60,
+                padding: (Platform.isIOS) ? const EdgeInsets.only(left: 14, right: 14, bottom: 14) : EdgeInsets.zero,
                 child: AdWidget(ad: _bannerAd!),
               )
             : null,

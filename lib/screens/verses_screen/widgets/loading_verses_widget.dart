@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
@@ -158,137 +160,124 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
       showBottomSheet(
           context: context,
           enableDrag: false,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           builder: (BuildContext ctx) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      onPressed: (() {
-                        _versesProvider.shareVerses(context, listMap, widget.bookName);
-                      }),
-                      icon: const Icon(Icons.share),
-                    ),
-                    IconButton(
-                      onPressed: (() {
-                        _versesProvider.copyVerses(listMap);
-                      }),
-                      icon: const Icon(Icons.copy),
-                    ),
-                    IconButton(
-                      onPressed: (() {
-                        Navigator.pop(context);
-                        final verses = listMap.where((element) => element["isSelected"]).toList();
-                        if(verses.length > 5) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Selecione até 5 versículos', textAlign: TextAlign.center)
-                              )
-                          );
+            return Padding(
+              padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 32) : EdgeInsets.zero,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        onPressed: (() {
+                          _versesProvider.shareVerses(context, listMap, widget.bookName);
+                        }),
+                        icon: const Icon(Icons.share),
+                      ),
+                      IconButton(
+                        onPressed: (() {
+                          _versesProvider.copyVerses(listMap);
+                        }),
+                        icon: const Icon(Icons.copy),
+                      ),
+                      IconButton(
+                        onPressed: (() {
+                          Navigator.pop(context);
+                          final verses = listMap.where((element) => element["isSelected"]).toList();
+                          if(verses.length > 5) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Selecione até 5 versículos', textAlign: TextAlign.center)
+                                )
+                            );
+                            _versesProvider.openBottomSheet(false);
+                            _versesProvider.clearSelectedVerses(listMap);
+                            return;
+                          }
+                          bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
+                          Navigator.pushNamed(
+                              context, 'verse_with_background',
+                              arguments: {
+                                "bookName": listMap[index]["bookName"],
+                                "chapter": widget.chapter,
+                                "verseStart": listMap[index]["verseNumber"],
+                                "verseEnd": bibleDataController.endIndex,
+                                "content": listMap.where((element) => element["isSelected"]).toList()
+                              });
                           _versesProvider.openBottomSheet(false);
                           _versesProvider.clearSelectedVerses(listMap);
-                          return;
-                        }
-                        bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
-                        Navigator.pushNamed(
-                            context, 'verse_with_background',
-                            arguments: {
-                              "bookName": listMap[index]["bookName"],
-                              "chapter": widget.chapter,
-                              "verseStart": listMap[index]["verseNumber"],
-                              "verseEnd": bibleDataController.endIndex,
-                              "content": listMap.where((element) => element["isSelected"]).toList()
-                            });
-                        _versesProvider.openBottomSheet(false);
-                        _versesProvider.clearSelectedVerses(listMap);
-                      }),
-                      icon: const Icon(Icons.photo_outlined),
-                    ),
-                    IconButton(
-                      onPressed: (() {
-                        final List<dynamic> verses = [];
-                        for(var element in listMap) {
-                          verses.add(element['verse']);
-                        }
-                        bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
-                        Annotation innerAnnotation = Annotation(
-                            annotationId: const Uuid().v1(),
-                            title:
-                            '${widget.bookName} ${widget.chapter}:${index + 1}',
-                            content: '',
-                            book: widget.bookName,
-                            chapter: widget.chapter,
-                            verseStart: bibleDataController.startIndex,
-                            verseEnd: bibleDataController.endIndex);
-                        bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
-                            .then((value) => {
-                          if (value != null) {
-                            innerAnnotation = value[0],
-                            Navigator.pushNamed(
-                                context, 'annotation_widget',
-                                arguments: {
-                                  'annotation': innerAnnotation,
-                                  'verses': verses,
-                                  'isEditing': true
-                                })
+                        }),
+                        icon: const Icon(Icons.photo_outlined),
+                      ),
+                      IconButton(
+                        onPressed: (() {
+                          final List<dynamic> verses = [];
+                          for(var element in listMap) {
+                            verses.add(element['verse']);
                           }
-                          else {
-                            Navigator.pushNamed(
-                                context, 'annotation_widget',
-                                arguments: {
-                                  'annotation': innerAnnotation,
-                                  'verses': verses,
-                                  'isEditing': false
-                                })
-                          },
-                        });
-                      }),
-                      icon: const Icon(Icons.edit_rounded),
-                    ),
-                    IconButton(
-                      onPressed: (listMap[index]["verseColor"] != Colors.transparent) ? (() {
-                        _versesProvider.openBottomSheet(false);
-                        _versesProvider.deleteVerses(listMap);
-                        Navigator.pop(ctx);
-                      }) : null,
-                      icon: const Icon(Icons.delete),
-                    ),
-                    IconButton(
-                      onPressed: (() {
-                        _versesProvider.clearSelectedVerses(listMap);
-                        _versesProvider.openBottomSheet(false);
-                        Navigator.pop(ctx);
-                      }),
-                      icon: const Icon(Icons.minimize),
-                    ),
-                  ],
-                ),
-                const Divider(
-                  thickness: 1.5,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
+                          bibleDataController.getStartAndEndIndex(listMap, listMap[index]["verseNumber"]);
+                          Annotation innerAnnotation = Annotation(
+                              annotationId: const Uuid().v1(),
+                              title:
+                              '${widget.bookName} ${widget.chapter}:${index + 1}',
+                              content: '',
+                              book: widget.bookName,
+                              chapter: widget.chapter,
+                              verseStart: bibleDataController.startIndex,
+                              verseEnd: bibleDataController.endIndex);
+                          bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
+                              .then((value) => {
+                            if (value != null) {
+                              innerAnnotation = value[0],
+                              Navigator.pushNamed(
+                                  context, 'annotation_widget',
+                                  arguments: {
+                                    'annotation': innerAnnotation,
+                                    'verses': verses,
+                                    'isEditing': true
+                                  })
+                            }
+                            else {
+                              Navigator.pushNamed(
+                                  context, 'annotation_widget',
+                                  arguments: {
+                                    'annotation': innerAnnotation,
+                                    'verses': verses,
+                                    'isEditing': false
+                                  })
+                            },
+                          });
+                        }),
+                        icon: const Icon(Icons.edit_rounded),
+                      ),
+                      IconButton(
+                        onPressed: (listMap[index]["verseColor"] != Colors.transparent) ? (() {
                           _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color2, ThemeColors.colorString2);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color2),
-                    ),
-                    InkWell(
+                          _versesProvider.deleteVerses(listMap);
+                          Navigator.pop(ctx);
+                        }) : null,
+                        icon: const Icon(Icons.delete),
+                      ),
+                      IconButton(
+                        onPressed: (() {
+                          _versesProvider.clearSelectedVerses(listMap);
+                          _versesProvider.openBottomSheet(false);
+                          Navigator.pop(ctx);
+                        }),
+                        icon: const Icon(Icons.minimize),
+                      ),
+                    ],
+                  ),
+                  const Divider(
+                    thickness: 1.5,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      InkWell(
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
@@ -297,114 +286,131 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                               listMap[index]["isEditing"] = true;
                             }
                             _versesProvider.updateColors(listMap,
-                                ThemeColors.color3, ThemeColors.colorString3);
+                                ThemeColors.color2, ThemeColors.colorString2);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
                         }),
-                        child: RoundContainer(color: ThemeColors.color3)),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color4, ThemeColors.colorString4);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: const RoundContainer(color: Colors.brown),
-                    ),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color5, ThemeColors.colorString5);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color5),
-                    ),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color6, ThemeColors.colorString6);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color6),
-                    ),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color7, ThemeColors.colorString7);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color7),
-                    ),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color8, ThemeColors.colorString8);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color8),
-                    ),
-                    InkWell(
-                      onTap: (() {
-                        setState(() {
-                          _versesProvider.openBottomSheet(false);
-                          if (listMap[index]["verseColor"] !=
-                              Colors.transparent) {
-                            listMap[index]["isEditing"] = true;
-                          }
-                          _versesProvider.updateColors(listMap,
-                              ThemeColors.color1, ThemeColors.colorString1);
-                        });
-                        _versesProvider.refresh();
-                        Navigator.pop(ctx);
-                      }),
-                      child: RoundContainer(color: ThemeColors.color1),
-                    ),
-                    const SizedBox(
-                      height: 70,
-                    ),
-                  ],
-                ),
-              ],
+                        child: RoundContainer(color: ThemeColors.color2),
+                      ),
+                      InkWell(
+                          onTap: (() {
+                            setState(() {
+                              _versesProvider.openBottomSheet(false);
+                              if (listMap[index]["verseColor"] !=
+                                  Colors.transparent) {
+                                listMap[index]["isEditing"] = true;
+                              }
+                              _versesProvider.updateColors(listMap,
+                                  ThemeColors.color3, ThemeColors.colorString3);
+                            });
+                            _versesProvider.refresh();
+                            Navigator.pop(ctx);
+                          }),
+                          child: RoundContainer(color: ThemeColors.color3)),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color4, ThemeColors.colorString4);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: const RoundContainer(color: Colors.brown),
+                      ),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color5, ThemeColors.colorString5);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color5),
+                      ),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color6, ThemeColors.colorString6);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color6),
+                      ),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color7, ThemeColors.colorString7);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color7),
+                      ),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color8, ThemeColors.colorString8);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color8),
+                      ),
+                      InkWell(
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] !=
+                                Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap,
+                                ThemeColors.color1, ThemeColors.colorString1);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color1),
+                      ),
+                      const SizedBox(
+                        height: 70,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           });
     }else if(listMap.where((element) => element["isSelected"]).length == 1 && !isSelected) {

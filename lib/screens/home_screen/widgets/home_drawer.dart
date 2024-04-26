@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -147,10 +149,13 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Widget _settingsWidget(BuildContext context) {
-    return ListTileDrawer(
-      onTap: (() {Navigator.pushNamed(context, 'settings');}),
-      leading: Icons.settings,
-      title: 'Configurações'
+    return Padding(
+      padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 24.0) : EdgeInsets.zero,
+      child: ListTileDrawer(
+        onTap: (() {Navigator.pushNamed(context, 'settings');}),
+        leading: Icons.settings,
+        title: 'Configurações'
+      ),
     );
   }
 }
@@ -197,9 +202,13 @@ class _PortraitDrawer extends StatelessWidget {
                 : Column(
         children: [
           readingProgressWidget,
+          const SizedBox(height: 15),
           savedVersesWidget,
+          const SizedBox(height: 15),
           annotationsWidget,
+          const SizedBox(height: 15),
           searchPassagesWidget,
+          const SizedBox(height: 15),
           toggleModeWidget,
           const Spacer(),
           settingsWidget,

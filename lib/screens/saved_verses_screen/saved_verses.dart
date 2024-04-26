@@ -167,28 +167,28 @@ class _SavedVersesState extends State<SavedVerses> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          child: Consumer<VersesProvider>(
-            builder: (context, list, child) {
-              if (_versesProvider.lista.isEmpty) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/images/nothing_yet.png'),
-                    const SizedBox(height: 32),
-                    const Text('Nenhum Versículo Salvo ainda...',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w400),
-                        textAlign: TextAlign.center)
-                  ],
-                );
-              }
+      body: Consumer<VersesProvider>(
+        builder: (context, list, child) {
+          if (_versesProvider.lista.isEmpty) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/nothing_yet.png',
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * .55,
+                ),
+                const SizedBox(height: 32),
+                const Text('Nenhum Versículo Salvo ainda...',
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w400),
+                    textAlign: TextAlign.center)
+              ],
+            );
+          }
 
-              return coresListWidget(list: _versesProvider.lista, corSelecionada: _selectedOption);
-            },
-          ),
-        ),
+          return coresListWidget(list: _versesProvider.lista, corSelecionada: _selectedOption);
+        },
       ),
     );
   }

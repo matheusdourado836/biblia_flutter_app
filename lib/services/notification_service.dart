@@ -27,8 +27,9 @@ class NotificationService {
 
   _initializeNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iOS = DarwinInitializationSettings();
     await localNotificationsPlugin.initialize(
-      const InitializationSettings(android: android),
+      const InitializationSettings(android: android, iOS: iOS),
       onDidReceiveNotificationResponse: _onSelectedNotification,
     );
   }

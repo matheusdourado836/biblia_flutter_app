@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bibleWise.biblia_flutter_app"
+<<<<<<< HEAD
     android:versionCode="39"
+=======
+    android:versionCode="40"
+>>>>>>> c26ea1519c0e3982c407184e562b23f72d5976d6
     android:versionName="6.3.0" >
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />

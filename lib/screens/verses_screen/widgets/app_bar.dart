@@ -73,6 +73,9 @@ class _VersesAppBarState extends State<VersesAppBar> {
         padding: const EdgeInsets.only(right: 32.0),
         child: IconButton(
           onPressed: (() {
+            if(_versesProvider.bottomSheetOpened) {
+              Navigator.pop(context);
+            }
             _versesProvider
                 .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
             _versesProvider.resetVersesFoundCounter();
@@ -152,22 +155,26 @@ class _VersesAppBarState extends State<VersesAppBar> {
                     ),
                     style: Theme.of(context).dropdownMenuTheme.textStyle,
                     isExpanded: true,
-                    itemHeight: 80.0,
+                    itemHeight: 125.0,
                     value: value.selectedOption,
                     items: value.options.map((option) {
                       value.setListItem(option.split(' ')[0]);
                       return DropdownMenuItem(
                         value: option,
-                        child: Center(
-                            child: Text(
-                              option,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            )),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0, left: 8, right: 8),
+                          child: Center(
+                              child: Text(
+                                option,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              )),
+                        ),
                       );
                     }).toList(),
                     onChanged: (newValue) {
                       if (_versesProvider.bottomSheetOpened) {
                         Navigator.pop(context);
+                        _versesProvider.openBottomSheet(false);
                       }
                       _versesProvider.resetVersesFoundCounter();
                       setState(() {

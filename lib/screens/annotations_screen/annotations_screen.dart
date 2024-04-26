@@ -127,209 +127,207 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
           )
         ],
       ),
-      body: Container(
-        color: Theme.of(context).primaryColor,
-        child: Consumer<VersesProvider>(
-          builder: (context, value, _) {
-            if (value.listaAnnotations.isEmpty) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/nothing_yet.png',
-                    width: double.infinity,
-                    height: height * .55,
-                  ),
-                  const SizedBox(height: 32),
-                  const Text('Nenhuma Anotação ainda...',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
-                      textAlign: TextAlign.center)
-                ],
-              );
-            }
+      backgroundColor: Theme.of(context).primaryColor,
+      body: Consumer<VersesProvider>(
+        builder: (context, value, _) {
+          if (value.listaAnnotations.isEmpty) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/nothing_yet.png',
+                  width: double.infinity,
+                  height: height * .55,
+                ),
+                const SizedBox(height: 32),
+                const Text('Nenhuma Anotação ainda...',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
+                    textAlign: TextAlign.center)
+              ],
+            );
+          }
 
-            return ListView.builder(
-                itemCount: value.listaAnnotations.length,
-                itemBuilder: (context, index) {
-                  Annotation annotation = value.listaAnnotations[index];
-                  final List<dynamic> list = BibleData().data[0];
-                  final bookInfo = list
-                      .where((element) => element['name'] == annotation.book)
-                      .toList();
-                  final List<dynamic> verses =
-                      bookInfo[0]['chapters'][annotation.chapter - 1];
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: InkWell(
-                      onTap: (() {
-                        Navigator.pushNamed(context, 'annotation_widget',
-                            arguments: {
-                              'annotation': annotation,
-                              'verses': verses,
-                              'isEditing': true
-                            });
-                      }),
-                      child: Card(
-                        child: Slidable(
-                          startActionPane: ActionPane(
-                            extentRatio: 0.3,
-                            motion: const ScrollMotion(),
-                            children: [
-                              SlidableAction(
-                                borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
-                                onPressed: (context) {
-                                  showDialog<void>(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                            'Alerta',
+          return ListView.builder(
+              itemCount: value.listaAnnotations.length,
+              itemBuilder: (context, index) {
+                Annotation annotation = value.listaAnnotations[index];
+                final List<dynamic> list = BibleData().data[0];
+                final bookInfo = list
+                    .where((element) => element['name'] == annotation.book)
+                    .toList();
+                final List<dynamic> verses =
+                    bookInfo[0]['chapters'][annotation.chapter - 1];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: InkWell(
+                    onTap: (() {
+                      Navigator.pushNamed(context, 'annotation_widget',
+                          arguments: {
+                            'annotation': annotation,
+                            'verses': verses,
+                            'isEditing': true
+                          });
+                    }),
+                    child: Card(
+                      child: Slidable(
+                        startActionPane: ActionPane(
+                          extentRatio: 0.3,
+                          motion: const ScrollMotion(),
+                          children: [
+                            SlidableAction(
+                              borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
+                              onPressed: (context) {
+                                showDialog<void>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                          'Alerta',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        ),
+                                        content: Text(
+                                            'Tem certeza que deseja remover essa anotação?',
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodyLarge,
+                                                .bodyMedium),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, 'Não'),
+                                            child: const Text('Não'),
                                           ),
-                                          content: Text(
-                                              'Tem certeza que deseja remover essa anotação?',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context, 'Não'),
-                                              child: const Text('Não'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                value
-                                                    .deleteAnnotation(value
-                                                        .listaAnnotations[index]
-                                                        .annotationId)
-                                                    .then((res) => {
-                                                          value.refresh(),
-                                                          Navigator.pop(context)
-                                                        });
-                                              },
-                                              child: const Text('Sim'),
-                                            ),
-                                          ],
-                                        );
-                                      });
-                                },
-                                icon: Icons.delete,
-                                label: 'Deletar',
-                                foregroundColor:
-                                    Theme.of(context).colorScheme.onSurface,
-                                backgroundColor: Colors.red.shade200,
-                              ),
-                            ],
-                          ),
-                          endActionPane: ActionPane(
-                            extentRatio: .55,
-                            motion: const ScrollMotion(),
+                                          TextButton(
+                                            onPressed: () {
+                                              value
+                                                  .deleteAnnotation(value
+                                                      .listaAnnotations[index]
+                                                      .annotationId)
+                                                  .then((res) => {
+                                                        value.refresh(),
+                                                        Navigator.pop(context)
+                                                      });
+                                            },
+                                            child: const Text('Sim'),
+                                          ),
+                                        ],
+                                      );
+                                    });
+                              },
+                              icon: Icons.delete,
+                              label: 'Deletar',
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSurface,
+                              backgroundColor: Colors.red.shade200,
+                            ),
+                          ],
+                        ),
+                        endActionPane: ActionPane(
+                          extentRatio: .55,
+                          motion: const ScrollMotion(),
+                          children: [
+                            SlidableAction(
+                              onPressed: (context) {
+                                Share.share('Veja que interessante essa reflexão:\n${annotation.title} ${annotation.content}');
+                              },
+                              icon: Icons.share,
+                              label: 'Share',
+                              backgroundColor: Theme.of(context)
+                                  .buttonTheme
+                                  .colorScheme!
+                                  .background,
+                            ),
+                            SlidableAction(
+                              borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
+                              onPressed: (context) {
+                                value.copyText(
+                                    annotation.book,
+                                    annotation.content,
+                                    annotation.chapter,
+                                    annotation.verseEnd!);
+                              },
+                              icon: Icons.copy,
+                              label: 'Copiar',
+                              backgroundColor: Theme.of(context)
+                                  .buttonTheme
+                                  .colorScheme!
+                                  .background
+                                  .withOpacity(0.9),
+                            )
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 12),
+                          child: Column(
                             children: [
-                              SlidableAction(
-                                onPressed: (context) {
-                                  Share.share('Veja que interessante essa reflexão:\n${annotation.title} ${annotation.content}');
-                                },
-                                icon: Icons.share,
-                                label: 'Share',
-                                backgroundColor: Theme.of(context)
-                                    .buttonTheme
-                                    .colorScheme!
-                                    .background,
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    annotation.title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge,
+                                  ),
+                                  TextButton(
+                                    onPressed: (() {
+                                      versesProvider.clear();
+                                      versesProvider.loadVerses(
+                                          list.indexOf(bookInfo.first),
+                                          annotation.book);
+                                      GoToVerseScreen().goToVersePage(
+                                          annotation.book,
+                                          bookInfo[0]['abbrev'],
+                                          list.indexOf(bookInfo.first),
+                                          bookInfo[0]['chapters'].length,
+                                          annotation.chapter,
+                                          annotation.verseEnd ?? 1);
+                                    }),
+                                    style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary),
+                                    child: Row(children: [
+                                      Text('Ler passagem  ',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge),
+                                      Icon(Icons.menu_book,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onError)
+                                    ]),
+                                  )
+                                ],
                               ),
-                              SlidableAction(
-                                borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
-                                onPressed: (context) {
-                                  value.copyText(
-                                      annotation.book,
-                                      annotation.content,
-                                      annotation.chapter,
-                                      annotation.verseEnd!);
-                                },
-                                icon: Icons.copy,
-                                label: 'Copiar',
-                                backgroundColor: Theme.of(context)
-                                    .buttonTheme
-                                    .colorScheme!
-                                    .background
-                                    .withOpacity(0.9),
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12.0),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .background,
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: Text(annotation.content,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge),
                               )
                             ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 12),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      annotation.title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge,
-                                    ),
-                                    TextButton(
-                                      onPressed: (() {
-                                        versesProvider.clear();
-                                        versesProvider.loadVerses(
-                                            list.indexOf(bookInfo.first),
-                                            annotation.book);
-                                        GoToVerseScreen().goToVersePage(
-                                            annotation.book,
-                                            bookInfo[0]['abbrev'],
-                                            list.indexOf(bookInfo.first),
-                                            bookInfo[0]['chapters'].length,
-                                            annotation.chapter,
-                                            annotation.verseEnd ?? 1);
-                                      }),
-                                      style: TextButton.styleFrom(
-                                          foregroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary),
-                                      child: Row(children: [
-                                        Text('Ler passagem  ',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge),
-                                        Icon(Icons.menu_book,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onError)
-                                      ]),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(12.0),
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .background,
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Text(annotation.content,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge),
-                                )
-                              ],
-                            ),
                           ),
                         ),
                       ),
                     ),
-                  );
-                });
-          },
-        ),
+                  ),
+                );
+              });
+        },
       ),
     );
   }

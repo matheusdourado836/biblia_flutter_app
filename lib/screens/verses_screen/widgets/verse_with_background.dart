@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
@@ -35,7 +36,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
 
     print('OLHA O LENGTH $length');
     if(length <= 360) {
-     calculatedFontSize = 20;
+      calculatedFontSize = 20;
     }else if(length > 360 && length <= 600) {
       calculatedFontSize = 15;
     }else if(length > 600 && length <= 900) {
@@ -201,32 +202,35 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),
                         ),
-                        SizedBox(
-                          height: 60,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: 10,
-                            itemBuilder: (context, index) {
-                              if(index == 0) {
-                                return NewImageContainer(onTap: (() => setState(() {
-                                    _selectedColor = null;
-                                    futureBackground = service.getRandomImage();
-                                  }))
-                                );
-                              }
-                              if(index == 9) {
-                                return AddMoreContainer(onTap: (() => setState(() {
-                                  _generatedColors = [];
-                                  _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
-                                })),
-                                );
-                              }
-                              return ColorContainer(
-                                color: _selectedColor,
-                                listColors: _generatedColors[index],
-                                onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
-                              );
-                          }),
+                        Padding(
+                          padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 22.0, left: 16, right: 16) : EdgeInsets.zero,
+                          child: SizedBox(
+                            height: 60,
+                            child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 10,
+                                itemBuilder: (context, index) {
+                                  if(index == 0) {
+                                    return NewImageContainer(onTap: (() => setState(() {
+                                      _selectedColor = null;
+                                      futureBackground = service.getRandomImage();
+                                    }))
+                                    );
+                                  }
+                                  if(index == 9) {
+                                    return AddMoreContainer(onTap: (() => setState(() {
+                                      _generatedColors = [];
+                                      _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
+                                    })),
+                                    );
+                                  }
+                                  return ColorContainer(
+                                    color: _selectedColor,
+                                    listColors: _generatedColors[index],
+                                    onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
+                                  );
+                                }),
+                          ),
                         )
                       ],
                     ),
@@ -277,8 +281,8 @@ class ColorContainer extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 65,
+            height: 65,
             color: listColors,
           ),
         ),
@@ -287,8 +291,8 @@ class ColorContainer extends StatelessWidget {
             : InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 65,
+            height: 65,
             color: Colors.black.withOpacity(.45),
             child: const Icon(Icons.check, color: Colors.white, size: 32,),
           ),
@@ -305,11 +309,11 @@ class AddMoreContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 65,
+      height: 65,
       color: Colors.white,
       child: IconButton(
-          onPressed: onTap, icon: const Icon(Icons.add)
+          onPressed: onTap, icon: const Icon(Icons.add, color: Colors.black,)
       ),
     );
   }
@@ -324,14 +328,11 @@ class NewImageContainer extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 60,
-        height: 60,
+        width: 65,
+        height: 65,
         color: Colors.white,
-        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),)),
+        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black),)),
       ),
     );
   }
 }
-
-
-

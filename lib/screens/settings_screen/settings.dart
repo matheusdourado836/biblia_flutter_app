@@ -98,7 +98,7 @@ class _OptionsState extends State<Options> {
                                               .background,
                                           value: _sliderValue,
                                           min: 8.0,
-                                          max: 50.0,
+                                          max: 40.0,
                                           onChanged: (double value) {
                                             setState(() {
                                               _sliderValue = value;
@@ -150,8 +150,8 @@ class _OptionsState extends State<Options> {
                               });
                         }),
                         child: Container(
-                          height: 50,
-                          width: 50,
+                          height: 60,
+                          width: 60,
                           decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(14.0)),
@@ -179,16 +179,18 @@ class _OptionsState extends State<Options> {
                       'Ordem dos livros:',
                       style: TextStyle(fontSize: 18),
                     ),
-                    OrderByDropDown()
+                    Expanded(child: OrderByDropDown())
                   ],
                 ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Preferência de Tema:',
-                    style: TextStyle(fontSize: 18),
+                  const Expanded(
+                    child: Text(
+                      'Preferência de Tema:',
+                      style: TextStyle(fontSize: 18),
+                    ),
                   ),
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
@@ -247,51 +249,47 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
 
   @override
   Widget build(BuildContext context) {
-    final chaptersProvider =
-        Provider.of<ChaptersProvider>(context, listen: false);
+    final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: SizedBox(
-        width: 140,
-        child: DropdownButton<String>(
-          underline: Container(
-            height: 0,
-            color: Colors.transparent,
-          ),
-          itemHeight: 150,
-          style: Theme.of(context).dropdownMenuTheme.textStyle,
-          isExpanded: true,
-          value: _selectedOption,
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedOption = newValue!;
-            });
-            chaptersProvider.setOrderStyle(_selectedOption);
-          },
-          items: <String>[
-            'Padrão',
-            'Cronológica',
-            'Por estilo\n(pentateuco, históricos, proféticos)',
-          ].map<DropdownMenuItem<String>>((String value) {
-            reducedValues.add(Center(
-              child: (value.startsWith('Por'))
-                  ? Text(value.substring(0, 10))
-                  : Text(value),
-            ));
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Center(
-                  child: Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              )),
-            );
-          }).toList(),
-          selectedItemBuilder: (BuildContext context) {
-            return reducedValues;
-          },
+      child: DropdownButton<String>(
+        underline: Container(
+          height: 0,
+          color: Colors.transparent,
         ),
+        itemHeight: 150,
+        style: Theme.of(context).dropdownMenuTheme.textStyle,
+        isExpanded: true,
+        value: _selectedOption,
+        onChanged: (String? newValue) {
+          setState(() {
+            _selectedOption = newValue!;
+          });
+          chaptersProvider.setOrderStyle(_selectedOption);
+        },
+        items: <String>[
+          'Padrão',
+          'Cronológica',
+          'Por estilo\n(pentateuco, históricos, proféticos)',
+        ].map<DropdownMenuItem<String>>((String value) {
+          reducedValues.add(Center(
+            child: (value.startsWith('Por'))
+                ? Text(value.substring(0, 10))
+                : Text(value),
+          ));
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Center(
+                child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            )),
+          );
+        }).toList(),
+        selectedItemBuilder: (BuildContext context) {
+          return reducedValues;
+        },
       ),
     );
   }
