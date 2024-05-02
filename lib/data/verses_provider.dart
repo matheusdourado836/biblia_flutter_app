@@ -106,16 +106,11 @@ class VersesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<int, dynamic>> loadVerses(int bookIndex, String bookName, {int versionIndex = 0}) async {
+  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {int versionIndex = 0}) {
     if (_listMapVerses.isEmpty) {
       List<dynamic> chapters = _bibleData.data[versionIndex][bookIndex]['chapters'];
       for (int i = 0; i < chapters.length; i++) {
         refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
-        // try {
-        //   refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
-        // } catch (e) {
-        //   log('ESSE FOI O ERRO: $e');
-        // }
       }
       notifyListeners();
       return _allVerses;

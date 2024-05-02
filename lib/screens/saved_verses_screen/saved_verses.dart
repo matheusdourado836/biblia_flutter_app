@@ -209,7 +209,7 @@ class _SavedVersesState extends State<SavedVerses> {
         int chapter = objetosFiltrados[index].chapter;
         String verse = objetosFiltrados[index].verse;
         String version = bibleDataController.getVersionName(list[index].version);
-        int verseNumber = objetosFiltrados[index].verseStart;
+        int verseNumber = objetosFiltrados[index].verseNumber;
         String verseColor = objetosFiltrados[index].verseColor;
 
         return Padding(

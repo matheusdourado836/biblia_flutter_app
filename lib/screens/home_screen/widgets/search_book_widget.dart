@@ -10,6 +10,15 @@ class SearchBookWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if(books.isEmpty) {
+      return Column(
+        children: [
+          Image.asset('assets/images/not_found.png', width: 230, height: 230),
+          const Text('Livro não encontrado...\nverifique a ortografia e tente novamente', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+        ],
+      );
+    }
+
     return ListView.builder(
       shrinkWrap: true,
       itemCount: books.length,

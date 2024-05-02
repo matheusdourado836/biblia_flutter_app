@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone_updated_gradle/flutter_native_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -38,6 +39,7 @@ class NotificationService {
     if(notificationResponse != null) {
       if (notificationResponse.payload != null && notificationResponse.payload!.isNotEmpty) {
         final payload = notificationResponse.payload;
+        print('OLHA A MENSAGEM AEEEEEE $payload');
         if(payload !=  null) {
           GoToVerseScreen().goToVersePage(
               payload.split(' ')[0],
@@ -54,10 +56,11 @@ class NotificationService {
 
   showNotification(CustomNotification notification) {
     androidNotificationDetails = const AndroidNotificationDetails(
-        'versiculo_diario_notification', 'versiculo_diario',
-        importance: Importance.max,
-        priority: Priority.max,
-        enableVibration: true);
+      'versiculo_diario_notification', 'versiculo_diario',
+      importance: Importance.max,
+      priority: Priority.max,
+      enableVibration: true,
+    );
 
     localNotificationsPlugin.show(
         notification.id,
