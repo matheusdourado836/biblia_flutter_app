@@ -2,6 +2,11 @@
     package="com.bibleWise.biblia_flutter_app"
     android:versionCode="39"
     android:versionName="6.3.0" >
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />

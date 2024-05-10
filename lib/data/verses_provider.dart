@@ -452,4 +452,12 @@ class VersesProvider extends ChangeNotifier {
       }
     }
   }
+
+  void highlightSpeechBloc(int chapter, int count) {
+    if(count > 0) {
+      _allVerses[chapter][count - 1]["isSelected"] = false;
+    }
+    _allVerses[chapter][count]["isSelected"] = true;
+    notifyListeners();
+  }
 }

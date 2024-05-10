@@ -6,6 +6,7 @@ import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../helpers/calculate_font_size.dart';
 import '../../home_screen/widgets/random_verse_widget.dart';
 
 class VerseWithBackground extends StatefulWidget {
@@ -29,23 +30,6 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
   bool realign = false;
   int length = 0;
   String reference = '';
-
-  double calculateFontSize() {
-    double calculatedFontSize = 20;
-
-    print('OLHA O LENGTH $length');
-    if(length <= 360) {
-     calculatedFontSize = 20;
-    }else if(length > 360 && length <= 600) {
-      calculatedFontSize = 15;
-    }else if(length > 600 && length <= 900) {
-      calculatedFontSize = 12;
-    }else {
-      calculatedFontSize = 10;
-    }
-
-    return calculatedFontSize;
-  }
 
   Color generateRandomColor() {
     final Random random = Random();
@@ -138,7 +122,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                                         style: TextStyle(
                                             fontWeight: FontWeight.w500,
                                             color: Colors.white,
-                                            fontSize: calculateFontSize()
+                                            fontSize: calculateFontSize(length)
                                         )
                                     ),
                                 ],
@@ -178,6 +162,9 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               const EdgeInsets.only(left: 32, bottom: 6.0),
                               child: IconButton(
                                 onPressed: (() {
+                                  for(var element in widget.content) {
+                                    element["isSelected"] = true;
+                                  }
                                   versesProvider.copyVerses(widget.content);
                                 }),
                                 icon: const Icon(Icons.copy),

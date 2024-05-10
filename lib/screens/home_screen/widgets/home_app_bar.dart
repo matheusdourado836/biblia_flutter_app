@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';

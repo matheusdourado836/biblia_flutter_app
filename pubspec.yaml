@@ -52,6 +52,7 @@ dependencies:
   google_mobile_ads: ^4.0.0
   page_transition: ^2.1.0
   flutter_animate: ^4.5.0
+  flutter_tts: ^4.0.2
   provider:
   flutter:
     sdk: flutter
