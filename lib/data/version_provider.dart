@@ -10,6 +10,7 @@ class VersionProvider extends ChangeNotifier {
     'BBE (Bible in Basic English)',
     'KJV (King James Version)',
     'RVR (Versão Espanhola Reina-Valera)',
+    'APEE (Versão em Francês)',
     'GREGO'
   ];
   String _selectedOption = 'NVI (Nova Versão Internacional)';

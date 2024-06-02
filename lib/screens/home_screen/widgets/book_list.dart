@@ -1,6 +1,8 @@
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import '../../../models/book.dart';
 
@@ -68,11 +70,12 @@ class _BookListState extends State<BookList> {
                               style: (index < 39) ? Theme.of(context).textTheme.titleLarge!.copyWith(fontSize: 18) : Theme.of(context).textTheme.bodyLarge,
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                            ),
                           ),
-                          const Spacer(),
                           SizedBox(
                             child: (widget.bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
                           )
@@ -157,11 +160,12 @@ class _ChronologicalOrderState extends State<ChronologicalOrder> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                    ),
                   ),
-                  const Spacer(),
                   SizedBox(
                     child: (widget.bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
                   )
@@ -281,11 +285,12 @@ class BookItems extends StatelessWidget {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Text(bookName, style: const TextStyle(fontSize: 18),),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(bookName, style: const TextStyle(fontSize: 18),),
+                ),
               ),
-              const Spacer(),
               SizedBox(
                 child: (bookIsRead(bookName)) ? const Icon(Icons.check_rounded) : null,
               )

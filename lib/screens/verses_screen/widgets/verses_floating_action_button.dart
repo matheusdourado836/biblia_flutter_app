@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
@@ -35,6 +37,7 @@ class VersesFloatingActionButton extends StatefulWidget {
 class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton> {
   int _chapter = 0;
   int _chapters = 0;
+  bool _resetCounter = false;
 
   void initTts() {
     _flutterTts.getVoices.then((value) {
@@ -68,17 +71,46 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     _flutterTts.setVoice({"name": voice["name"], "locale": voice["locale"]});
   }
 
+  void goToNextChapter() {
+    if (_chapter < _chapters) {
+      setState(() => _chapter++);
+      widget.pageController.nextPage(duration: 500.ms, curve: Curves.linear);
+    }
+  }
+
+  void goToPrevChapter() {
+    if (_chapter > 1) {
+      setState(() => _chapter--);
+      widget.pageController.previousPage(duration: 500.ms, curve: Curves.linear);
+    }
+  }
+
+  void initNextChapter() {
+    Navigator.pop(context);
+    setState(() => _isSpeaking = true);
+    Future.delayed(1000.ms).whenComplete(() {
+      showModalBottomSheet(context: context, isScrollControlled: true, isDismissible: false, enableDrag: false, barrierColor: Colors.transparent, builder: (context) => SpeechBottomSheet(verses: widget.verses, chapter: widget.chapter, reset: reset));
+      _flutterTts.speak('${widget.verses[_count]["bookName"]}, Capítulo ${widget.verses[_count]["chapter"]}, verso, 1');
+      versesProvider.highlightSpeechBloc(widget.chapter, _count);
+      setState(() => _resetCounter = true);
+    });
+
+  }
+
   @override
   void initState() {
     _chapter = widget.chapter;
     _chapters = widget.chapters;
-    print('CONTADOR ESTA HEIN $_count');
     initTts();
     _flutterTts.setCompletionHandler(() {
       setState(() => _count++);
+      if(_resetCounter) {
+        setState(() {_count = 0; _resetCounter = false;});
+      }
       if(_count == widget.verses.length) {
         reset();
-        Navigator.pop(context);
+        goToNextChapter();
+        initNextChapter();
         return;
       }
       versesProvider.highlightSpeechBloc(widget.chapter, _count);
@@ -94,8 +126,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      height:
-      (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+      height: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
           ? 146
           : 0,
       child: Row(
@@ -135,26 +166,16 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
           heroTag: 'btn3',
           backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
           onPressed: (() {
-            (widget.notScrolling &&
-                versesProvider.bottomSheetOpened == false)
-                ? setState(() {
-              if (_chapter < _chapters) {
-                _chapter++;
-                widget.pageController.nextPage(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.linear);
-              }
-            })
+            (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+                ? goToNextChapter()
                 : null;
           }),
           child: Icon(
             Icons.arrow_forward_ios_rounded,
-            size: (widget.notScrolling &&
-                versesProvider.bottomSheetOpened == false)
+            size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
                 ? 22
                 : 0,
-            color:
-            Theme.of(context).buttonTheme.colorScheme?.onSurface,
+            color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
           ),
         ),
       ],
@@ -169,29 +190,16 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         backgroundColor:
         Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: (() {
-          (widget.notScrolling &&
-              versesProvider.bottomSheetOpened == false)
-              ? setState(() {
-            if (_chapter > 1) {
-              _chapter--;
-              widget.pageController.previousPage(
-                  duration:
-                  const Duration(milliseconds: 500),
-                  curve: Curves.linear);
-            }
-          })
+          (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+              ? goToPrevChapter()
               : null;
         }),
         child: Icon(
           Icons.arrow_back_ios_rounded,
-          size: (widget.notScrolling &&
-              versesProvider.bottomSheetOpened == false)
+          size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
               ? 22
               : 0,
-          color: Theme.of(context)
-              .buttonTheme
-              .colorScheme
-              ?.onSurface,
+          color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
         ),
       ),
     );
@@ -265,6 +273,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
       setState(() => _count++);
       scrollTo();
       _flutterTts.speak(widget.verses[_count]["verse"]);
+      setState(() => _isSpeaking = true);
     }
   }
 
@@ -275,6 +284,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
       setState(() => _count--);
       scrollTo();
       _flutterTts.speak(widget.verses[_count]["verse"]);
+      setState(() => _isSpeaking = true);
     }
   }
 
@@ -287,6 +297,9 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
 
   @override
   void initState() {
+    if(_count < 0) {
+      setState(() => _count = 0);
+    }
     _flutterTts.setSpeechRate(_speechRate);
     super.initState();
   }

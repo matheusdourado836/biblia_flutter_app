@@ -13,7 +13,7 @@ class BibleData {
   }
 
   BibleData._internal() {
-    loadBibleData(['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']).then((value) {
+    loadBibleData(['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'fr', 'el_greek']).then((value) {
       _data = value;
     });
   }

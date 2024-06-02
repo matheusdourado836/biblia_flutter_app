@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import '../../../data/theme_provider.dart';
 import '../../../data/verses_provider.dart';
@@ -35,6 +36,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             annotationsWidget: _annotationsWidget(context, versesProvider.qtdAnnotations),
             searchPassagesWidget: _searchPassagesWidget(context),
             toggleModeWidget: _toggleModeWidget(context),
+            devocionalWidget: _devocionaisWidget(context),
             settingsWidget: _settingsWidget(context),
         )
             : _PortraitDrawer(
@@ -43,6 +45,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             annotationsWidget: _annotationsWidget(context, versesProvider.qtdAnnotations),
             searchPassagesWidget: _searchPassagesWidget(context),
             toggleModeWidget: _toggleModeWidget(context),
+            devocionalWidget: _devocionaisWidget(context),
             settingsWidget: _settingsWidget(context),
         );
       },
@@ -146,6 +149,34 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
+  Widget _devocionaisWidget(BuildContext context) {
+    return InkWell(
+      radius: 50,
+      onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Consumer<ThemeProvider>(
+              builder: (context, theme, _) {
+                return SvgPicture.asset(
+                  'assets/images/bible.svg',
+                  width: 20,
+                  height: 20,
+                  colorFilter: (theme.isOn)
+                      ? ColorFilter.mode(Theme.of(context).colorScheme.primary, BlendMode.srcIn)
+                      : const ColorFilter.mode(Color.fromRGBO(250, 250, 250, 1), BlendMode.srcIn),
+                );
+              },
+            ),
+            const SizedBox(width: 18),
+            const Text('Devocionais')
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _settingsWidget(BuildContext context) {
     return ListTileDrawer(
       onTap: (() {Navigator.pushNamed(context, 'settings');}),
@@ -183,8 +214,9 @@ class _PortraitDrawer extends StatelessWidget {
   final Widget annotationsWidget;
   final Widget searchPassagesWidget;
   final Widget toggleModeWidget;
+  final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _PortraitDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.settingsWidget}) : super(key: key);
+  const _PortraitDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +233,7 @@ class _PortraitDrawer extends StatelessWidget {
           annotationsWidget,
           searchPassagesWidget,
           toggleModeWidget,
+          devocionalWidget,
           const Spacer(),
           settingsWidget,
         ],
@@ -238,8 +271,9 @@ class _LandscapeDrawer extends StatelessWidget {
   final Widget annotationsWidget;
   final Widget searchPassagesWidget;
   final Widget toggleModeWidget;
+  final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _LandscapeDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.settingsWidget}) : super(key: key);
+  const _LandscapeDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -257,6 +291,7 @@ class _LandscapeDrawer extends StatelessWidget {
               annotationsWidget,
               searchPassagesWidget,
               toggleModeWidget,
+              devocionalWidget,
               const Spacer(),
               settingsWidget
             ],
