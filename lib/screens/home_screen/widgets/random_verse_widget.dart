@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
+import 'package:biblia_flutter_app/helpers/calculate_font_size.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -95,7 +96,13 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                                       children: <TextSpan>[
                                         TextSpan(
                                             text: verse,
-                                            style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, color: Colors.white))
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.white,
+                                              fontSize: calculateFontSize(verse.length)
+                                            )
+                                        )
                                       ]),
                                   textAlign: TextAlign.center,
                                 ),

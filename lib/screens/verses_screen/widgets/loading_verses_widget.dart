@@ -16,7 +16,7 @@ import '../../../data/bible_data_controller.dart';
 import '../../../models/annotation.dart';
 import '../verses_screen.dart';
 
-late ItemScrollController itemScrollController;
+ItemScrollController? itemScrollController;
 final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 
 class LoadingVersesWidget extends StatefulWidget {

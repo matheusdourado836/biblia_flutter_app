@@ -132,6 +132,7 @@ class _VersesScreenState extends State<VersesScreen> {
             notScrolling: notScrolling,
             chapter: _chapter,
             chapters: _chapters,
+            verses: item.allVerses![_chapter],
             pageController: _pageController
           );
         },

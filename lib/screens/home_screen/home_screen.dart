@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 late VersesProvider versesProvider;
 
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+    setUserId();
     bibleDataController.getBooks();
     getLayout();
     final chapterProvider = Provider.of<ChaptersProvider>(context, listen: false);
@@ -43,6 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
     versesProvider.getImage();
     _createBannerAd();
     super.initState();
+  }
+
+  void setUserId() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('userId');
+    userId ??= const Uuid().v4();
+    prefs.setString('userId', userId);
   }
 
   void _createBannerAd() {

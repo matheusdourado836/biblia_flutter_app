@@ -18,8 +18,8 @@ class BibleService {
   Future<bool> checkInternetConnectivity() async {
     try {
       var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.mobile ||
-          connectivityResult == ConnectivityResult.wifi) {
+      if (connectivityResult.contains(ConnectivityResult.mobile)||
+          connectivityResult.contains(ConnectivityResult.wifi)) {
         return true;
       } else {
         return false;
@@ -54,5 +54,21 @@ class BibleService {
     final String url = randomPhoto['src']['large2x'];
 
     return url;
+  }
+
+  Future<Map<String, dynamic>> getOnlyImage() async {
+    http.Response response = await client.get(
+        Uri.parse(imageUrl),
+        headers: {"Authorization": "$imageToken"});
+
+    if (response.statusCode != 200) {
+      throw HttpException(response.statusCode.toString());
+    }
+    final List<dynamic> photos = jsonDecode(response.body)['photos'];
+    final Map<String, dynamic> randomPhoto =
+    photos[Random().nextInt(photos.length)];
+    final String url = randomPhoto['src']['large2x'];
+
+    return {"url": url, "bodyBytes": response.bodyBytes};
   }
 }

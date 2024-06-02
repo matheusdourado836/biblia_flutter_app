@@ -56,7 +56,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
       contador.add(verse["verseNumber"] - 1);
       _versesProvider.versesFound(contador);
       _searchVersesProvider.changeColorOfMatchedWord(text.toLowerCase(), verse["verse"].toString(), textOnColoredBackground: (verse["verseColor"] != Colors.transparent) ? true : false);
-      itemScrollController.jumpTo(index: _versesProvider.versesFoundList[0]);
+      itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[0]);
       _versesProvider.resetVersesFoundCounter();
       final List<TextSpan> listTextSpan = [];
       for (var element in _searchVersesProvider.highlightedWords) {
@@ -107,7 +107,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
                      child: IconButton(padding: const EdgeInsets.only(bottom: 0), onPressed: (() {
                        if(_versesProvider.versesFoundCounter < _versesProvider.versesFoundList.length) {
                          _versesProvider.increaseVersesFoundCounter();
-                         itemScrollController.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
+                         itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
                        }
                      }), icon: const Icon(Icons.arrow_drop_up), iconSize: 28,),
                    ),
@@ -119,7 +119,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
                      child: IconButton(padding: const EdgeInsets.only(bottom: 10), onPressed: (() {
                        if(_versesProvider.versesFoundCounter > 1) {
                          _versesProvider.decreaseVersesFoundCounter();
-                         itemScrollController.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
+                         itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
                        }
                      }), icon: const Icon(Icons.arrow_drop_down), iconSize: 28),
                    ),

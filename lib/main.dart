@@ -1,10 +1,17 @@
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
+import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/annotation_widget.dart';
 import 'package:biblia_flutter_app/screens/annotations_screen/annotations_screen.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/devocional_selected.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/devocionais_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/plans/one_year_plan/one_year_plan_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/plans/one_year_plan/widgets/selected_day_widget.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/plans/three_months_plan/three_months_plan_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/saved_verses.dart';
@@ -39,15 +46,15 @@ void main() async {
   Animate.restartOnHotReload = true;
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  MobileAds.instance.updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));
+  MobileAds.instance
+      .updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));
   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  _themeMode = (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
+  _themeMode =
+      (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
   await dotenv.load(fileName: ".env");
-  await bibleData.loadBibleData(
-    ['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']
-  );
+  await bibleData.loadBibleData(['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
   BibleService().checkInternetConnectivity().then((value) async {
-    if(value) {
+    if (value) {
       NotificationService notificationService = NotificationService();
       FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -68,13 +75,13 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        Provider<NotificationService>(
-            create: (context) => NotificationService()),
+        Provider<NotificationService>(create: (context) => NotificationService()),
         ChangeNotifierProvider(create: (context) => ChaptersProvider()),
         ChangeNotifierProvider(create: (context) => VersesProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => SearchVersesProvider()),
         ChangeNotifierProvider(create: (context) => VersionProvider()),
+        ChangeNotifierProvider(create: (context) => DevocionalProvider()),
       ],
       child: const MyApp(),
     ),
@@ -101,66 +108,89 @@ class MyApp extends StatelessWidget {
         "annotations_screen": (context) => const AnnotationsScreen(),
         "saved_verses": (context) => const SavedVerses(),
         "search_screen": (context) => const SearchScreen(),
+        "devocionais_screen": (context) => const DevocionaisScreen(),
+        "feed_screen": (context) => const FeedScreen(),
         "random_verse_screen": (context) => const RandomVerseScreen(),
-        "settings": (context) => const SettingsScreen()
+        "settings": (context) => const SettingsScreen(),
+        "one_year": (context) => const OneYearPlanScreen(),
+        "three_months": (context) => const ThreeMonthsPlanScreen(),
       },
       onGenerateRoute: (settings) {
-        if(settings.name == 'home') {
-          return PageTransition(child: const HomeScreen(), type: PageTransitionType.bottomToTop, duration: 400.ms);
-        }
-        if (settings.name == 'chapter_screen') {
-          Map<String, dynamic>? routeArgs =
-              settings.arguments as Map<String, dynamic>?;
-          return PageTransition(
-            child: ChapterScreen(
-              bookName: routeArgs?['bookName'] as String,
-              abbrev: routeArgs?['abbrev'],
-              bookIndex: routeArgs?['bookIndex'],
-              chapters: routeArgs?['chapters'],
-            ),
-            duration: 500.ms,
-            type: PageTransitionType.rightToLeftWithFade,
-          );
-        } else if (settings.name == 'verses_screen') {
-          Map<String, dynamic>? map =
-              settings.arguments as Map<String, dynamic>?;
-          return PageTransition(
-            child: VersesScreen(
-              bookName: map?["bookName"],
-              abbrev: map?["abbrev"],
-              bookIndex: map?["bookIndex"],
-              chapters: map?["chapters"],
-              chapter: map?["chapter"],
-              verseNumber: map?["verseNumber"],
-            ),
-            type: PageTransitionType.rightToLeftWithFade,
-            duration: 500.ms
-          );
-        } else if(settings.name == 'verse_with_background') {
-          Map<String, dynamic>? map =
-          settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (context) {
-            return VerseWithBackground(
+        switch (settings.name) {
+          case 'home':
+            return PageTransition(
+              child: const HomeScreen(),
+              type: PageTransitionType.bottomToTop,
+              duration: Duration(milliseconds: 800),
+            );
+
+          case 'chapter_screen':
+            Map<String, dynamic>? routeArgs = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              child: ChapterScreen(
+                bookName: routeArgs?['bookName'] as String,
+                abbrev: routeArgs?['abbrev'],
+                bookIndex: routeArgs?['bookIndex'],
+                chapters: routeArgs?['chapters'],
+              ),
+              duration: Duration(milliseconds: 500),
+              type: PageTransitionType.rightToLeftWithFade,
+            );
+
+          case 'verses_screen':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              child: VersesScreen(
+                bookName: map?["bookName"],
+                abbrev: map?["abbrev"],
+                bookIndex: map?["bookIndex"],
+                chapters: map?["chapters"],
+                chapter: map?["chapter"],
+                verseNumber: map?["verseNumber"],
+              ),
+              type: PageTransitionType.rightToLeftWithFade,
+              duration: Duration(milliseconds: 500),
+            );
+
+          case 'verse_with_background':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(builder: (context) {
+              return VerseWithBackground(
                 bookName: map?["bookName"],
                 chapter: map?["chapter"],
                 verseStart: map?["verseStart"],
                 verseEnd: map?["verseEnd"],
-                content: map?["content"]
-            );
-          });
-        } else if (settings.name == 'annotation_widget') {
-          Map<String, dynamic>? map =
-          settings.arguments as Map<String, dynamic>?;
-          return MaterialPageRoute(builder: (context) {
-            return AnnotationWidget(
-              annotation: map?["annotation"],
-              verses: map?["verses"],
-              isEditing: map?["isEditing"],
-            );
-          });
-        }
+                content: map?["content"],
+              );
+            });
 
-        return null;
+          case 'annotation_widget':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(builder: (context) {
+              return AnnotationWidget(
+                annotation: map?["annotation"],
+                verses: map?["verses"],
+                isEditing: map?["isEditing"],
+              );
+            });
+
+          case 'devocional_selected':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              type: PageTransitionType.rightToLeftWithFade,
+              child: DevocionalSelected(
+                devocional: map?["devocional"],
+              ),
+            );
+          case 'selected_day':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              type: PageTransitionType.rightToLeftWithFade,
+              child: SelectedDayWidget(day: map?["day"], chaptersLength: map?["chaptersLength"],),
+            );
+          default:
+            return null;
+        }
       },
     );
   }

@@ -204,6 +204,10 @@ class VersesProvider extends ChangeNotifier {
     await service.getRandomImage().then((value) => _verseInfo["url"] = value);
   }
 
+  Future<Map<String, dynamic>> getOnlyImage() async {
+    return await service.getOnlyImage();
+  }
+
   Future<Map<String, dynamic>> getRandomVerse() async {
     await service.getRandomVerse()
         .then((value) => {
@@ -446,5 +450,13 @@ class VersesProvider extends ChangeNotifier {
         }
       }
     }
+  }
+
+  void highlightSpeechBloc(int chapter, int count) {
+    if(count > 0) {
+      _allVerses[chapter][count - 1]["isSelected"] = false;
+    }
+    _allVerses[chapter][count]["isSelected"] = true;
+    notifyListeners();
   }
 }

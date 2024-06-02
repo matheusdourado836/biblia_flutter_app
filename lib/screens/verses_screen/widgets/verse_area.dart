@@ -34,7 +34,10 @@ class _VerseAreaState extends State<VerseArea> {
     final defaultColor = themeColors.verseNumberColor(themeProvider!.isOn);
     final textOnColoredBackground = (widget.verseColor == Theme.of(context).highlightColor) ? themeColors.coloredVerse(themeProvider!.isOn) : themeColors.coloredVerse(true);
     return Container(
-      color: widget.verseColor,
+      decoration: BoxDecoration(
+        color: widget.verseColor,
+        borderRadius: BorderRadius.circular(4)
+      ),
       padding: const EdgeInsets.all(6),
       child: Wrap(
         children: [
