@@ -76,9 +76,8 @@ class _OptionsState extends State<Options> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  actionsAlignment: MainAxisAlignment.center,
                                   title: Text(
-                                      'E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo',
+                                      '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                           fontSize: _sliderValue,
@@ -109,28 +108,7 @@ class _OptionsState extends State<Options> {
                                     ],
                                   ),
                                   actions: [
-                                    ElevatedButton(
-                                      onPressed: (() {
-                                        setState(() {
-                                          _sliderValue = _savedSliderValue;
-                                        });
-                                        Navigator.pop(context);
-                                      }),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Theme.of(context).colorScheme.error,
-                                        minimumSize: const Size(110, 42)
-                                      ),
-                                      child: Text('Cancelar',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displayMedium!
-                                              .copyWith(fontSize: 14)),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Theme.of(context).colorScheme.secondary,
-                                        minimumSize: const Size(110, 42)
-                                      ),
+                                    TextButton(
                                       onPressed: (() {
                                         versesValue.newFontSize(
                                             _sliderValue, true);
@@ -139,11 +117,16 @@ class _OptionsState extends State<Options> {
                                         });
                                         Navigator.pop(context);
                                       }),
-                                      child: Text('Salvar',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displayMedium!
-                                              .copyWith(fontSize: 14)),
+                                      child: const Text('Salvar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: (() {
+                                        setState(() {
+                                          _sliderValue = _savedSliderValue;
+                                        });
+                                        Navigator.pop(context);
+                                      }),
+                                      child: const Text('Cancelar'),
                                     ),
                                   ],
                                 );

@@ -8,6 +8,7 @@ import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_floating
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../helpers/loading_widget.dart';
+import '../../models/daily_read.dart';
 
 int initialVerse = 0;
 ThemeProvider? themeProvider;
@@ -19,6 +20,7 @@ class VersesScreen extends StatefulWidget {
   final int chapters;
   final int chapter;
   final int verseNumber;
+  final bool? readingPlan;
 
   const VersesScreen(
       {Key? key,
@@ -27,7 +29,7 @@ class VersesScreen extends StatefulWidget {
       required this.bookName,
       required this.abbrev,
       required this.chapters,
-      required this.bookIndex})
+      required this.bookIndex, this.readingPlan})
       : super(key: key);
 
   @override
@@ -101,6 +103,7 @@ class _VersesScreenState extends State<VersesScreen> {
                       chapter: i + 1,
                       verseColors: verseColor,
                       listVerses: value.allVerses!,
+                      readingPlan: widget.readingPlan,
                     );
                   },
                   onPageChanged: (page) {

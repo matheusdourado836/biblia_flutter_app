@@ -1,8 +1,10 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/data/books_dao.dart';
+import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
+import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
@@ -14,6 +16,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:uuid/uuid.dart';
 import '../../../data/bible_data_controller.dart';
 import '../../../models/annotation.dart';
+import '../../../models/daily_read.dart';
 import '../verses_screen.dart';
 
 ItemScrollController? itemScrollController;
@@ -25,6 +28,7 @@ class LoadingVersesWidget extends StatefulWidget {
   final int bookIndex;
   final int chapter;
   final String verseColors;
+  final bool? readingPlan;
   final Map<int, dynamic> listVerses;
 
   const LoadingVersesWidget({
@@ -34,6 +38,7 @@ class LoadingVersesWidget extends StatefulWidget {
     required this.chapter,
     required this.verseColors,
     required this.bookIndex, required this.listVerses,
+    this.readingPlan,
   }) : super(key: key);
 
   @override
@@ -47,11 +52,18 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   final BooksDao booksDao = BooksDao();
   bool isChapterRead = false;
   int _chapter = 1;
-
+  PlansProvider? _planProvider;
   late VersesProvider _versesProvider;
+  DailyRead? _dailyRead;
+  bool _isLastDay = false;
 
   @override
   void initState() {
+    if(widget.readingPlan != null) {
+      _planProvider = Provider.of<PlansProvider>(context, listen: false);
+      _dailyRead = _planProvider!.dailyReads.firstWhere((element) => element.chapter == '${widget.bookName} ${widget.chapter}');
+      _isLastDay = _planProvider!.dailyReadsGrouped[_planProvider!.dailyReadsGrouped.length - 2].contains(_dailyRead);
+    }
     _chapter = widget.chapter;
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     itemScrollController = ItemScrollController();
@@ -111,12 +123,20 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                       padding: const EdgeInsets.only(top: 16.0, bottom: 180),
                       child: ElevatedButton(
                         onPressed: (() {
-                          if(!isChapterRead) {
-                            chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
-                          } else {
-                            chaptersProvider.deleteChapter(widget.bookName, _chapter.toString());
+                          if(widget.readingPlan == null) {
+                            if(!isChapterRead) {
+                              chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
+                            } else {
+                              chaptersProvider.deleteChapter(widget.bookName, _chapter.toString());
+                            }
+                            setState(() => isChapterRead = !isChapterRead);
+                          }else {
+                            final currentPlan = PlanType.fromCode(_dailyRead!.progressId!);
+                            _dailyRead!.completed == 1 ? _dailyRead!.completed = 0 : _dailyRead!.completed = 1;
+                            _planProvider!.markChapter(_dailyRead!.chapter!, read: _dailyRead!.completed!, progressId: _dailyRead!.progressId!, update: true);
+                            _planProvider!.checkIfCompletedDailyRead(planId: _dailyRead!.progressId!, qtdChapterRequired: planTypeToChapters(planType: currentPlan, lastDay: _isLastDay ? true : null));
+                            setState(() {});
                           }
-                          setState(() => isChapterRead = !isChapterRead);
                         }),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -124,7 +144,9 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                             fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                         ),
-                        child: (isChapterRead) ? const Text('Desmarcar como lido', style: TextStyle(color: Colors.white)) : const Text('Marcar como lido', style: TextStyle(color: Colors.white)),
+                        child: (widget.readingPlan == null)
+                            ? Text((isChapterRead) ? 'Desmarcar como lido' : 'Marcar como lido', style: const TextStyle(color: Colors.white))
+                            : Text((_dailyRead!.completed == 1) ? 'Desmarcar leitura diária' : 'Marcar leitura diária', style: const TextStyle(color: Colors.white)),
                       ),
                     )
                   ],

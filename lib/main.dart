@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
+import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
@@ -10,8 +11,9 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/community/devocion
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/devocionais_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/plans/one_year_plan/one_year_plan_screen.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/plans/one_year_plan/widgets/selected_day_widget.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/selected_day_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/plans/three_months_plan/three_months_plan_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/theme/thematic_selected.dart';
 import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/saved_verses.dart';
@@ -35,6 +37,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/bible_data.dart';
+import 'data/database.dart';
 import 'firebase_options.dart';
 
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
@@ -43,7 +46,6 @@ BibleData bibleData = BibleData();
 int screenWidth = 0;
 
 void main() async {
-  Animate.restartOnHotReload = true;
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   MobileAds.instance
@@ -51,6 +53,7 @@ void main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   _themeMode =
       (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
+  await DatabaseHelper.initializeDatabases();
   await dotenv.load(fileName: ".env");
   await bibleData.loadBibleData(['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
   BibleService().checkInternetConnectivity().then((value) async {
@@ -82,6 +85,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => SearchVersesProvider()),
         ChangeNotifierProvider(create: (context) => VersionProvider()),
         ChangeNotifierProvider(create: (context) => DevocionalProvider()),
+        ChangeNotifierProvider(create: (context) => PlansProvider()),
       ],
       child: const MyApp(),
     ),
@@ -121,7 +125,7 @@ class MyApp extends StatelessWidget {
             return PageTransition(
               child: const HomeScreen(),
               type: PageTransitionType.bottomToTop,
-              duration: Duration(milliseconds: 800),
+              duration: const Duration(milliseconds: 800),
             );
 
           case 'chapter_screen':
@@ -133,7 +137,7 @@ class MyApp extends StatelessWidget {
                 bookIndex: routeArgs?['bookIndex'],
                 chapters: routeArgs?['chapters'],
               ),
-              duration: Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 500),
               type: PageTransitionType.rightToLeftWithFade,
             );
 
@@ -147,9 +151,10 @@ class MyApp extends StatelessWidget {
                 chapters: map?["chapters"],
                 chapter: map?["chapter"],
                 verseNumber: map?["verseNumber"],
+                readingPlan: map?["reading_plan"],
               ),
               type: PageTransitionType.rightToLeftWithFade,
-              duration: Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 500),
             );
 
           case 'verse_with_background':
@@ -186,7 +191,15 @@ class MyApp extends StatelessWidget {
             Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
             return PageTransition(
               type: PageTransitionType.rightToLeftWithFade,
-              child: SelectedDayWidget(day: map?["day"], chaptersLength: map?["chaptersLength"],),
+              child: SelectedDayWidget(day: map?["day"], qtdDays: map?["qtdDays"], chaptersLength: map?["chaptersLength"], dailyRead: map?["dailyRead"],),
+            );
+          case 'thematic_selected':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              type: PageTransitionType.scale,
+              alignment: Alignment.center,
+              duration: 500.ms,
+              child: ThematicSelected(devocional: map?["devocional"]),
             );
           default:
             return null;

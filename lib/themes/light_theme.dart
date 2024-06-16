@@ -59,6 +59,7 @@ ThemeData lightTheme = ThemeData(
       bodyLarge: const TextStyle(
         fontFamily: 'Poppins',
         fontSize: 16,
+        color: Colors.black,
         fontWeight: FontWeight.bold,
       )),
 );

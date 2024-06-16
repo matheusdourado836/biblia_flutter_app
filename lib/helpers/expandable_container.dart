@@ -13,7 +13,7 @@ class ExpandableContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      color: Theme.of(context).colorScheme.primary,
+      color: Theme.of(context).cardTheme.color,
       child: ExpandablePanel(
         theme: const ExpandableThemeData(
             headerAlignment: ExpandablePanelHeaderAlignment.center,
@@ -32,7 +32,8 @@ class ExpandableContainer extends StatelessWidget {
                 ? ElevatedButton(
                   onPressed: (() => Navigator.pushNamed(context, 'devocional_selected', arguments: {"devocional": devocional})),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.tertiary,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Colors.white,
                       fixedSize: const Size(100, 40),
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))

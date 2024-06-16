@@ -52,14 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void onTap() {
     _versesProvider.clear();
-    _versesProvider
-        .loadVerses(map["bookIndex"], map["bookName"],
-            versionIndex:
-                versionProvider.options.indexOf(versionProvider.selectedOption))
-        .catchError((error) => alertDialog(
-            title: 'Erro ao carregar versículo',
-            content:
-                'Não foi possível carregar este versículo\nPor favor tente novamente'));
+    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionIndex: versionProvider.options.indexOf(versionProvider.selectedOption));
     Navigator.pushNamed(context, 'verses_screen', arguments: map);
   }
 

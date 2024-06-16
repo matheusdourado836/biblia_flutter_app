@@ -81,20 +81,22 @@ class DevocionalService {
   Future<String> postDevocional({required Devocional devocional}) async {
     try {
       final devocionalJson = devocional.toJson();
+      devocionalJson["bgImagem"] = "";
+      devocionalJson["bgImagemUser"] = "";
       final docRef = await _database.collection('devocionais').add(devocionalJson);
       if(devocional.bgImagem != null) {
         final fileName = devocional.bgImagem!.split('/').last;
         final bgRef = _storage.ref().child('devocionais/${docRef.id}/bgImage/$fileName');
         await bgRef.putFile(File(devocional.bgImagem!));
         String photoURL = await bgRef.getDownloadURL();
-        updateInPhotoInFirestore(docRef.id, photoURL);
+        updateUserData(docRef.id, {'bgImagem': photoURL});
       }
       if(devocional.bgImagemUser != null) {
         final fileName = devocional.bgImagemUser!.split('/').last;
         final userRef = _storage.ref().child('devocionais/${docRef.id}/bgUserImage/$fileName');
         await userRef.putFile(File(devocional.bgImagemUser!));
         String photoURL = await userRef.getDownloadURL();
-        updateInPhotoInFirestore(docRef.id, photoURL);
+        updateUserData(docRef.id, {'bgImagemUser': photoURL});
       }
 
       _database.collection('devocionais').doc(docRef.id).update({'id': docRef.id});
@@ -104,16 +106,6 @@ class DevocionalService {
     }catch(e) {
       print('NAO FOI POSSIVEL SALVAR O DEVOCIONAL $e');
       return '';
-    }
-  }
-
-  Future<bool> updateInPhotoInFirestore(String id, String? photoUrl) async {
-    try {
-      await _database.collection('devocionais').doc(id).update({'$photoUrl': photoUrl});
-      return true;
-    }catch (e) {
-      print('Não foi possível atualizar a imagem no firestore $e');
-      return false;
     }
   }
 

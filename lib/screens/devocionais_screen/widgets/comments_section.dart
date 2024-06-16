@@ -4,6 +4,7 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_scr
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_skeleton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,8 +23,8 @@ class _CommentsSectionState extends State<CommentsSection> {
   bool _isLoading = false;
 
   Widget _loading() => const SizedBox(
-        height: 25,
-        width: 25,
+        height: 20,
+        width: 20,
         child: CircularProgressIndicator(
           color: Colors.white,
           strokeWidth: 2,
@@ -49,12 +50,12 @@ class _CommentsSectionState extends State<CommentsSection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: null,
-      backgroundColor: Theme.of(context).colorScheme.secondary,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Column(
         children: [
           const Text(
             'Comentários',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           Expanded(
             child: Consumer<DevocionalProvider>(
@@ -65,7 +66,7 @@ class _CommentsSectionState extends State<CommentsSection> {
 
                 if (value.comments.isEmpty) {
                   return const Center(
-                    child: Text('Nenhum comentário ainda...'),
+                    child: Text('Nenhum comentário ainda...\ninicie a conversa', textAlign: TextAlign.center,),
                   );
                 }
 
@@ -97,81 +98,105 @@ class _CommentsSectionState extends State<CommentsSection> {
           ),
           Container(
             decoration: BoxDecoration(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
-                color: Theme.of(context).colorScheme.primary),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                color: Theme.of(context).cardTheme.color
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            alignment: AlignmentDirectional.center,
             child: Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                //crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 200,
-                    child: TextFormField(
-                      controller: _nameController,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      cursorColor: Colors.white,
-                      validator: (value) => value?.isEmpty ?? true
-                          ? 'o nome é obrigatório'
-                          : null,
-                      decoration: const InputDecoration(
-                        hintText: 'Seu nome...',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _commentController,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12),
-                      hintText: 'Adicionar um comentário...',
-                      hintStyle:
-                          const TextStyle(color: Colors.grey, fontSize: 12),
-                      fillColor: Colors.white,
-                      suffixIcon: IconButton(
-                          onPressed: (() {
-                            if (_formKey.currentState!.validate() &&
-                                _commentController.text.isNotEmpty) {
-                              setState(() => _isLoading = true);
-                              final devocionalProvider =
+                  const NoBgUser(),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 150,
+                          height: 50,
+                          child: TextFormField(
+                            controller: _nameController,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            cursorColor: Colors.white,
+                            validator: (value) => value?.isEmpty ?? true
+                                ? 'o nome é obrigatório'
+                                : null,
+                            decoration: InputDecoration(
+                              hintText: 'Seu nome...',
+                              hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
+                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.background)),
+                              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.background)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _commentController,
+                                validator: (value) => value?.isEmpty ?? true
+                                    ? 'o comentário é obrigatório'
+                                    : null,
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                cursorColor: Colors.white,
+                                decoration: InputDecoration(
+                                  hintText: 'Adicionar um comentário...',
+                                  hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
+                                  fillColor: Colors.white,
+                                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.background)),
+                                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.background)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            InkWell(
+                              onTap: (() {
+                                if (_formKey.currentState!.validate() &&
+                                    _commentController.text.isNotEmpty) {
+                                  setState(() => _isLoading = true);
+                                  final devocionalProvider =
                                   Provider.of<DevocionalProvider>(context,
                                       listen: false);
-                              final comment = Comentario(
-                                  id: const Uuid().v4(),
-                                  name: _nameController.text,
-                                  comment: _commentController.text,
-                                  qtdCurtidas: 0);
-                              devocionalProvider
-                                  .postComment(
+                                  final comment = Comentario(
+                                      id: const Uuid().v4(),
+                                      name: _nameController.text,
+                                      comment: _commentController.text,
+                                      qtdCurtidas: 0);
+                                  devocionalProvider
+                                      .postComment(
                                       devocionalId: widget.devocionalId,
                                       comentario: comment)
-                                  .whenComplete(() {
-                                _nameController.clear();
-                                _commentController.clear();
-                                setState(() => _isLoading = false);
-                                FocusScope.of(context).unfocus();
-                              });
-                            }
-                          }),
-                          icon: (_isLoading)
-                              ? _loading()
-                              : const Icon(
+                                      .whenComplete(() {
+                                    _nameController.clear();
+                                    _commentController.clear();
+                                    setState(() => _isLoading = false);
+                                    FocusScope.of(context).unfocus();
+                                  });
+                                }
+                              }),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.secondary,
+                                    borderRadius: BorderRadius.circular(50)
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                alignment: Alignment.center,
+                                child: (_isLoading)
+                                    ? _loading()
+                                    : const Icon(
                                   Icons.send,
-                                  color: Colors.white,
-                                )),
-                      focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(width: 1, color: Colors.grey),
-                          borderRadius: BorderRadius.all(Radius.circular(50))),
-                      enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(
-                              width: 1, color: Colors.grey, strokeAlign: 10),
-                          borderRadius: BorderRadius.all(Radius.circular(50))),
+                                  size: 20,
+                                  //color: Colors.black,
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],

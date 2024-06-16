@@ -1,6 +1,7 @@
-import 'package:biblia_flutter_app/data/database.dart';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:sqflite/sqflite.dart';
+
+import 'database.dart';
 
 class AnnotationsDao {
   static const String tableSql = 'CREATE TABLE $_tablename('

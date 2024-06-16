@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
-import 'package:biblia_flutter_app/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -135,7 +133,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
         ),
         IconButton(
           onPressed: () {
-            NotificationService().showNotification(CustomNotification(id: 0, title: 'Testew', body: 'teste', payload: ''));
             versesProvider.clear();
             BibleService().checkInternetConnectivity().then((value) => {
                   if (value) {

@@ -1,8 +1,6 @@
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import '../../../models/book.dart';
 
@@ -281,7 +279,7 @@ class BookItems extends StatelessWidget {
                 child: Center(
                   child: Text(
                     abbrev,
-                    style: (bookIndex < 29) ? Theme.of(context).textTheme.titleLarge : Theme.of(context).textTheme.bodyLarge,
+                    style: (bookIndex < 29) ? Theme.of(context).textTheme.titleLarge : Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.onBackground),
                   ),
                 ),
               ),

@@ -84,3 +84,49 @@ class Comentario {
     return data;
   }
 }
+
+class ThematicDevocional {
+  String? id;
+  String? createdAt;
+  String? referencia;
+  String? passagem;
+  String? titulo;
+  String? texto;
+  String? nomeAutor;
+  String? bgImagem;
+
+  ThematicDevocional(
+      {this.id,
+        this.createdAt,
+        this.referencia,
+        this.passagem,
+        this.titulo,
+        this.texto,
+        this.nomeAutor,
+        this.bgImagem}
+  );
+
+  ThematicDevocional.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    createdAt = json['createdAt'];
+    referencia = json['referencia'];
+    passagem = json['passagem'];
+    titulo = json['titulo'];
+    texto = json['texto'];
+    nomeAutor = json['nomeAutor'];
+    bgImagem = json['bgImagem'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['createdAt'] = createdAt;
+    data['referencia'] = referencia;
+    data['passagem'] = passagem;
+    data['titulo'] = titulo;
+    data['texto'] = texto;
+    data['bgImagem'] = bgImagem;
+    data['nomeAutor'] = nomeAutor;
+    return data;
+  }
+}

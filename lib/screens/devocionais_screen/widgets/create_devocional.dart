@@ -1,6 +1,8 @@
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/save_bottom_sheet.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class CreateDevocional extends StatefulWidget {
   const CreateDevocional({super.key});
@@ -56,50 +58,49 @@ class _CreateDevocionalState extends State<CreateDevocional> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                  onPressed: (() {
-                    if (textValue == 2) {
-                      setState(() => textValue = 0);
-                      switchTextAlign(textValue);
-                      return;
-                    }
-                    setState(() => textValue++);
-                    switchTextAlign(textValue);
-                  }),
-                  icon: Icon(textAlignIcon)),
-              Expanded(
-                child: TextField(
-                  controller: _referenceController,
-                  decoration: const InputDecoration(
-                      hintStyle: TextStyle(fontSize: 12),
-                      hintText: 'Passagem de referência...',
-                      suffixIcon: Icon(
-                        Icons.edit_outlined,
-                        size: 18,
-                      ),
-                      enabledBorder: InputBorder.none),
-                ),
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: AppBar(
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        leading: IconButton(
+            onPressed: (() {
+              if (textValue == 2) {
+                setState(() => textValue = 0);
+                switchTextAlign(textValue);
+                return;
+              }
+              setState(() => textValue++);
+              switchTextAlign(textValue);
+            }),
+            icon: Icon(textAlignIcon)),
+        title: TextField(
+          controller: _referenceController,
+          decoration: const InputDecoration(
+              hintStyle: TextStyle(fontSize: 12),
+              hintText: 'Passagem de referência...',
+              suffixIcon: Icon(
+                Icons.edit_outlined,
+                size: 18,
               ),
-              IconButton(
-                  onPressed: (() => Navigator.pop(context)),
-                  icon: const Icon(Icons.close))
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: MediaQuery.of(context).size.height * .7,
-            width: MediaQuery.of(context).size.width,
-            child: Padding(
+              enabledBorder: InputBorder.none),
+        ),
+        actions: [
+          IconButton(
+              onPressed: (() => Navigator.pop(context)),
+              icon: const Icon(Icons.close)
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,55 +121,54 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Expanded(
-                    child: TextField(
-                      controller: _textoController,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 22),
-                      textAlign: textAlign,
-                      decoration: const InputDecoration(
-                          hintText: 'Escreva seu devocional aqui...'),
-                      keyboardType: TextInputType.multiline,
-                      expands: true,
-                      minLines: null,
-                      maxLines: null,
-                    ),
-                  )
+                  TextField(
+                    controller: _textoController,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 22),
+                    textAlign: textAlign,
+                    decoration: const InputDecoration(
+                        hintText: 'Escreva seu devocional aqui...'),
+                    keyboardType: TextInputType.multiline,
+                    minLines: null,
+                    maxLines: null,
+                  ),
                 ],
               ),
             ),
-          ),
-          const Spacer(),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10))),
-              onPressed: (() {
-                final devocional = Devocional(
-                    createdAt: DateTime.now().toIso8601String(),
-                    referencia: _referenceController.text,
-                    titulo: _titleController.text,
-                    texto: _textoController.text,
-                    textAlign: textAlignToInt(textAlign),
-                    status: 0,
-                    qtdCurtidas: 0,
-                    qtdComentarios: 0);
-                showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    isScrollControlled: true,
-                    isDismissible: false,
-                    showDragHandle: true,
-                    enableDrag: false,
-                    builder: (context) =>
-                        SaveBottomSheet(devocional: devocional));
-              }),
-              child: const Text('Salvar'))
-        ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10))),
+            onPressed: (() {
+              final devocional = Devocional(
+                  createdAt: DateTime.now().toIso8601String(),
+                  referencia: _referenceController.text,
+                  titulo: _titleController.text,
+                  texto: _textoController.text,
+                  textAlign: textAlignToInt(textAlign),
+                  status: 0,
+                  qtdCurtidas: 0,
+                  qtdComentarios: 0);
+              showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  isScrollControlled: true,
+                  isDismissible: false,
+                  showDragHandle: true,
+                  enableDrag: false,
+                  builder: (context) =>
+                      SaveBottomSheet(devocional: devocional));
+            }),
+            child: const Text('Salvar')),
       ),
     );
   }

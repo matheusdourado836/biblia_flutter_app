@@ -242,6 +242,7 @@ class _PortraitDrawer extends StatelessWidget {
           searchPassagesWidget,
           const SizedBox(height: 15),
           toggleModeWidget,
+          const SizedBox(height: 15),
           devocionalWidget,
           const Spacer(),
           settingsWidget,

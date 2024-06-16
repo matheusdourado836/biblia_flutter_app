@@ -76,22 +76,6 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                     children: [
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .highlightColor
-                                                .withOpacity(0.4),
-                                            minimumSize: const Size(80, 36),
-                                            textStyle: const TextStyle(
-                                                color: Colors.white)),
-                                        onPressed: () =>
-                                            Navigator.pop(context, 'Não'),
-                                        child: Text('Cancelar',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .displayMedium!
-                                                .copyWith(fontSize: 14)),
-                                      ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
                                             textStyle: const TextStyle(
                                                 color: Colors.white),
                                             minimumSize: const Size(80, 36),
@@ -108,6 +92,22 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                                   });
                                         },
                                         child: Text('Sim',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium!
+                                                .copyWith(fontSize: 14)),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context)
+                                                .highlightColor
+                                                .withOpacity(0.4),
+                                            minimumSize: const Size(80, 36),
+                                            textStyle: const TextStyle(
+                                                color: Colors.white)),
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'Não'),
+                                        child: Text('Cancelar',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .displayMedium!
@@ -195,11 +195,6 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                                 .bodyMedium),
                                         actions: [
                                           TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, 'Não'),
-                                            child: const Text('Não'),
-                                          ),
-                                          TextButton(
                                             onPressed: () {
                                               value
                                                   .deleteAnnotation(value
@@ -211,6 +206,11 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                                       });
                                             },
                                             child: const Text('Sim'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, 'Não'),
+                                            child: const Text('Não'),
                                           ),
                                         ],
                                       );

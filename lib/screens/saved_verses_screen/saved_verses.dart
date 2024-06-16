@@ -123,6 +123,28 @@ class _SavedVersesState extends State<SavedVerses> {
                                     children: [
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
+                                            textStyle: const TextStyle(color: Colors.white),
+                                            minimumSize: const Size(80, 36),
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .error
+                                                .withOpacity(0.65)
+                                        ),
+                                        onPressed: () {
+                                          _versesProvider
+                                              .deleteAllVerses()
+                                              .then((value) => {
+                                            _versesProvider.refresh(),
+                                            Navigator.pop(context)
+                                          });
+                                        },
+                                        child: Text(
+                                          'Sim',
+                                          style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
                                             backgroundColor: Theme.of(context).highlightColor.withOpacity(0.4),
                                             minimumSize: const Size(80, 36),
                                             textStyle: const TextStyle(color: Colors.white)
@@ -130,28 +152,6 @@ class _SavedVersesState extends State<SavedVerses> {
                                         onPressed: () => Navigator.pop(context, 'Cancelar'),
                                         child: Text('Cancelar', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                                       ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                            textStyle: const TextStyle(color: Colors.white),
-                                            minimumSize: const Size(80, 36),
-                                            backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .error
-                                              .withOpacity(0.65)
-                                        ),
-                                        onPressed: () {
-                                          _versesProvider
-                                              .deleteAllVerses()
-                                              .then((value) => {
-                                                    _versesProvider.refresh(),
-                                                    Navigator.pop(context)
-                                                  });
-                                        },
-                                        child: Text(
-                                          'Sim',
-                                          style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14),
-                                        ),
-                                      )
                                     ],
                                   ),
                                 ],
@@ -255,10 +255,6 @@ class _SavedVersesState extends State<SavedVerses> {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, 'Não'),
-                                    child: const Text('Não'),
-                                  ),
-                                  TextButton(
                                     onPressed: () {
                                       _versesProvider.deleteVerse(verse).then(
                                           (value) => {
@@ -267,6 +263,10 @@ class _SavedVersesState extends State<SavedVerses> {
                                               });
                                     },
                                     child: const Text('Sim'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, 'Não'),
+                                    child: const Text('Não'),
                                   ),
                                 ],
                               );

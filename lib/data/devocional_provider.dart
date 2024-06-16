@@ -1,13 +1,19 @@
 import 'package:biblia_flutter_app/services/devocional_service.dart';
+import 'package:biblia_flutter_app/services/thematic_service.dart';
 import 'package:flutter/material.dart';
 
 import '../models/devocional.dart';
 
 class DevocionalProvider extends ChangeNotifier {
   static final DevocionalService _service = DevocionalService();
+  static final ThematicService _thematicService = ThematicService();
   List<Devocional> _devocionais = [];
 
   List<Devocional> get devocionais => _devocionais;
+
+  List<ThematicDevocional> _thematicDevocionais = [];
+
+  List<ThematicDevocional> get thematicDevocionais => _thematicDevocionais;
 
   List<Devocional> _pendingDevocionais = [];
 
@@ -23,6 +29,14 @@ class DevocionalProvider extends ChangeNotifier {
     isLoading = true;
     _devocionais = [];
     _devocionais = await _service.getDevocionais();
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> getThematicDevocionais() async {
+    isLoading = true;
+    _thematicDevocionais = [];
+    _thematicDevocionais = await _thematicService.getDevocionais();
     isLoading = false;
     notifyListeners();
   }

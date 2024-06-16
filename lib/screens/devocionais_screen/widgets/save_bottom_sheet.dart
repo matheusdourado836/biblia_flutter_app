@@ -106,14 +106,13 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
                                         const DevocionalSavedDialog())
                                 .whenComplete(() {
                               Navigator.pushNamedAndRemoveUntil(
-                                  context, 'feed_screen', (route) => false);
+                                  context, 'feed_screen', (route) => route.settings.name == 'feed_screen');
                             });
                           }
                         });
                       }),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8))),
@@ -184,13 +183,9 @@ class _PostContainerState extends State<_PostContainer> {
 
   Future<CroppedFile> cropImage(File file) async {
     final croppedImage = await ImageCropper()
-        .cropImage(sourcePath: file.path, aspectRatioPresets: [
-      CropAspectRatioPreset.square,
-      CropAspectRatioPreset.ratio4x3,
-      CropAspectRatioPreset.original,
-      CropAspectRatioPreset.ratio7x5,
-      CropAspectRatioPreset.ratio16x9,
-    ], uiSettings: [
+        .cropImage(sourcePath: file.path,
+        aspectRatioPresets: [CropAspectRatioPreset.ratio4x3],
+        uiSettings: [
       AndroidUiSettings(
           toolbarTitle: 'Cortar imagem',
           toolbarColor: Theme.of(context).primaryColor,

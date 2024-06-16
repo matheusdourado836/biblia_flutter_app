@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/remover_acentos.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
@@ -102,7 +103,8 @@ class ChaptersProvider extends ChangeNotifier {
   }
 
   void updateSearch(List<Book> books, String query) {
-    innerList = books.where((item) => item.name.toLowerCase().startsWith(query.toLowerCase()) || item.name.toLowerCase().contains(query.toLowerCase())).toList();
+    final querySemAcento = removerAcentos(query.toLowerCase());
+    innerList = books.where((item) => removerAcentos(item.name.toLowerCase()).startsWith(querySemAcento) || item.name.toLowerCase().contains(querySemAcento)).toList();
     notifyListeners();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/helpers/expandable_container.dart';
+import 'package:biblia_flutter_app/helpers/format_date.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_section.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/create_devocional.dart';
@@ -58,6 +59,10 @@ class _FeedScreenState extends State<FeedScreen> {
               );
             }
 
+            if(value.devocionais.isNotEmpty && value.devocionais.first.bgImagem != null) {
+              
+            }
+
             return ListView.builder(
               itemCount: value.devocionais.length,
               shrinkWrap: true,
@@ -79,7 +84,17 @@ class _FeedScreenState extends State<FeedScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-        onPressed: (() => showModalBottomSheet(context: context, showDragHandle: true, isScrollControlled: true, builder: (context) => const CreateDevocional())),
+        onPressed: (() => showModalBottomSheet(
+            context: context,
+            backgroundColor: Theme.of(context).colorScheme.background,
+            barrierColor: Theme.of(context).colorScheme.background,
+            elevation: 0,
+            useSafeArea: true,
+            showDragHandle: true,
+            isScrollControlled: true,
+            builder: (context) => const CreateDevocional()
+        )
+        ),
         tooltip: 'Adicionar um devocional',
         child: Icon(
           Icons.add,
@@ -112,11 +127,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
     controller.stop();
     devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     checkIfPostIsLiked();
-    final createdAt = DateTime.parse(widget.devocional.createdAt!);
-    String day = createdAt.day < 10 ? '0${createdAt.day}' : createdAt.day.toString();
-    String month = createdAt.month < 10 ? '0${createdAt.month}' : createdAt.month.toString();
-    int year = createdAt.year;
-    todayDate = '$day/$month/$year';
+    todayDate = formattedDate(dateString: widget.devocional.createdAt!);
     super.initState();
   }
 
@@ -162,7 +173,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).colorScheme.primary,
+          color: Theme.of(context).cardTheme.color,
           boxShadow: kElevationToShadow[1]
       ),
       child: Column(
@@ -183,17 +194,12 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
               }),
               child: Stack(
                 children: [
-                  (widget.devocional.bgImagem != null)
-                      ? Container(
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          fit: BoxFit.cover,
-                          image: CachedNetworkImageProvider(widget.devocional.bgImagem!)
+                  (widget.devocional.bgImagem != null && widget.devocional.bgImagem!.isNotEmpty)
+                      ? CachedNetworkImage(
+                          imageUrl: widget.devocional.bgImagem!,
+                          placeholder: (context, url) => const Center(child: CircularProgressIndicator())
                         )
-                    ),
-                  )
-                      : NoBgImage(title: widget.devocional.texto!),
+                      : NoBgImage(title: widget.devocional.titulo!),
                   Align(
                     alignment: Alignment.center,
                     child: const Icon(CupertinoIcons.heart_fill, size: 100, color: Colors.red,)
@@ -220,7 +226,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
             children: [
               Row(
                 children: [
-                  (widget.devocional.bgImagemUser != null)
+                  (widget.devocional.bgImagemUser != null && widget.devocional.bgImagemUser!.isNotEmpty)
                     ? Container(
                     height: 50,
                     width: 50,
@@ -258,8 +264,9 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                             showDragHandle: true,
                             isScrollControlled: true,
                             useSafeArea: true,
-                            barrierColor: Theme.of(context).colorScheme.secondary,
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
+                            elevation: 0,
+                            barrierColor: Theme.of(context).colorScheme.background,
+                            backgroundColor: Theme.of(context).colorScheme.background,
                             builder: (context) => CommentsSection(devocionalId: widget.devocional.id!))
                         ),
                         child: iconInfo(text: widget.devocional.qtdComentarios!.toString(), icon: const Icon(Icons.chat_bubble, color: Colors.white, size: 16,)),
