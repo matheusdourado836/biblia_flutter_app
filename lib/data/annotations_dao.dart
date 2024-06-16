@@ -1,9 +1,9 @@
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:sqflite/sqflite.dart';
-
 import 'database.dart';
 
 class AnnotationsDao {
+  static final Database _versesInstance = DatabaseHelper.versesDatabase;
   static const String tableSql = 'CREATE TABLE $_tablename('
       '$_annotationId TEXT, '
       '$_title TEXT, '
@@ -23,38 +23,30 @@ class AnnotationsDao {
   static const String _verseEnd = 'verseEnd';
 
   Future<int> save(Annotation annotation) async {
-    final Database bancoDeDados = await getDatabase();
     var itemExists = await find(annotation.annotationId);
     Map<String, dynamic> annotationMap = toMap(annotation);
 
     if (itemExists.isEmpty) {
-      return await bancoDeDados.insert(_tablename, annotationMap);
+      return await _versesInstance.insert(_tablename, annotationMap);
     }
     return 0;
   }
 
   Future<int> updateAnnotation(String annotationId, String content) async {
-    final Database bancoDeDados = await getDatabase();
-
-    return await bancoDeDados.rawUpdate(
+    return await _versesInstance.rawUpdate(
         'UPDATE $_tablename SET $_content = ?  WHERE $_annotationId = ?', [content, annotationId]);
   }
 
   delete(String annotationId) async {
-    final Database bancoDeDados = await getDatabase();
-
-    return bancoDeDados.delete(_tablename, where: '$_annotationId = ?', whereArgs: [annotationId]);
+    return _versesInstance.delete(_tablename, where: '$_annotationId = ?', whereArgs: [annotationId]);
   }
 
   deleteAllAnnotations() async {
-    final Database bancoDeDados = await getDatabase();
-
-    return bancoDeDados.delete(_tablename);
+    return _versesInstance.delete(_tablename);
   }
 
   Future<List<Map<String, dynamic>>> find(String annotationId) async {
-    final Database bancoDeDados = await getDatabase();
-    final List<Map<String, dynamic>> result = await bancoDeDados.query(
+    final List<Map<String, dynamic>> result = await _versesInstance.query(
       _tablename,
       where: '$_annotationId = ?',
       whereArgs: [annotationId],
@@ -64,8 +56,7 @@ class AnnotationsDao {
   }
 
   Future<List<Annotation>?> findByTitle(String bookName, int chapter, int verse) async {
-    final Database bancoDeDados = await getDatabase();
-    final List<Map<String, dynamic>> result = await bancoDeDados.query(
+    final List<Map<String, dynamic>> result = await _versesInstance.query(
       _tablename,
       where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
       whereArgs: [bookName, chapter, verse],
@@ -79,8 +70,7 @@ class AnnotationsDao {
   }
 
   Future<Annotation?> checkByTitle(String bookName, int chapter, int verse) async {
-    final Database bancoDeDados = await getDatabase();
-    final List<Map<String, dynamic>> result = await bancoDeDados.query(
+    final List<Map<String, dynamic>> result = await _versesInstance.query(
       _tablename,
       where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
       whereArgs: [bookName, chapter, verse],
@@ -94,9 +84,8 @@ class AnnotationsDao {
   }
 
   Future<List<Annotation>> findAll() async {
-    final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result =
-    await bancoDeDados.query(_tablename);
+    await _versesInstance.query(_tablename);
 
     return toList(result);
   }

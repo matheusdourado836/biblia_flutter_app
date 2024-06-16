@@ -11,11 +11,11 @@ class DatabaseHelper {
   static Database? _plansDbInstance;
 
   static Future<void> initializeDatabases() async {
-    _versesDbInstance = await getDatabase();
+    _versesDbInstance = await _getDatabase();
     _plansDbInstance = await _getPlansDatabase();
   }
 
-  static Database get mainDatabase {
+  static Database get versesDatabase {
     if (_versesDbInstance == null) {
       throw Exception("Verses database has not been initialized");
     }
@@ -30,7 +30,7 @@ class DatabaseHelper {
   }
 }
 
-Future<Database> getDatabase() async {
+Future<Database> _getDatabase() async {
   final String path = join(await getDatabasesPath(), 'verses.db');
 
   return openDatabase(

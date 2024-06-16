@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'package:biblia_flutter_app/data/database.dart';
+import 'database.dart';
 import 'package:sqflite/sqflite.dart';
 import 'bible_data.dart';
 
 class BooksDao {
+  static final Database _versesInstance = DatabaseHelper.versesDatabase;
   static const String tableSql = 'CREATE TABLE $_tablename('
       '$_bookName TEXT, '
       '$_chapters TEXT, '
@@ -15,28 +16,25 @@ class BooksDao {
   static const String _finishedReading = 'finishedReading';
 
   save(String bookName, int chapters, int finishedReading) async {
-    final Database bancoDeDados = await getDatabase();
     Map<String, dynamic> bookMap = toMap(bookName, setChapters(chapters, 1).toString(), finishedReading);
 
-    return await bancoDeDados.update(_tablename, bookMap, where: '$_bookName = ?', whereArgs: [bookName]);
+    return await _versesInstance.update(_tablename, bookMap, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   saveChapters(String bookName) async {
     var itemExists = await find(bookName);
     if(itemExists.isEmpty) {
-      final Database bancoDeDados = await getDatabase();
       final List<dynamic> list = BibleData().data[0];
       final bookInfo = list.where((element) => element['name'] == bookName).toList();
       final chapters = bookInfo[0]['chapters'].length;
       final Map<String, dynamic> mapaDeCapitulos = toMap(bookName, setChapters(chapters, 0).toString(), 0);
 
-      return await bancoDeDados.insert(_tablename, mapaDeCapitulos);
+      return await _versesInstance.insert(_tablename, mapaDeCapitulos);
     }
   }
 
   saveChapter(String bookName, String chapter) async {
     int finishedReading = 0;
-    final Database bancoDeDados = await getDatabase();
     Map<String, dynamic> mapChapters = {};
     await findByChapter(bookName).then((value) => mapChapters = value);
     List<dynamic> list = mapChapters['chapters'];
@@ -50,11 +48,10 @@ class BooksDao {
       finishedReading = 1;
     }
 
-    return await bancoDeDados.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': finishedReading}, where: '$_bookName = ?', whereArgs: [bookName]);
+    return await _versesInstance.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': finishedReading}, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   deleteChapter(String bookName, String chapter) async {
-    final Database bancoDeDados = await getDatabase();
     Map<String, dynamic> mapChapters = {};
     await findByChapter(bookName).then((value) => mapChapters = value);
     for(var element in mapChapters['chapters']) {
@@ -63,7 +60,7 @@ class BooksDao {
       }
     }
 
-    return await bancoDeDados.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': 0}, where: '$_bookName = ?', whereArgs: [bookName]);
+    return await _versesInstance.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': 0}, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   List<Map<String, dynamic>> setChapters(int chapters, int finishedReading) {
@@ -86,22 +83,18 @@ class BooksDao {
   }
 
   delete(String bookName) async {
-    final Database bancoDeDados = await getDatabase();
-
-    return bancoDeDados.delete(_tablename, where: '$_bookName = ?', whereArgs: [bookName]);
+    return _versesInstance.delete(_tablename, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   Future<List<Map<String, dynamic>>> findAll() async {
-    final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result =
-        await bancoDeDados.query(_tablename);
+        await _versesInstance.query(_tablename);
 
     return result;
   }
 
   Future<List<Map<String, dynamic>>> find(String bookName) async {
-    final Database bancoDeDados = await getDatabase();
-    final List<Map<String, dynamic>> result = await bancoDeDados.query(
+    final List<Map<String, dynamic>> result = await _versesInstance.query(
       _tablename,
       where: '$_bookName = ?',
       whereArgs: [bookName],

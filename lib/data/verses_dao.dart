@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'database.dart';
 
 class VersesDao {
+  static final Database _versesInstance = DatabaseHelper.versesDatabase;
   static const String tableSql = 'CREATE TABLE $_tablename('
       '$_verse TEXT, '
       '$_verseColor TEXT, '
@@ -20,38 +21,34 @@ class VersesDao {
   static const String _verseNumber = 'verseNumber';
 
   Future<int> save(VerseModel verse) async {
-    final Database bancoDeDados = await getDatabase();
     var itemExists = await find(verse.verse);
     Map<String, dynamic> verseMap = toMap(verse);
 
     if (itemExists.isEmpty) {
-      return await bancoDeDados.insert(_tablename, verseMap);
+      return await _versesInstance.insert(_tablename, verseMap);
     }
     return 0;
   }
 
   Future<int> saveChapter(VerseModel verse) async {
-    final Database bancoDeDados = await getDatabase();
     var itemExists = await find(verse.chapter.toString());
     Map<String, dynamic> verseMap = toMap(verse);
 
     if (itemExists.isEmpty) {
-      return await bancoDeDados.insert(_tablename, verseMap);
+      return await _versesInstance.insert(_tablename, verseMap);
     }
     return 0;
   }
 
   Future<List<VerseModel>> findAll() async {
-    final Database bancoDeDados = await getDatabase();
     final List<Map<String, dynamic>> result =
-    await bancoDeDados.query(_tablename);
+    await _versesInstance.query(_tablename);
 
     return toList(result);
   }
 
   Future<List<VerseModel>> find(String verse) async {
-    final Database bancoDeDados = await getDatabase();
-    final List<Map<String, dynamic>> result = await bancoDeDados.query(
+    final List<Map<String, dynamic>> result = await _versesInstance.query(
       _tablename,
       where: '$_verse = ?',
       whereArgs: [verse],
@@ -61,22 +58,16 @@ class VersesDao {
   }
 
   updateColor(String verse, String newColor) async {
-    final Database bancoDeDados = await getDatabase();
-
-    return await bancoDeDados.rawUpdate(
+    return await _versesInstance.rawUpdate(
         'UPDATE $_tablename SET $_verseColor = ? WHERE $_verse = ?', [newColor, verse]);
   }
 
   delete(String verse) async {
-    final Database bancoDeDados = await getDatabase();
-
-    return bancoDeDados.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
+    return _versesInstance.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
   }
 
   deleteAllVerses() async {
-    final Database bancoDeDados = await getDatabase();
-
-    return bancoDeDados.delete(_tablename);
+    return _versesInstance.delete(_tablename);
   }
 
   List<VerseModel> toList(List<Map<String, dynamic>> mapaDeVersos) {
