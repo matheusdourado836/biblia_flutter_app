@@ -1,4 +1,5 @@
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -39,7 +40,9 @@ class NotificationService {
     if(notificationResponse != null) {
       if (notificationResponse.payload != null && notificationResponse.payload!.isNotEmpty) {
         final payload = notificationResponse.payload;
-        print('OLHA A MENSAGEM AEEEEEE $payload');
+        if(payload != null && payload.split(' ')[0] == 'route') {
+          navigatorKey!.currentState!.pushNamed(payload.split(' ')[1]);
+        }
         if(payload !=  null) {
           GoToVerseScreen().goToVersePage(
               payload.split(' ')[0],
@@ -54,12 +57,15 @@ class NotificationService {
     }
   }
 
-  showNotification(CustomNotification notification) {
-    androidNotificationDetails = const AndroidNotificationDetails(
-      'versiculo_diario_notification', 'versiculo_diario',
+  showNotification(CustomNotification notification, String? channelInfo) {
+    final channel = (channelInfo == null) ? 'versiculo_diario' : channelInfo;
+    androidNotificationDetails = AndroidNotificationDetails(
+      '${channel}_notification', channel,
       importance: Importance.max,
       priority: Priority.max,
       enableVibration: true,
+      colorized: true,
+      color: Colors.brown
     );
 
     localNotificationsPlugin.show(

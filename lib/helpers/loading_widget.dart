@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
 class LoadingWidget extends StatelessWidget {
-  const LoadingWidget({Key? key}) : super(key: key);
+  final Color? bgColor;
+  final Color? txtColor;
+  const LoadingWidget({super.key, this.bgColor, this.txtColor});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircularProgressIndicator(),
+            padding: const EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(color: bgColor),
           ),
-          Text('Carregando')
+          Text('Carregando', style: TextStyle(color: txtColor))
         ],
       ),
     );

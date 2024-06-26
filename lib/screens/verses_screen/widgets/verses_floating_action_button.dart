@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
@@ -9,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../helpers/alert_dialog.dart';
 
 final FlutterTts _flutterTts = FlutterTts();
@@ -21,6 +18,7 @@ double _speechRate = 0.5;
 Map _ptVoice = {};
 Map _enVoice = {};
 Map _esVoice = {};
+Map _frVoice = {};
 
 class VersesFloatingActionButton extends StatefulWidget {
   final bool notScrolling;
@@ -28,7 +26,7 @@ class VersesFloatingActionButton extends StatefulWidget {
   final int chapters;
   final List<Map<String, dynamic>> verses;
   final PageController pageController;
-  const VersesFloatingActionButton({Key? key, required this.notScrolling, required this.chapter, required this.chapters, required this.pageController, required this.verses}) : super(key: key);
+  const VersesFloatingActionButton({super.key, required this.notScrolling, required this.chapter, required this.chapters, required this.pageController, required this.verses});
 
   @override
   State<VersesFloatingActionButton> createState() => _VersesFloatingActionButtonState();
@@ -46,6 +44,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         _ptVoice = voices.where((element) => element["name"].startsWith("pt")).toList().first;
         _enVoice = voices.where((element) => element["name"].startsWith("en")).toList().first;
         _esVoice = voices.where((element) => element["name"].startsWith("es")).toList().first;
+        _frVoice = voices.where((element) => element["name"].startsWith("fr")).toList().first;
         setVoice(voices.where((element) => element["name"].startsWith("pt")).toList()[0]);
       }catch(e) {
         alertDialog(content: e.toString());
@@ -260,6 +259,10 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
         break;
       case 'Espanhol (ES)':
         _flutterTts.setVoice({"name": _esVoice["name"], "locale": _esVoice["locale"]});
+        break;
+      case 'Francês (FR)':
+        _flutterTts.setVoice({"name": _frVoice["name"], "locale": _frVoice["locale"]});
+        break;
     }
 
     if(_isSpeaking) {
@@ -424,7 +427,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                     setState(() => _selectedLanguage = newValue!);
                     updateSpeechLanguage(_selectedLanguage);
                   },
-                  items: <String>['English (US)', 'Português (BR)', 'Português (PT)', 'Espanhol (ES)']
+                  items: <String>['English (US)', 'Português (BR)', 'Português (PT)', 'Espanhol (ES)', 'Francês (FR)']
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,

@@ -12,6 +12,7 @@ import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/alert_dialog.dart';
@@ -153,38 +154,6 @@ class VersesProvider extends ChangeNotifier {
         "isEditing": false,
         "annotation": annotationFound.isEmpty ? null : annotationFound.first
       });
-      // await versesDao.find(versesByChapterDefault[i]).then((res) => {
-      //     if (res.isNotEmpty) {
-      //       if (res[0].verse == versesByChapterDefault[i]) {
-      //         listColorsDb.add({
-      //           "verse": versesByChapterDefault[i],
-      //           "version": res[0].version,
-      //           "color": ConvertColors().convertColors(res[0].verseColor)
-      //         }),
-      //       }
-      //     }
-      //     else {
-      //       listColorsDb.add({
-      //         "verse": versesByChapterDefault[i],
-      //         "version": 0,
-      //         "color": Colors.transparent
-      //       }),
-      //     },
-      //   });
-      // await bibleDataController.annotationExists(bookName, chapter + 1, i + 1)
-      //     .then((value) => _listMapVerses.add({
-      //         "bookName": bookName,
-      //         "chapter": chapter + 1,
-      //         "verseNumber": i + 1,
-      //         "verse": versesByChapter[i],
-      //         "verseDefault": versesByChapterDefault[i],
-      //         "verseColor": listColorsDb[i]["color"],
-      //         "version": versionIndex,
-      //         "isSelected": false,
-      //         "isEditing": false,
-      //         "annotation": value
-      //       })
-      // );
     }
     _allVerses[chapter + 1] = _listMapVerses;
   }
@@ -204,8 +173,19 @@ class VersesProvider extends ChangeNotifier {
     await service.getRandomImage().then((value) => _verseInfo["url"] = value);
   }
 
-  Future<Map<String, dynamic>> getOnlyImage() async {
-    return await service.getOnlyImage();
+  Future<File?> getOnlyImage() async {
+    final image = await service.getOnlyImage();
+    return await FileDownloader.downloadFile(
+      url: image.trim(),
+      name: 'randomImage',
+      downloadDestination: DownloadDestinations.appFiles,
+      onDownloadError: (String error) {
+        return null;
+      },
+      onDownloadCompleted: (String path) {
+        print('FILE DOWNLOADED TO PATH: $path');
+      },
+    );
   }
 
   Future<Map<String, dynamic>> getRandomVerse() async {

@@ -1,8 +1,6 @@
 import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
 import 'package:biblia_flutter_app/models/daily_read.dart';
-import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/bible_data.dart';
@@ -21,6 +19,7 @@ class SelectedDayWidget extends StatefulWidget {
 class _SelectedDayWidgetState extends State<SelectedDayWidget> {
   final BibleData _bibleData = BibleData();
   late final PageController _controller;
+  List<List<DailyRead>> dailyReads = [];
   int i = 1;
 
   @override
@@ -50,60 +49,83 @@ class _SelectedDayWidgetState extends State<SelectedDayWidget> {
       backgroundColor: Theme.of(context).primaryColor,
       body: Consumer<PlansProvider>(
         builder: (context, value, _) {
+          dailyReads = value.dailyReadsGrouped;
           return PageView.builder(
             controller: _controller,
             onPageChanged: (page) => setState(() => i = page + 1),
             itemCount: value.chaptersDivided.length - 1,
             itemBuilder: (context, index) {
-              if(value.chaptersDivided[index + 1].length < widget.chaptersLength) {
+              if(value.chaptersDivided[value.chaptersDivided.length - 1] == value.chaptersDivided[index + 1]) {
                 for(var i = 0; i < value.chaptersDivided[index + 1].length; i++) {
                   if(!value.chaptersDivided[index].contains(value.chaptersDivided[index + 1][i])) {
                     value.chaptersDivided[index].add(value.chaptersDivided[index + 1][i]);
-                    value.dailyReadsGrouped[index].add(value.dailyReadsGrouped[index + 1][i]);
+                  }
+                  for(var j = 0; j < dailyReads[index + 1].length; j++) {
+                    if(!dailyReads[index].contains(dailyReads[index + 1][j])) {
+                      dailyReads[index].add(dailyReads[index + 1][j]);
+                    }
                   }
                 }
               }
+
               return ListView.builder(
+                padding: const EdgeInsets.only(top: 16, right: 12),
                 itemCount: value.chaptersDivided[index].length,
                 itemBuilder: (context, i) {
-                  return InkWell(
-                    onTap: (() {
-                      final versesProvider = Provider.of<VersesProvider>(context, listen: false);
-                      final book = _bibleData.data[0].where((element) => element["name"] == extractBookAndChapter(value.chaptersDivided[index][i])["bookName"]).first;
-                      final bookIndex = _bibleData.data[0].indexOf(book);
-                      final chapter = int.parse(extractBookAndChapter(value.chaptersDivided[index][i])["chapter"]!);
-                      versesProvider.loadVerses(bookIndex, book["name"]);
-                      Navigator.pushNamed(context, 'verses_screen', arguments: {
-                        "bookName": book["name"],
-                        "abbrev": book["abbrev"],
-                        "bookIndex": bookIndex,
-                        "chapters": book["chapters"].length,
-                        "chapter": chapter,
-                        "verseNumber": 1,
-                        "reading_plan": true,
-                      });
-                    }),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                     child: Row(
                       children: [
                         Checkbox(
-                            value: value.dailyReadsGrouped[index][i].completed == 1,
+                            value: dailyReads[index][i].completed == 1,
                             onChanged: ((newValue) {
-                              bool allRead = value.dailyReadsGrouped[index].every((element) => element.completed == 1);
+                              bool allRead = dailyReads[index].every((element) => element.completed == 1);
                               if(allRead) {
-                                value.dailyReadsGrouped[index][i].completed == 0 ? value.dailyReadsGrouped[index][i].completed = 1 : value.dailyReadsGrouped[index][i].completed = 0;
+                                dailyReads[index][i].completed == 0 ? dailyReads[index][i].completed = 1 : dailyReads[index][i].completed = 0;
                                 setState(() {});
-                                value.markChapter(value.dailyReadsGrouped[index][i].chapter!, read: value.dailyReadsGrouped[index][i].completed ?? 0, progressId: widget.dailyRead[i].progressId!, update: true);
+                                value.markChapter(dailyReads[index][i].chapter!, read: dailyReads[index][i].completed ?? 0, progressId: widget.dailyRead[i].progressId!, update: true);
                                 value.updateCurrentDay(planId: widget.dailyRead[i].progressId!, action: 0);
                               }else {
-                                value.dailyReadsGrouped[index][i].completed == 0 ? value.dailyReadsGrouped[index][i].completed = 1 : value.dailyReadsGrouped[index][i].completed = 0;
+                                dailyReads[index][i].completed == 0 ? dailyReads[index][i].completed = 1 : dailyReads[index][i].completed = 0;
+                                bool allRead = dailyReads[index].every((element) => element.completed == 1);
                                 setState(() {});
-                                bool allRead = value.dailyReadsGrouped[index].every((element) => element.completed == 1);
-                                value.markChapter(value.dailyReadsGrouped[index][i].chapter!, read: value.dailyReadsGrouped[index][i].completed ?? 0, progressId: widget.dailyRead[i].progressId!, update: (allRead) ? true : null);
-                                value.checkIfCompletedDailyRead(planId: widget.dailyRead[i].progressId!, qtdChapterRequired: value.dailyReadsGrouped[index].length);
+                                value.markChapter(dailyReads[index][i].chapter!, read: dailyReads[index][i].completed ?? 0, progressId: widget.dailyRead[i].progressId!, update: (allRead) ? true : null);
+                                value.checkIfCompletedDailyRead(planId: widget.dailyRead[i].progressId!, qtdChapterRequired: dailyReads[index].length);
                               }
                             })
                         ),
-                        Text(value.chaptersDivided[index][i])
+                        Expanded(
+                          child: InkWell(
+                            onTap: (() {
+                              final versesProvider = Provider.of<VersesProvider>(context, listen: false);
+                              final book = _bibleData.data[0].where((element) => element["name"] == extractBookAndChapter(value.chaptersDivided[index][i])["bookName"]).first;
+                              final bookIndex = _bibleData.data[0].indexOf(book);
+                              final chapter = int.parse(extractBookAndChapter(value.chaptersDivided[index][i])["chapter"]!);
+                              versesProvider.loadVerses(bookIndex, book["name"]);
+                              Navigator.pushNamed(context, 'verses_screen', arguments: {
+                                "bookName": book["name"],
+                                "abbrev": book["abbrev"],
+                                "bookIndex": bookIndex,
+                                "chapters": book["chapters"].length,
+                                "chapter": chapter,
+                                "verseNumber": 1,
+                                "reading_plan": true,
+                              });
+                            }),
+                            child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(value.chaptersDivided[index][i], style: Theme.of(context).textTheme.titleLarge,),
+                                      Icon(Icons.keyboard_arrow_right_rounded, color: Theme.of(context).colorScheme.onError, size: 28),
+                                    ],
+                                  ),
+                                )
+                            ),
+                          )
+                        )
                       ],
                     ),
                   );

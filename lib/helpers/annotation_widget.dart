@@ -14,11 +14,10 @@ class AnnotationWidget extends StatefulWidget {
   final bool isEditing;
 
   const AnnotationWidget(
-      {Key? key,
+      {super.key,
       required this.annotation,
       required this.isEditing,
-      required this.verses})
-      : super(key: key);
+      required this.verses});
 
   @override
   State<AnnotationWidget> createState() => _AnnotationWidgetState();

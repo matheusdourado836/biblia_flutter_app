@@ -52,11 +52,7 @@ class ReadingProgressDao {
     return readingPlan;
   }
 
-  void dropDb() async {
-    await _plansInstance.delete(_tableName);
-  }
-
-  Future<int> startReadingPlan({required PlanType planId}) async {
+  Future<int> startReadingPlan({required PlanType planId, required int durationDays}) async {
     final startDate = DateTime.now().toIso8601String();
 
     int progressId = await _plansInstance.insert(
@@ -64,7 +60,7 @@ class ReadingProgressDao {
       {
         'plan_id': planId.code,
         'start_date': startDate,
-        'duration_days': planTypeToDays(planType: planId),
+        'duration_days': durationDays,
         'current_day': 0,
         'completed': 0,
       },
@@ -92,26 +88,7 @@ class ReadingProgressDao {
     return await _plansInstance.rawUpdate('UPDATE $_tableName SET $_currentDay = ? WHERE $_planId = ?', [qtdDays, planId]);
   }
 
-  Future<Map<String, dynamic>> getTodaysReading({required int planId}) async {
-    // Obtém o progresso atual
-    List<Map<String, dynamic>> progress = await _plansInstance.query(
-      _tableName,
-      where: '$_planId = ?',
-      whereArgs: [planId],
-    );
-
-    int currentDay = progress.first[_currentDay];
-
-    // Obtém os capítulos para o dia atual
-    List<Map<String, dynamic>> todaysChapters = await _plansInstance.query(
-      _tableName,
-      where: 'progress_id = ? AND day_number = ?',
-      whereArgs: [planId, currentDay],
-    );
-
-    return {
-      'currentDay': currentDay,
-      'chapters': todaysChapters,
-    };
+  void dropDb({required int progressId}) async {
+    await _plansInstance.delete(_tableName, where: '$_planId = ?', whereArgs: [progressId]);
   }
 }

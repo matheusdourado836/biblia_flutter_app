@@ -5,22 +5,35 @@ import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
 import 'package:biblia_flutter_app/models/daily_read.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:biblia_flutter_app/models/reading_plan.dart';
+import 'package:biblia_flutter_app/services/plans_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/firebase_messaging_service.dart';
+import '../services/notification_service.dart';
 
 class PlansProvider extends ChangeNotifier {
   static final DailyReadingDao _dailyReadingDao = DailyReadingDao.instance;
   static final ReadingProgressDao _readingProgressDao = ReadingProgressDao();
+  static final PlansService _plansService = PlansService();
+  static final NotificationService notificationService = NotificationService();
+  FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
+  FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
 
   bool _loading = false;
 
   bool get loading => _loading;
 
+  bool _planNotificationStatus = false;
+
+  bool get planNotificationStatus => _planNotificationStatus;
+
   ReadingPlan? _currentPlan;
 
   ReadingPlan? get currentPlan => _currentPlan;
 
-  List<ReadingPlan> _readingPlans = [];
+  final List<ReadingPlan> _readingPlans = [];
 
   List<ReadingPlan> get readingPlans => _readingPlans;
 
@@ -32,14 +45,6 @@ class PlansProvider extends ChangeNotifier {
 
   List<List<DailyRead>> get dailyReadsGrouped => _dailyReadsGrouped;
 
-  bool _startedOneYear = false;
-
-  bool get startedOneYear => _startedOneYear;
-
-  bool _startedThreeMonths = false;
-
-  bool get startedThreeMonths => _startedThreeMonths;
-
   List<String> _chapters = [];
 
   List<String> get chapters => _chapters;
@@ -48,17 +53,9 @@ class PlansProvider extends ChangeNotifier {
 
   List<List<String>> get chaptersDivided => _chaptersDivided;
 
-  void getAllReadingPlans() async {
-    _readingPlans = await _readingProgressDao.findAll();
-    notifyListeners();
-  }
-
   void getDailyReads({required int progressId}) async {
-    // _loading = true;
-    _currentPlan = await _readingProgressDao.find(planId: 0);
     _dailyReads = await _dailyReadingDao.getByType(progressId: progressId);
     transformList(_dailyReads);
-    // _loading = false;
     notifyListeners();
   }
 
@@ -69,56 +66,62 @@ class PlansProvider extends ChangeNotifier {
     return result != null;
   }
 
-  void checkIfPlanStarted({required PlanType planType}) async {
+  Future<bool> checkIfPlanStarted({required PlanType planType}) async {
+    _currentPlan = null;
     _loading = true;
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if(planType == PlanType.ONE_YEAR) {
-      final oneYearCode = prefs.getInt("one_year");
-      (oneYearCode == null) ? _startedOneYear = false : _startedOneYear = true;
-      _currentPlan = await _readingProgressDao.find(planId: 0);
-      notifyListeners();
-    }else if(planType == PlanType.THREE_MONTHS) {
-      final threeMonthsCode = prefs.getInt("three_months");
-      (threeMonthsCode == null) ? _startedThreeMonths = false : _startedThreeMonths = true;
-      _currentPlan = await _readingProgressDao.find(planId: 1);
-      notifyListeners();
+    final planCode = prefs.getInt(planType.description);
+    if(planCode != null) {
+      _currentPlan = await _readingProgressDao.find(planId: planType.code);
     }
     _loading = false;
-    print('LOADING $_loading /// ${_dailyReadsGrouped.length} /// $_currentPlan');
+    notifyListeners();
+    return planCode != null;
+  }
+
+  Future<void> startReadingPlan({required PlanType planId, required int durationDays, int? bibleLength, bool? isNewTestament}) async {
+    _loading = true;
+    notifyListeners();
+    subscribeUser(planType: planId);
+    generateChapters(planTypeToChapters(planType: planId), planId, bibleLength: bibleLength, isNewTestament: isNewTestament);
+    await generateDailyReadings(planId.code, durationDays + 1, planId);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt(planId.description, planId.code);
+    _readingProgressDao.startReadingPlan(planId: planId, durationDays: durationDays);
+    _currentPlan = await _readingProgressDao.find(planId: planId.code);
+    getDailyReads(progressId: planId.code);
+    _loading = false;
+  }
+
+  Future<void> checkPlanNotificationStatus({required PlanType planType}) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _planNotificationStatus = prefs.getBool('${planType.description}_notifications') ?? false;
     notifyListeners();
   }
 
-  Future<void> startReadingPlan({required PlanType planId}) async {
-    _loading = true;
+  Future<void> updatePlanNotification({required PlanType planType, required bool status}) async {
+    (status) ? subscribeUser(planType: planType) : unsubscribeUser(planType: planType);
     notifyListeners();
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    (planId.code == 0)
-        ? prefs.setInt("one_year", planId.code).whenComplete(() => _startedOneYear = true)
-        : prefs.setInt("three_months", planId.code).whenComplete(() => _startedThreeMonths = true);
-    await Future.wait([
-      _readingProgressDao.startReadingPlan(planId: planId),
-      generateDailyReadings(planId.code, planTypeToDays(planType: planId), planId)
-    ]);
-    _loading = false;
-    getDailyReads(progressId: planId.code);
   }
 
   Future<void> generateDailyReadings(int progressId, int durationDays, PlanType planType) async {
-    generateChapters(planTypeToChapters(planType: planType));
-
     return await _dailyReadingDao.generateDailyReadings(progressId, durationDays, _chaptersDivided);
   }
 
-  void generateChapters(int chaptersLength) {
+  void generateChapters(int chaptersLength, PlanType planId, {int? bibleLength, bool? isNewTestament}) {
     _chapters = [];
     _chaptersDivided = [];
     _dailyReadsGrouped = [];
     final BibleData bibleData = BibleData();
     List<List<String>> partitions = [];
+    final length = bibleLength ??= bibleData.data[0].length;
+    final index = isNewTestament == null ? 0 : 39;
+    print('OLHA O INDEX AEEEE $index');
 
-    for (var book in bibleData.data[0]) {
-      for (var i = 0; i < book["chapters"].length; i++) {
-        _chapters.add('${book["name"]} ${i + 1}');
+    for (var i = index; i < length; i++) {
+      final book = bibleData.data[0][i];
+      for (var j = 0; j < book["chapters"].length; j++) {
+        _chapters.add('${book["name"]} ${j + 1}');
       }
     }
 
@@ -175,14 +178,33 @@ class PlansProvider extends ChangeNotifier {
     return await _readingProgressDao.updateCurrentDayRaw(planId: planId, qtdDays: qtdDays);
   }
 
-  void dropDb() async {
+  Future<void> subscribeUser({required PlanType planType}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove("one_year");
-    prefs.remove("three_months");
-    _startedOneYear = false;
-    _startedThreeMonths = false;
-    _dailyReadingDao.dropDb();
-    notifyListeners();
-    return _readingProgressDao.dropDb();
+    firebaseMessaging.subscribeToTopic('${planType.description}_sub');
+    _plansService.subscribeUser(planType: planType);
+    prefs.setBool('${planType.description}_notifications', true);
+    _planNotificationStatus = true;
+  }
+
+  Future<void> unsubscribeUser({required PlanType planType}) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    firebaseMessaging.unsubscribeFromTopic('${planType.description}_sub');
+    _plansService.unsubscribeUser(planType: planType);
+    prefs.setBool('${planType.description}_notifications', false);
+    _planNotificationStatus = false;
+  }
+
+  void dropDb({required PlanType planType, required int progressId}) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    for(var plan in PlanType.values) {
+      if(plan == planType) {
+        unsubscribeUser(planType: plan);
+        prefs.remove(planType.description);
+        _dailyReadingDao.dropDb(progressId: progressId);
+        _readingProgressDao.dropDb(progressId: progressId);
+        _currentPlan = null;
+        notifyListeners();
+      }
+    }
   }
 }

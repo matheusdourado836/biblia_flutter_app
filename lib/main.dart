@@ -10,9 +10,8 @@ import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/devocional_selected.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/devocionais_screen.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/plans/one_year_plan/one_year_plan_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/plans/init_plan_base_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/selected_day_widget.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/plans/three_months_plan/three_months_plan_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/theme/thematic_selected.dart';
 import 'package:biblia_flutter_app/screens/home_screen/home_screen.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
@@ -50,6 +49,7 @@ void main() async {
   MobileAds.instance.initialize();
   MobileAds.instance
       .updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   _themeMode =
       (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
@@ -60,7 +60,6 @@ void main() async {
     if (value) {
       NotificationService notificationService = NotificationService();
       FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
       await firebaseMessaging.requestPermission(
         alert: true,
@@ -116,8 +115,6 @@ class MyApp extends StatelessWidget {
         "feed_screen": (context) => const FeedScreen(),
         "random_verse_screen": (context) => const RandomVerseScreen(),
         "settings": (context) => const SettingsScreen(),
-        "one_year": (context) => const OneYearPlanScreen(),
-        "three_months": (context) => const ThreeMonthsPlanScreen(),
       },
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -125,7 +122,7 @@ class MyApp extends StatelessWidget {
             return PageTransition(
               child: const HomeScreen(),
               type: PageTransitionType.bottomToTop,
-              duration: const Duration(milliseconds: 800),
+              duration: const Duration(milliseconds: 500),
             );
 
           case 'chapter_screen':
@@ -200,6 +197,21 @@ class MyApp extends StatelessWidget {
               alignment: Alignment.center,
               duration: 500.ms,
               child: ThematicSelected(devocional: map?["devocional"]),
+            );
+          case 'plans_base':
+            Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+            return PageTransition(
+              type: PageTransitionType.bottomToTop,
+              duration: 500.ms,
+              child: InitPlanBaseScreen(
+                planType: map?["planType"],
+                label: map?["label"],
+                qtdChapters: map?["qtdChapters"],
+                duration: map?["duration"],
+                bibleLength: map?["bibleLength"],
+                isNewTestament: map?["isNewTestament"],
+                openedFromNotification: map?["notification"],
+              ),
             );
           default:
             return null;

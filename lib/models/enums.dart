@@ -1,7 +1,8 @@
 enum PlanType {
   ONE_YEAR(0, 'one_year'),
   THREE_MONTHS(1, 'three_months'),
-  SIX_MONTHS(2, 'two_months');
+  TWO_MONTHS_NEW(2, 'two_months_new'),
+  SIX_MONTHS_OLD(3, 'six_months_old');
 
   final int code;
   final String description;

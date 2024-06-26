@@ -12,14 +12,15 @@ class ExpandableContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       color: Theme.of(context).cardTheme.color,
       child: ExpandablePanel(
         theme: const ExpandableThemeData(
             headerAlignment: ExpandablePanelHeaderAlignment.center,
-            iconColor: Colors.white
+            iconColor: Colors.white,
+            iconPadding: EdgeInsets.zero
         ),
-        header: Text(header, style: Theme.of(context).textTheme.titleMedium),
+        header: Text(header, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold)),
         collapsed: Container(),
         expanded: Padding(
           padding: const EdgeInsets.only(top: 8.0),

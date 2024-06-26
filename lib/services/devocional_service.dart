@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class DevocionalService {
   final FirebaseFirestore _database = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   Future<List<Devocional>> getDevocionais() async {
     try {
@@ -73,13 +75,16 @@ class DevocionalService {
   }
 
   Future<void> postComment({required String devocionalId, required Comentario comentario}) async {
+    final userToken = await _messaging.getToken();
     final commentJson = comentario.toJson();
+    commentJson["id"] = userToken;
     await _database.collection('devocionais').doc(devocionalId).collection('comentarios').add(commentJson);
     _database.collection('devocionais').doc(devocionalId).update({'qtdComentarios': FieldValue.increment(1)});
   }
 
   Future<String> postDevocional({required Devocional devocional}) async {
     try {
+      final userToken = await _messaging.getToken();
       final devocionalJson = devocional.toJson();
       devocionalJson["bgImagem"] = "";
       devocionalJson["bgImagemUser"] = "";
@@ -100,6 +105,7 @@ class DevocionalService {
       }
 
       _database.collection('devocionais').doc(docRef.id).update({'id': docRef.id});
+      _database.collection('devocionais').doc(docRef.id).update({'ownerId': userToken});
       _database.collection('devocionais').doc(docRef.id).collection('comentarios');
 
       return docRef.id;
@@ -113,15 +119,17 @@ class DevocionalService {
     return await _database.collection('devocionais').doc(id).update(info);
   }
 
-  Future<void> likePost({required String userId, required String postId, required bool like}) async {
+  Future<void> likePost({required String postId, required bool like}) async {
+    final userToken = await _messaging.getToken();
     return (like)
-        ? await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).set({})
-        : await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).delete();
+        ? await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).set({})
+        : await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).delete();
   }
 
-  Future<bool> checkIfPostIsLiked({required String userId, required String postId}) async {
+  Future<bool> checkIfPostIsLiked({required String postId}) async {
+    final userToken = await _messaging.getToken();
     bool isLiked = false;
-    await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).get().then((res) {
+    await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).get().then((res) {
       if(res.exists) {
         isLiked = true;
       }

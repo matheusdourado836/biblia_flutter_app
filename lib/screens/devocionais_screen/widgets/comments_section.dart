@@ -4,7 +4,6 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_scr
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_skeleton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -17,6 +16,7 @@ class CommentsSection extends StatefulWidget {
 }
 
 class _CommentsSectionState extends State<CommentsSection> {
+  late DevocionalProvider _devocionalProvider;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -29,13 +29,12 @@ class _CommentsSectionState extends State<CommentsSection> {
           color: Colors.white,
           strokeWidth: 2,
         ),
-      );
+  );
 
   @override
   void initState() {
-    final devocionalProvider =
-        Provider.of<DevocionalProvider>(context, listen: false);
-    devocionalProvider.getComments(devocionalId: widget.devocionalId);
+    _devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    _devocionalProvider.getComments(devocionalId: widget.devocionalId);
     super.initState();
   }
 
@@ -52,6 +51,7 @@ class _CommentsSectionState extends State<CommentsSection> {
       appBar: null,
       backgroundColor: Theme.of(context).colorScheme.background,
       body: Column(
+        //crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'Comentários',
@@ -79,12 +79,13 @@ class _CommentsSectionState extends State<CommentsSection> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 20),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const NoBgUser(),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               Expanded(child: UserRow(comment: comentario))
                             ],
                           )
@@ -115,7 +116,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                       children: [
                         SizedBox(
                           width: 150,
-                          height: 50,
+                          //height: 64,
                           child: TextFormField(
                             controller: _nameController,
                             style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -131,7 +132,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 20),
+                        const SizedBox(width: 16),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -155,22 +156,15 @@ class _CommentsSectionState extends State<CommentsSection> {
                             const SizedBox(width: 16),
                             InkWell(
                               onTap: (() {
-                                if (_formKey.currentState!.validate() &&
-                                    _commentController.text.isNotEmpty) {
+                                if (_formKey.currentState!.validate() && _commentController.text.isNotEmpty) {
                                   setState(() => _isLoading = true);
-                                  final devocionalProvider =
-                                  Provider.of<DevocionalProvider>(context,
-                                      listen: false);
                                   final comment = Comentario(
-                                      id: const Uuid().v4(),
-                                      name: _nameController.text,
-                                      comment: _commentController.text,
-                                      qtdCurtidas: 0);
-                                  devocionalProvider
-                                      .postComment(
-                                      devocionalId: widget.devocionalId,
-                                      comentario: comment)
-                                      .whenComplete(() {
+                                    name: _nameController.text,
+                                    comment: _commentController.text,
+                                    qtdCurtidas: 0,
+                                    createdAt: DateTime.now().toIso8601String(),
+                                  );
+                                  _devocionalProvider.postComment(devocionalId: widget.devocionalId, comentario: comment).whenComplete(() {
                                     _nameController.clear();
                                     _commentController.clear();
                                     setState(() => _isLoading = false);
@@ -219,6 +213,32 @@ class UserRow extends StatefulWidget {
 
 class _UserRowState extends State<UserRow> {
   bool _liked = false;
+  String timeAgo(String isoDate) {
+    final DateTime date = DateTime.parse(isoDate);
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(date);
+
+    if (difference.inMinutes < 1) {
+      return 'agora';
+    } else if (difference.inMinutes < 60) {
+      return 'há ${difference.inMinutes} ${difference.inMinutes > 1 ? 'minutos' : 'minuto'}';
+    } else if (difference.inHours < 24) {
+      return 'há ${difference.inHours} ${difference.inHours > 1 ? 'horas' : 'hora'}';
+    } else if (difference.inDays == 1) {
+      return 'ontem';
+    } else if (difference.inDays < 7) {
+      return 'há ${difference.inDays} dias';
+    } else if (difference.inDays < 30) {
+      final int weeks = (difference.inDays / 7).floor();
+      return 'há $weeks ${weeks > 1 ? 'semanas' : 'semana'}';
+    } else if (difference.inDays < 365) {
+      final int months = (difference.inDays / 30).floor();
+      return 'há $months ${months > 1 ? 'meses' : 'mês'}';
+    } else {
+      final int years = (difference.inDays / 365).floor();
+      return 'há $years ${years > 1 ? 'anos' : 'ano'}';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,25 +249,36 @@ class _UserRowState extends State<UserRow> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.comment.name!,
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: Text(widget.comment.name!, maxLines: 1, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(Icons.circle, size: 4, color: Color.fromRGBO(167, 165, 165, 1),)
+                  ),
+                  Text(timeAgo(widget.comment.createdAt!), style: const TextStyle(fontSize: 8, color: Color.fromRGBO(167, 167, 167, 1)),)
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
             Material(
               color: Colors.transparent,
               child: InkWell(
                   onTap: (() => setState(() => _liked = !_liked)),
-                  //splashColor: Colors.redAccent,
+                  splashColor: Colors.redAccent,
                   radius: 40,
                   borderRadius: BorderRadius.circular(50),
-                  child: (_liked)
-                      ? const Icon(CupertinoIcons.heart_fill,
-                          color: Colors.red, size: 18)
-                      : const Icon(CupertinoIcons.heart, size: 20)),
+                  child: const Icon(Icons.report_outlined, size: 20,)
+              ),
             )
           ],
         ),
-        const SizedBox(height: 4),
-        Text(widget.comment.comment!, style: const TextStyle(fontSize: 12))
+        Padding(
+          padding: const EdgeInsets.only(right: 32.0),
+          child: Text(widget.comment.comment!, textAlign: TextAlign.justify, style: const TextStyle(fontSize: 12)),
+        ),
       ],
     );
   }

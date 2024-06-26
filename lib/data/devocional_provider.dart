@@ -1,7 +1,6 @@
 import 'package:biblia_flutter_app/services/devocional_service.dart';
 import 'package:biblia_flutter_app/services/thematic_service.dart';
 import 'package:flutter/material.dart';
-
 import '../models/devocional.dart';
 
 class DevocionalProvider extends ChangeNotifier {
@@ -71,11 +70,11 @@ class DevocionalProvider extends ChangeNotifier {
     return await _service.updateUserData(id, info);
   }
 
-  Future<void> likePost({required String userId, required String postId, required bool like}) async {
-    return await _service.likePost(userId: userId, postId: postId, like: like);
+  Future<void> likePost({required String postId, required bool like}) async {
+    return await _service.likePost(postId: postId, like: like);
   }
 
-  Future<bool> checkIfPostIsLiked({required String userId, required String postId}) async {
-   return await _service.checkIfPostIsLiked(userId: userId, postId: postId);
+  Future<bool> checkIfPostIsLiked({required String postId}) async {
+   return await _service.checkIfPostIsLiked(postId: postId);
   }
 }

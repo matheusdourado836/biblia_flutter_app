@@ -15,7 +15,7 @@ class VerseWithBackground extends StatefulWidget {
   final int verseStart;
   final int? verseEnd;
   final List<Map<String, dynamic>> content;
-  const VerseWithBackground({Key? key, required this.bookName, required this.content, required this.chapter, required this.verseStart, this.verseEnd}) : super(key: key);
+  const VerseWithBackground({super.key, required this.bookName, required this.content, required this.chapter, required this.verseStart, this.verseEnd});
 
   @override
   State<VerseWithBackground> createState() => _VerseWithBackgroundState();
@@ -181,9 +181,9 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               Navigator.pop(context);
                             }),
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
-                              side: MaterialStateProperty.all<BorderSide>(const BorderSide(color: Colors.white, width: 2)),
-                              fixedSize: MaterialStateProperty.all<Size>(Size(width * 0.7, 40)),
+                              backgroundColor: WidgetStateProperty.all<Color>(Colors.transparent),
+                              side: WidgetStateProperty.all<BorderSide>(const BorderSide(color: Colors.white, width: 2)),
+                              fixedSize: WidgetStateProperty.all<Size>(Size(width * 0.7, 40)),
                             ),
                             child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),

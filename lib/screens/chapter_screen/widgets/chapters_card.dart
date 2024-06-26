@@ -10,12 +10,11 @@ class ChapterCard extends StatefulWidget {
   final String bookName;
   final String abbrev;
   const ChapterCard(
-      {Key? key,
+      {super.key,
       required this.chapters,
       required this.bookName,
       required this.abbrev,
-      required this.bookIndex})
-      : super(key: key);
+      required this.bookIndex});
 
   @override
   State<ChapterCard> createState() => _ChapterCardState();

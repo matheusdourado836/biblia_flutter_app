@@ -9,10 +9,10 @@ class BookCard extends StatefulWidget {
   final Function bookIsRead;
 
   const BookCard({
-    Key? key,
+    super.key,
     required this.database,
     required this.bookIsRead,
-  }) : super(key: key);
+  });
 
   @override
   State<BookCard> createState() => _BookCardState();

@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 GlobalKey globalKey = GlobalKey();
 
 class RandomVerseScreen extends StatefulWidget {
-  const RandomVerseScreen({Key? key}) : super(key: key);
+  const RandomVerseScreen({super.key});
 
   @override
   State<RandomVerseScreen> createState() => _RandomVerseScreenState();
@@ -169,12 +169,12 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                               Navigator.pop(context);
                             }),
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
+                              backgroundColor: WidgetStateProperty.all<Color>(
                                   Colors.transparent),
-                              side: MaterialStateProperty.all<BorderSide>(
+                              side: WidgetStateProperty.all<BorderSide>(
                                 const BorderSide(color: Colors.white, width: 2),
                               ),
-                              fixedSize: MaterialStateProperty.all<Size>(
+                              fixedSize: WidgetStateProperty.all<Size>(
                                 Size(width * 0.7, 40),
                               ),
                             ),

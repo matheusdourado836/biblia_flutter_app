@@ -12,7 +12,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../models/verse.dart';
 
 class SavedVerses extends StatefulWidget {
-  const SavedVerses({Key? key}) : super(key: key);
+  const SavedVerses({super.key});
 
   @override
   State<SavedVerses> createState() => _SavedVersesState();

@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/google-services.json
 /android/app/biblia-online-a1a06-db458fb984e6.json
 /lib/firebase_options.dart
+
+# FVM Version Cache
+.fvm/

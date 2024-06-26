@@ -20,7 +20,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 6.3.2
 
 environment:
-  sdk: '>=2.18.2 <3.0.0'
+  sdk: '>=2.18.2 <3.5.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -32,39 +32,43 @@ dependencies:
   flutter_native_splash: ^2.3.9
   sqflite: ^2.3.2
   http: ^1.2.1
-  share_plus: ^6.3.0
+  share_plus: ^9.0.0
   scrollable_positioned_list: ^0.3.8
   flutter_local_notifications: ^17.0.0
-  timezone: ^0.9.2
+  timezone: ^0.9.3
   flutter_native_timezone_updated_gradle: ^2.0.3
   url_launcher: ^6.2.5
-  firebase_core: ^2.27.1
-  firebase_messaging: ^14.7.20
-  cloud_firestore: ^4.17.3
+  firebase_core: ^3.1.0
+  firebase_messaging: ^15.0.1
+  cloud_firestore: ^5.0.1
   flutter_dotenv: ^5.0.2
   cached_network_image: ^3.3.1
   flutter_slidable: ^3.1.0
   connectivity_plus: ^6.0.3
-  uuid: ^3.0.7
-  lite_rolling_switch: ^1.0.1
+  uuid: ^4.4.0
+  animated_toggle_switch: ^0.8.2
   shared_preferences: ^2.2.2
-  google_mobile_ads: ^4.0.0
+  google_mobile_ads: ^5.1.0
   page_transition: ^2.1.0
   flutter_animate: ^4.5.0
   flutter_tts: ^4.0.2
   flutter_svg: ^2.0.9
   expandable: ^5.0.1
-  firebase_storage: ^11.7.5
+  firebase_storage: ^12.0.1
   dotted_border: ^2.1.0
   image_picker: ^1.1.1
-  image_cropper: ^6.0.0
+  image_cropper: ^7.0.5
   permission_handler: ^11.3.1
   shimmer: ^3.0.0
   carousel_slider: ^4.2.1
   tutorial_coach_mark: ^1.2.11
+  flutter_quill: ^9.4.2
+  flutter_file_downloader: ^1.2.1
   provider:
   flutter:
     sdk: flutter
+dependency_overrides:
+  intl: ^0.19.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -80,7 +84,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.3
+  flutter_lints: ^4.0.0
 
 flutter_native_splash:
   color: "#795548"

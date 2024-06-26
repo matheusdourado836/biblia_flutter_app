@@ -12,13 +12,13 @@ class VerseArea extends StatefulWidget {
   final Annotation? annotation;
 
   const VerseArea({
-    Key? key,
+    super.key,
     required this.verseNumber,
     required this.verse,
     required this.verseColor,
     required this.chapter,
     this.annotation,
-  }) : super(key: key);
+  });
 
   @override
   State<VerseArea> createState() => _VerseAreaState();

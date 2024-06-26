@@ -8,7 +8,7 @@ import '../../../data/theme_provider.dart';
 import '../../../data/verses_provider.dart';
 
 class HomeDrawer extends StatefulWidget {
-  const HomeDrawer({Key? key}) : super(key: key);
+  const HomeDrawer({super.key});
 
   @override
   State<HomeDrawer> createState() => _HomeDrawerState();
@@ -33,28 +33,28 @@ class _HomeDrawerState extends State<HomeDrawer> {
         readBooks = versesProvider.listMap.where((element) => element['finishedReading'] == 1).length;
         return (screenOrientation == Orientation.landscape)
             ? _LandscapeDrawer(
-            readingProgressWidget: _readingProgressWidget(context, readBooks),
-            savedVersesWidget: _savedVersesWidget(context, versesProvider.qtdVerses),
-            annotationsWidget: _annotationsWidget(context, versesProvider.qtdAnnotations),
-            searchPassagesWidget: _searchPassagesWidget(context),
-            toggleModeWidget: _toggleModeWidget(context),
-            devocionalWidget: _devocionaisWidget(context),
-            settingsWidget: _settingsWidget(context),
+            readingProgressWidget: _readingProgressWidget(readBooks),
+            savedVersesWidget: _savedVersesWidget(versesProvider.qtdVerses),
+            annotationsWidget: _annotationsWidget(versesProvider.qtdAnnotations),
+            searchPassagesWidget: _searchPassagesWidget(),
+            toggleModeWidget: _toggleModeWidget(),
+            devocionalWidget: _devocionaisWidget(),
+            settingsWidget: _settingsWidget(),
         )
             : _PortraitDrawer(
-            readingProgressWidget:_readingProgressWidget(context, readBooks),
-            savedVersesWidget: _savedVersesWidget(context, versesProvider.qtdVerses),
-            annotationsWidget: _annotationsWidget(context, versesProvider.qtdAnnotations),
-            searchPassagesWidget: _searchPassagesWidget(context),
-            toggleModeWidget: _toggleModeWidget(context),
-            devocionalWidget: _devocionaisWidget(context),
-            settingsWidget: _settingsWidget(context),
+            readingProgressWidget:_readingProgressWidget(readBooks),
+            savedVersesWidget: _savedVersesWidget(versesProvider.qtdVerses),
+            annotationsWidget: _annotationsWidget(versesProvider.qtdAnnotations),
+            searchPassagesWidget: _searchPassagesWidget(),
+            toggleModeWidget: _toggleModeWidget(),
+            devocionalWidget: _devocionaisWidget(),
+            settingsWidget: _settingsWidget(),
         );
       },
     );
   }
 
-  Widget _readingProgressWidget(BuildContext context, int readBooks) {
+  Widget _readingProgressWidget(int readBooks) {
     final screenSize = MediaQuery.of(context).size.width;
     final screenOrientation = MediaQuery.of(context).orientation;
     return Padding(
@@ -104,7 +104,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _savedVersesWidget(BuildContext context, int qtdVerses) {
+  Widget _savedVersesWidget(int qtdVerses) {
     return ListTileDrawer(
       onTap: (() {Navigator.pushNamed(context, 'saved_verses');}),
       leading: Icons.bookmark,
@@ -113,7 +113,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _annotationsWidget(BuildContext context, qtdAnnotations) {
+  Widget _annotationsWidget(qtdAnnotations) {
     return ListTileDrawer(
       onTap: (() {Navigator.pushNamed(context, 'annotations_screen');}),
       leading: Icons.create_rounded,
@@ -122,7 +122,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _searchPassagesWidget(BuildContext context) {
+  Widget _searchPassagesWidget() {
     return ListTileDrawer(
        onTap: (() {Navigator.popAndPushNamed(context, 'search_screen');}),
        leading: Icons.search,
@@ -130,7 +130,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _toggleModeWidget(BuildContext context) {
+  Widget _toggleModeWidget() {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     themeProvider.getThemeMode();
     return ListTile(
@@ -151,35 +151,15 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _devocionaisWidget(BuildContext context) {
-    return InkWell(
-      radius: 50,
-      onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Consumer<ThemeProvider>(
-              builder: (context, theme, _) {
-                return SvgPicture.asset(
-                  'assets/images/bible.svg',
-                  width: 20,
-                  height: 20,
-                  colorFilter: (theme.isOn)
-                      ? ColorFilter.mode(Theme.of(context).colorScheme.primary, BlendMode.srcIn)
-                      : const ColorFilter.mode(Color.fromRGBO(250, 250, 250, 1), BlendMode.srcIn),
-                );
-              },
-            ),
-            const SizedBox(width: 18),
-            const Text('Devocionais')
-          ],
-        ),
-      ),
+  Widget _devocionaisWidget() {
+    return ListTileDrawer(
+        onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
+        leading: Icons.menu_book_rounded,
+        title: 'Devocionais'
     );
   }
 
-  Widget _settingsWidget(BuildContext context) {
+  Widget _settingsWidget() {
     return Padding(
       padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 24.0) : EdgeInsets.zero,
       child: ListTileDrawer(
@@ -221,7 +201,7 @@ class _PortraitDrawer extends StatelessWidget {
   final Widget toggleModeWidget;
   final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _PortraitDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget}) : super(key: key);
+  const _PortraitDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +245,7 @@ class _PortraitDrawer extends StatelessWidget {
               annotationsWidget,
               searchPassagesWidget,
               toggleModeWidget,
+              devocionalWidget
             ],
           ),
         ),
@@ -283,31 +264,44 @@ class _LandscapeDrawer extends StatelessWidget {
   final Widget toggleModeWidget;
   final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _LandscapeDrawer({Key? key, required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget}) : super(key: key);
+  const _LandscapeDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget});
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size.width;
-    return SingleChildScrollView(
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width *.5,
-        height: (screenSize > 900) ? MediaQuery.of(context).size.height : MediaQuery.of(context).size.height * 1.5,
-        child: Drawer(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight <= 400 ? constraints.maxHeight * 2 : constraints.maxHeight;
+        return Drawer(
+          width: constraints.maxWidth *.5,
           backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-          child: Column(
-            children: [
-              readingProgressWidget,
-              savedVersesWidget,
-              annotationsWidget,
-              searchPassagesWidget,
-              toggleModeWidget,
-              devocionalWidget,
-              const Spacer(),
-              settingsWidget
-            ],
+          child: SingleChildScrollView(
+            child: SizedBox(
+              height: height,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    children: [
+                      readingProgressWidget,
+                      const SizedBox(height: 15),
+                      savedVersesWidget,
+                      const SizedBox(height: 15),
+                      annotationsWidget,
+                      const SizedBox(height: 15),
+                      searchPassagesWidget,
+                      const SizedBox(height: 15),
+                      toggleModeWidget,
+                      const SizedBox(height: 15),
+                      devocionalWidget,
+                    ],
+                  ),
+                  settingsWidget
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

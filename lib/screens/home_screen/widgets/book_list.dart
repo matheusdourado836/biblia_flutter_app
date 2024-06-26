@@ -8,7 +8,7 @@ class BookList extends StatefulWidget {
   final List<Book> listBooks;
   final Function bookIsRead;
 
-  const BookList({Key? key, required this.listBooks, required this.bookIsRead}) : super(key: key);
+  const BookList({super.key, required this.listBooks, required this.bookIsRead});
 
   @override
   State<BookList> createState() => _BookListState();

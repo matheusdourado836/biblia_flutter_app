@@ -3,7 +3,7 @@ import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/tutorial_widget.dart';
+import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +16,7 @@ import 'community/feed_screen.dart';
 
 TutorialCoachMark? _coachMark;
 List<TargetFocus> _targets = [];
+ValueNotifier<bool> _removeBackground = ValueNotifier(false);
 
 final GlobalKey _journeyKey = GlobalKey();
 final GlobalKey _communityKey = GlobalKey();
@@ -30,24 +31,11 @@ class DevocionaisScreen extends StatefulWidget {
 
 class _DevocionaisScreenState extends State<DevocionaisScreen> {
   final ScrollController _scrollController = ScrollController();
-  ThemeProvider? _themeProvider;
 
   @override
   void initState() {
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    Future.delayed(const Duration(seconds: 1), () {
-      showTutorial();
-    });
-    super.initState();
-  }
-
-  void showTutorial() {
     initTargets();
-    _coachMark = TutorialCoachMark(
-      colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
-      targets: _targets,
-      hideSkip: true
-    )..show(context: context);
+    super.initState();
   }
 
   void initTargets() {
@@ -124,6 +112,13 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    _coachMark?.finish();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -131,16 +126,30 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
         title: const Text('Devocionais'),
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            JornadaEspiritual(),
-            Comunidade(),
-            PlanosDeLeitura()
-          ],
-        ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            controller: _scrollController,
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                JornadaEspiritual(),
+                Comunidade(),
+                PlanosDeLeitura()
+              ],
+            ),
+          ),
+          ValueListenableBuilder(valueListenable: _removeBackground, builder: (context, value, _) {
+            if(!value) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+              );
+            }else {
+              return const SizedBox();
+            }
+          })
+        ],
       ),
     );
   }
@@ -154,15 +163,28 @@ class JornadaEspiritual extends StatefulWidget {
 }
 
 class _JornadaEspiritualState extends State<JornadaEspiritual> {
+  ThemeProvider? _themeProvider;
+
   @override
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    devocionalProvider.getThematicDevocionais();
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    devocionalProvider.getThematicDevocionais().whenComplete(() {
+      _removeBackground.value = true;
+      if(MediaQuery.of(context).orientation == Orientation.portrait) {
+        _coachMark = TutorialCoachMark(
+            colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
+            targets: _targets,
+            hideSkip: true
+        )..show(context: context);
+      }
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.longestSide;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -171,34 +193,32 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
         children: [
           const Text('Jornada Espiritual'),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 120,
-            child: Consumer<DevocionalProvider>(
-              builder: (context, value, _) {
-                if(value.thematicDevocionais.isEmpty) {
-                  return const LoadingWidget();
-                }
+          Consumer<DevocionalProvider>(
+            builder: (context, value, _) {
+              if(value.thematicDevocionais.isEmpty) {
+                return const LoadingWidget();
+              }
 
-                return CarouselSlider(
-                  options: CarouselOptions(
-                    height: 120,
-                    padEnds: false,
-                    enableInfiniteScroll: false,
-                    aspectRatio: 16/9,
-                    viewportFraction: .58
-                  ),
-                  items: value.thematicDevocionais.map((thematicDevocional) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
-                      child: InkWell(
-                        onTap: (() {
-                          Navigator.pushNamed(context, 'thematic_selected', arguments: {"devocional": thematicDevocional});
-                        }),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              height: 80,
+              return CarouselSlider(
+                options: CarouselOptions(
+                  padEnds: false,
+                  enableInfiniteScroll: false,
+                  aspectRatio: (height <= 800) ? 10/4 : 16/4,
+                  viewportFraction: .65
+                ),
+                items: value.thematicDevocionais.map((thematicDevocional) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: InkWell(
+                      onTap: (() {
+                        Navigator.pushNamed(context, 'thematic_selected', arguments: {"devocional": thematicDevocional});
+                      }),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 120,
                               decoration: BoxDecoration(
                                 image: DecorationImage(
                                   fit: BoxFit.cover,
@@ -209,16 +229,16 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                                 )
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(thematicDevocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(thematicDevocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))
+                        ],
                       ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -300,20 +320,20 @@ class _ComunidadeState extends State<Comunidade> {
                                     ),
                                   )
                                       : const NoBgUser(),
-                                  const SizedBox(width: 15),
-                                  Text(devocional.nomeAutor!)
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(devocional.nomeAutor!, maxLines: 1, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))
                                 ],
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
                               Expanded(
                                 child: Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(12),
                                       color: Colors.white
                                   ),
-                                  child: Text(devocional.texto!, maxLines: 5, style: const TextStyle(color: Colors.black),)
+                                  child: Text(devocional.plainText!, maxLines: 4, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black),)
                                 ),
                               ),
                             ],
@@ -353,11 +373,12 @@ class PlanosDeLeitura extends StatefulWidget {
 }
 
 class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
+  // TODO TEM QUE COLOCAR ISSO NO BANCO DE DADOS ANTES DE LANÇAR A ATUALIZAÇÃO
   static final List<Map<String, dynamic>> _plans = [
-    {"label": "Bíblia em 1 ano", "route": "one_year", "code": PlanType.ONE_YEAR},
-    {"label": "Bíblia toda em 3 meses", "route": "three_months", "code": PlanType.THREE_MONTHS},
-    {"label": "Novo testamento em 2 meses", "route": "one_year", "code": PlanType.SIX_MONTHS},
-    {"label": "Mais um que não sei", "route": "one_year", "code": PlanType.ONE_YEAR}
+    {"label": "Bíblia em 1 ano", "code": PlanType.ONE_YEAR, "duration": 396, "qtdChapters": 3},
+    {"label": "Bíblia toda em 3 meses", "code": PlanType.THREE_MONTHS, "duration": 91, "qtdChapters": 13},
+    {"label": "Novo testamento em 2 meses", "code": PlanType.TWO_MONTHS_NEW, "duration": 64, "qtdChapters": 4, "isNewTestament": true},
+    {"label": "Antigo testamento em 6 meses", "code": PlanType.SIX_MONTHS_OLD, "duration": 185, "qtdChapters": 5, "bibleLength": 39}
   ];
   late PlansProvider _plansProvider;
   double percentageValue = 0;
@@ -417,7 +438,19 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                         itemBuilder: (context, index) {
                           if(snapshot.data![index]) {
                             return InkWell(
-                              onTap: (() => Navigator.pushNamed(context, _plans[index]["route"], arguments: {"code": _plans[index]["code"]})),
+                              onTap: (() => Navigator.pushNamed(
+                                  context,
+                                  'plans_base',
+                                  arguments: {
+                                    "planType": _plans[index]["code"],
+                                    "label": _plans[index]["label"],
+                                    "qtdChapters": _plans[index]["qtdChapters"],
+                                    "duration": _plans[index]["duration"],
+                                    "bibleLength": _plans[index]["bibleLength"],
+                                    "isNewTestament": _plans[index]["isNewTestament"],
+                                  }
+                                )
+                              ),
                               child: Row(
                                 children: [
                                   Container(
@@ -434,7 +467,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(_plans[index]["label"]),
+                                        Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
                                         const SizedBox(height: 8),
                                         FutureBuilder(
                                             future: calculateReadPercentage(index),
@@ -476,7 +509,18 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                             );
                           }
                           return InkWell(
-                            onTap: (() => Navigator.pushNamed(context, _plans[index]["route"], arguments: {"code": _plans[index]["code"]})),
+                            onTap: (() => Navigator.pushNamed(
+                                context,
+                                'plans_base',
+                                arguments: {
+                                  "planType": _plans[index]["code"],
+                                  "label": _plans[index]["label"],
+                                  "qtdChapters": _plans[index]["qtdChapters"],
+                                  "duration": _plans[index]["duration"],
+                                  "bibleLength": _plans[index]["bibleLength"],
+                                  "isNewTestament": _plans[index]["isNewTestament"],
+                                }
+                            )),
                             child: Row(
                               children: [
                                 Container(
@@ -489,7 +533,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                   ),
                                 ),
                                 Expanded(
-                                  child: Text(_plans[index]["label"]),
+                                  child: Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
                                 )
                               ],
                             ),

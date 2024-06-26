@@ -32,14 +32,14 @@ class LoadingVersesWidget extends StatefulWidget {
   final Map<int, dynamic> listVerses;
 
   const LoadingVersesWidget({
-    Key? key,
+    super.key,
     required this.bookName,
     required this.abbrev,
     required this.chapter,
     required this.verseColors,
     required this.bookIndex, required this.listVerses,
     this.readingPlan,
-  }) : super(key: key);
+  });
 
   @override
   State<LoadingVersesWidget> createState() => _LoadingVersesWidgetState();
@@ -182,6 +182,9 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
       showBottomSheet(
           context: context,
           enableDrag: false,
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width
+          ),
           backgroundColor: Theme.of(context).colorScheme.secondary,
           builder: (BuildContext ctx) {
             return Padding(
@@ -191,7 +194,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                 children: [
                   const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       IconButton(
                         onPressed: (() {

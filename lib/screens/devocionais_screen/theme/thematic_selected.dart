@@ -4,14 +4,18 @@ import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+late ThemeProvider _themeProvider;
+
 class ThematicSelected extends StatelessWidget {
   final ThematicDevocional devocional;
   const ThematicSelected({super.key, required this.devocional});
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    return Scaffold(
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    return MediaQuery.of(context).orientation == Orientation.landscape
+      ? LandScapeWidget(devocional: devocional)
+      : Scaffold(
       appBar: null,
       body: Stack(
         children: [
@@ -34,9 +38,9 @@ class ThematicSelected extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(devocional.referencia!, style: const TextStyle(fontWeight: FontWeight.bold, color: Color.fromRGBO(255, 255, 255, 0.85))),
+                    Text(devocional.referencia ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color.fromRGBO(255, 255, 255, 0.85))),
                     const SizedBox(height: 20),
-                    Text(devocional.passagem!, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, color: Color.fromRGBO(255, 255, 255, 0.85)))
+                    Text(devocional.passagem ?? '', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, color: Color.fromRGBO(255, 255, 255, 0.85)))
                   ],
                 ),
               ),
@@ -56,8 +60,8 @@ class ThematicSelected extends StatelessWidget {
               height: MediaQuery.of(context).size.height * .52,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.background,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(45), topRight: Radius.circular(45))
+                  color: Theme.of(context).colorScheme.background,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(45), topRight: Radius.circular(45))
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -67,7 +71,7 @@ class ThematicSelected extends StatelessWidget {
                     children: [
                       Text(devocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
-                      Text(devocional.texto!.replaceAll('\\n', '\n\n'), textAlign: TextAlign.justify, style: ThemeColors().verseColor(themeProvider.isOn).copyWith(height: 1.8)
+                      Text(devocional.texto!.replaceAll('\\n', '\n\n'), textAlign: TextAlign.justify, style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
                       )
                     ],
                   ),
@@ -76,6 +80,45 @@ class ThematicSelected extends StatelessWidget {
             ),
           )
         ],
+      ),
+    );
+  }
+}
+
+class LandScapeWidget extends StatelessWidget {
+  final ThematicDevocional devocional;
+  const LandScapeWidget({super.key, required this.devocional});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(devocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                Text(devocional.texto!.replaceAll('\\n', '\n\n'), textAlign: TextAlign.justify, style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
+                )
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

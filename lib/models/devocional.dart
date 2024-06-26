@@ -1,13 +1,14 @@
 class Devocional {
   String? id;
+  String? ownerId;
   String? createdAt;
-  String? referencia;
   String? titulo;
-  String? texto;
-  int? textAlign;
+  List<dynamic>? styles;
+  String? plainText;
   String? nomeAutor;
   String? bgImagem;
   String? bgImagemUser;
+  bool? hasFrost;
   int? status;
   int? qtdComentarios;
   int? qtdCurtidas;
@@ -15,30 +16,31 @@ class Devocional {
 
   Devocional(
       {this.id,
-        this.createdAt,
-        this.referencia,
-        this.titulo,
-        this.texto,
-        this.textAlign,
-        this.nomeAutor,
-        this.bgImagem,
-        this.bgImagemUser,
-        this.status,
-        this.qtdComentarios,
-        this.qtdCurtidas,
-        this.public}
-  );
+      this.ownerId,
+      this.createdAt,
+      this.titulo,
+      this.styles,
+      this.plainText,
+      this.nomeAutor,
+      this.bgImagem,
+      this.bgImagemUser,
+      this.hasFrost,
+      this.status,
+      this.qtdComentarios,
+      this.qtdCurtidas,
+      this.public});
 
   Devocional.fromJson(Map<String, dynamic> json) {
     id = json['id'];
+    ownerId = json['ownerId'];
     createdAt = json['createdAt'];
-    referencia = json['referencia'];
     titulo = json['titulo'];
-    texto = json['texto'];
-    textAlign = json['textAlign'];
+    styles = json['styles'];
+    plainText = json['plainText'];
     nomeAutor = json['nomeAutor'];
     bgImagem = json['bgImagem'];
     bgImagemUser = json['bgImagemUser'];
+    hasFrost = json['hasFrost'];
     status = json['status'];
     qtdComentarios = json['qtdComentarios'];
     qtdCurtidas = json['qtdCurtidas'];
@@ -48,14 +50,15 @@ class Devocional {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
+    data['ownerId'] = ownerId;
     data['createdAt'] = createdAt;
-    data['referencia'] = referencia;
     data['titulo'] = titulo;
-    data['texto'] = texto;
-    data['textAlign'] = textAlign;
+    data['styles'] = styles;
+    data['plainText'] = plainText;
     data['bgImagem'] = bgImagem;
     data['nomeAutor'] = nomeAutor;
     data['bgImagemUser'] = bgImagemUser;
+    data['hasFrost'] = hasFrost;
     data['status'] = status;
     data['qtdComentarios'] = qtdComentarios;
     data['qtdCurtidas'] = qtdCurtidas;
@@ -69,10 +72,22 @@ class Comentario {
   String? name;
   String? comment;
   int qtdCurtidas;
+  String? createdAt;
 
-  Comentario({required this.name, required this.comment, required this.qtdCurtidas, this.id});
+  Comentario(
+      {required this.name,
+      required this.comment,
+      required this.qtdCurtidas,
+      required this.createdAt,
+      this.id,});
 
-  factory Comentario.fromJson(Map<String, dynamic> json) => Comentario(id: json["id"], name: json["name"], comment: json["comment"], qtdCurtidas: json["qtdCurtidas"]);
+  factory Comentario.fromJson(Map<String, dynamic> json) => Comentario(
+      id: json["id"],
+      name: json["name"],
+      comment: json["comment"],
+      qtdCurtidas: json["qtdCurtidas"],
+      createdAt: json["createdAt"]
+  );
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
@@ -80,6 +95,7 @@ class Comentario {
     data["name"] = name;
     data["comment"] = comment;
     data["qtdCurtidas"] = qtdCurtidas;
+    data["createdAt"] = createdAt;
 
     return data;
   }
@@ -97,14 +113,13 @@ class ThematicDevocional {
 
   ThematicDevocional(
       {this.id,
-        this.createdAt,
-        this.referencia,
-        this.passagem,
-        this.titulo,
-        this.texto,
-        this.nomeAutor,
-        this.bgImagem}
-  );
+      this.createdAt,
+      this.referencia,
+      this.passagem,
+      this.titulo,
+      this.texto,
+      this.nomeAutor,
+      this.bgImagem});
 
   ThematicDevocional.fromJson(Map<String, dynamic> json) {
     id = json['id'];

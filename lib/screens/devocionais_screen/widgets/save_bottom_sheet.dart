@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/devocional_saved_dialog.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
@@ -24,12 +26,12 @@ class SaveBottomSheet extends StatefulWidget {
 class _SaveBottomSheetState extends State<SaveBottomSheet> {
   late final DevocionalProvider _devocionalProvider;
   bool _public = true;
+  bool _addFrost = false;
   bool _isLoading = false;
 
   @override
   void initState() {
-    _devocionalProvider =
-        Provider.of<DevocionalProvider>(context, listen: false);
+    _devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     widget.devocional.public = _public;
     super.initState();
   }
@@ -50,7 +52,7 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
           color: Colors.white,
           strokeWidth: 2,
         ),
-      );
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -64,31 +66,38 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
           _PostContainer(devocional: widget.devocional),
           const SizedBox(height: 20),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Público'),
+              const Text('Publicar para todos'),
               const SizedBox(width: 12),
               Switch(
                   value: _public,
                   onChanged: ((newValue) {
                     setState(() => _public = !_public);
                     widget.devocional.public = _public;
-                  }))
+                  })
+              )
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Adicionar título na imagem'),
+              const SizedBox(width: 12),
+              Switch(
+                  value: _addFrost,
+                  onChanged: ((newValue) {
+                    setState(() => _addFrost = !_addFrost);
+                    widget.devocional.hasFrost = _addFrost;
+                  })
+              )
             ],
           ),
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                  child: ElevatedButton(
-                      onPressed: (() => Navigator.pop(context)),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8))),
-                      child: const Text('Cancelar'))),
-              const SizedBox(width: 12),
               Expanded(
                   child: ElevatedButton(
                       onPressed: (() {
@@ -100,13 +109,12 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
                           if (value.isNotEmpty) {
                             saveUserPost(value);
                             showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (context) =>
-                                        const DevocionalSavedDialog())
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) =>
+                                const DevocionalSavedDialog())
                                 .whenComplete(() {
-                              Navigator.pushNamedAndRemoveUntil(
-                                  context, 'feed_screen', (route) => route.settings.name == 'feed_screen');
+                                Navigator.popUntil(context, (route) => route.settings.name == 'feed_screen');
                             });
                           }
                         });
@@ -117,7 +125,19 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8))),
                       child:
-                          (_isLoading) ? _loading() : const Text('Publicar')))
+                      (_isLoading) ? _loading() : const Text('Publicar'))),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: ElevatedButton(
+                      onPressed: (() => Navigator.pop(context)),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                      ),
+                      child: const Text('Cancelar')
+                  )
+              ),
             ],
           )
         ],
@@ -128,7 +148,7 @@ class _SaveBottomSheetState extends State<SaveBottomSheet> {
 
 class _PostContainer extends StatefulWidget {
   final Devocional devocional;
-  const _PostContainer({super.key, required this.devocional});
+  const _PostContainer({required this.devocional});
 
   @override
   State<_PostContainer> createState() => _PostContainerState();
@@ -138,9 +158,11 @@ class _PostContainerState extends State<_PostContainer> {
   final TextEditingController _nameController = TextEditingController();
   final imagePicker = ImagePicker();
   File? imageFile;
-  Widget? bgImage;
+  File? bgImageFile;
+  File? apiImage;
   Widget? avatar;
   String todayDate = '';
+  bool _loadingImage = false;
 
   pick(ImageSource source, bool profile) async {
     var storageStatus = await Permission.storage.status;
@@ -169,22 +191,16 @@ class _PostContainerState extends State<_PostContainer> {
                     fit: BoxFit.cover, image: FileImage(imageFile!))),
           );
         } else {
-          widget.devocional.bgImagem = imageFile!.path;
-          bgImage = Container(
-            decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                image: DecorationImage(
-                    fit: BoxFit.cover, image: FileImage(imageFile!))),
-          );
+          bgImageFile = File(croppedImage.path);
+          widget.devocional.bgImagem = bgImageFile!.path;
         }
       });
     }
   }
 
   Future<CroppedFile> cropImage(File file) async {
-    final croppedImage = await ImageCropper()
-        .cropImage(sourcePath: file.path,
-        aspectRatioPresets: [CropAspectRatioPreset.ratio4x3],
+    final croppedImage = await ImageCropper().cropImage(sourcePath: file.path,
+        aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 3),
         uiSettings: [
       AndroidUiSettings(
           toolbarTitle: 'Cortar imagem',
@@ -198,6 +214,30 @@ class _PostContainerState extends State<_PostContainer> {
     ]);
 
     return croppedImage!;
+  }
+
+  Future<void> loadApiImage() async {
+    final versesProvider = Provider.of<VersesProvider>(context, listen: false);
+    setState(() => _loadingImage = true);
+    final res = await versesProvider.getOnlyImage();
+    if(res != null) {
+      apiImage = res;
+      final croppedImage = await cropImage(File(res.path));
+      bgImageFile = File(croppedImage.path);
+      widget.devocional.bgImagem = bgImageFile!.path;
+      setState(() => bgImageFile);
+    }else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível gerar uma imagem, tente novamente'))
+      );
+    }
+    setState(() => _loadingImage = false);
+  }
+
+  Future<void> deleteApiImage() async {
+    if (apiImage != null && await apiImage!.exists()) {
+      await apiImage!.delete();
+    }
   }
 
   void _showOpcoesBottomSheet(bool profile) {
@@ -272,23 +312,9 @@ class _PostContainerState extends State<_PostContainer> {
                 title: const Text('Imagem aleatória'),
                 onTap: () {
                   setState(() {
-                    final versesProvider =
-                        Provider.of<VersesProvider>(context, listen: false);
-                    versesProvider.getOnlyImage().then((res) async {
-                      Navigator.pop(context);
-                      setState(() async {
-                        imageFile = File(res["url"]);
-                        bgImage = Container(
-                          decoration: BoxDecoration(
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(12)),
-                              image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image: NetworkImage(
-                                      versesProvider.verseInfo["url"]))),
-                        );
-                      });
-                    });
+                    deleteApiImage();
+                    Navigator.pop(context);
+                    loadApiImage();
                   });
                 },
               ),
@@ -318,17 +344,20 @@ class _PostContainerState extends State<_PostContainer> {
     );
   }
 
-  Widget iconInfo({required Widget icon, required String text}) => Row(
+  Widget iconInfo({required Widget icon, required String text}) => Column(
         children: [
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 13)),
-          const SizedBox(width: 10),
           icon,
+          const SizedBox(height: 4),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 13)),
         ],
-      );
+  );
 
   @override
   void dispose() {
     _nameController.dispose();
+    if (apiImage != null && apiImage!.existsSync()) {
+      apiImage!.deleteSync();
+    }
     super.dispose();
   }
 
@@ -353,46 +382,66 @@ class _PostContainerState extends State<_PostContainer> {
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Theme.of(context).colorScheme.primary,
-          boxShadow: kElevationToShadow[1]),
+          color: Theme.of(context).cardTheme.color,
+          boxShadow: kElevationToShadow[1]
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: InkWell(
+          (_loadingImage)
+            ? const SizedBox(height: 200, width: 30, child: Center(child: LoadingWidget(bgColor: Colors.white, txtColor: Colors.white,)),)
+            : Expanded(
+              child: InkWell(
               onTap: (() => _showOpcoesBottomSheet(false)),
-              child: (bgImage == null)
+              child: (bgImageFile == null)
                   ? DottedBorder(
-                      borderType: BorderType.RRect,
-                      color: Colors.white,
-                      dashPattern: const [5, 5],
-                      radius: const Radius.circular(12),
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(12)),
-                        child: Container(
-                          color: Colors.grey,
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.image, size: 80),
-                              Text(
-                                'Adicionar imagem de fundo (opcional)',
-                                textAlign: TextAlign.center,
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
+                borderType: BorderType.RRect,
+                color: Colors.white,
+                dashPattern: const [5, 5],
+                radius: const Radius.circular(12),
+                child: ClipRRect(
+                  borderRadius:
+                  const BorderRadius.all(Radius.circular(12)),
+                  child: Container(
+                    color: Colors.grey,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Icon(Icons.image, size: 80),
+                        Text(
+                          'Adicionar imagem de fundo (opcional)',
+                          textAlign: TextAlign.center,
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              : Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    image: DecorationImage(
+                        colorFilter: (widget.devocional.hasFrost ?? false)
+                            ? ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken)
+                            : null,
+                        fit: BoxFit.cover, image: FileImage(bgImageFile!)
                     )
-                  : bgImage,
+                ),
+                child: (widget.devocional.hasFrost ?? false)
+                    ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: FrostedContainer(title: widget.devocional.titulo ?? ''),
+                ) : const SizedBox(),
+              ),
+                        ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24.0),
             child: ExpandableContainer(
               header: widget.devocional.titulo!,
-              expandedText: widget.devocional.texto!,
+              expandedText: widget.devocional.plainText!,
               verCompleto: false,
             ),
           ),
@@ -449,7 +498,8 @@ class _PostContainerState extends State<_PostContainer> {
                   )
                 ],
               ),
-              Expanded(
+              Padding(
+                padding: const EdgeInsets.only(right: 4.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -463,7 +513,7 @@ class _PostContainerState extends State<_PostContainer> {
                             size: 16,
                           )),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 20),
                     iconInfo(
                         text: '0',
                         icon: Material(

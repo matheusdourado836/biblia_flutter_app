@@ -15,13 +15,12 @@ class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int chapter;
 
   const VersesAppBar(
-      {Key? key,
+      {super.key,
       required this.bookName,
       required this.abbrev,
       required this.chapters,
       required this.bookIndex,
-      required this.chapter})
-      : super(key: key);
+      required this.chapter});
 
   @override
   State<VersesAppBar> createState() => _VersesAppBarState();

@@ -1,8 +1,8 @@
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/save_bottom_sheet.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 
 class CreateDevocional extends StatefulWidget {
   const CreateDevocional({super.key});
@@ -12,47 +12,34 @@ class CreateDevocional extends StatefulWidget {
 }
 
 class _CreateDevocionalState extends State<CreateDevocional> {
-  final TextEditingController _referenceController = TextEditingController();
+  final QuillController _controller = QuillController.basic();
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _textoController = TextEditingController();
-  int textValue = 1;
-  IconData textAlignIcon = Icons.align_horizontal_center;
+  final FocusNode _titleFocus = FocusNode();
+  final FocusNode _textFocus = FocusNode();
 
-  TextAlign textAlign = TextAlign.center;
+  @override
+  void initState() {
 
-  void switchTextAlign(int value) {
-    if (value == 0) {
-      textAlign = TextAlign.start;
-      textAlignIcon = Icons.align_horizontal_left;
-    } else if (value == 1) {
-      textAlign = TextAlign.center;
-      textAlignIcon = Icons.align_horizontal_center;
-    } else {
-      textAlign = TextAlign.end;
-      textAlignIcon = Icons.align_horizontal_right;
-    }
-
-    setState(() {
-      textAlign;
-      textAlignIcon;
+    _titleFocus.addListener(() {
+      if (_titleFocus.hasFocus) {
+        _textFocus.unfocus();
+      }
     });
-  }
 
-  int textAlignToInt(TextAlign textAlign) {
-    if (textAlign == TextAlign.start) {
-      return 0;
-    } else if (textAlign == TextAlign.center) {
-      return 1;
-    } else {
-      return 2;
-    }
+    _textFocus.addListener(() {
+      if (_textFocus.hasFocus) {
+        _titleFocus.unfocus();
+      }
+    });
+    super.initState();
   }
 
   @override
   void dispose() {
-    _referenceController.dispose();
     _titleController.dispose();
-    _textoController.dispose();
+    _controller.dispose();
+    _titleFocus.dispose();
+    _textFocus.dispose();
     super.dispose();
   }
 
@@ -65,23 +52,14 @@ class _CreateDevocionalState extends State<CreateDevocional> {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).colorScheme.background,
-        leading: IconButton(
-            onPressed: (() {
-              if (textValue == 2) {
-                setState(() => textValue = 0);
-                switchTextAlign(textValue);
-                return;
-              }
-              setState(() => textValue++);
-              switchTextAlign(textValue);
-            }),
-            icon: Icon(textAlignIcon)),
         title: TextField(
-          controller: _referenceController,
+          controller: _titleController,
+          focusNode: _titleFocus,
           decoration: const InputDecoration(
-              hintStyle: TextStyle(fontSize: 12),
-              hintText: 'Passagem de referência...',
+              hintStyle: TextStyle(fontSize: 14),
+              hintText: 'Título...',
               suffixIcon: Icon(
                 Icons.edit_outlined,
                 size: 18,
@@ -91,73 +69,85 @@ class _CreateDevocionalState extends State<CreateDevocional> {
         actions: [
           IconButton(
               onPressed: (() => Navigator.pop(context)),
-              icon: const Icon(Icons.close)
-          )
+              icon: const Icon(Icons.close))
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    textAlign: textAlign,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 24,
-                        fontStyle: FontStyle.italic),
-                    expands: false,
-                    decoration: const InputDecoration(
-                      hintText: 'Tema do devocional...',
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _textoController,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 22),
-                    textAlign: textAlign,
-                    decoration: const InputDecoration(
-                        hintText: 'Escreva seu devocional aqui...'),
-                    keyboardType: TextInputType.multiline,
-                    minLines: null,
-                    maxLines: null,
-                  ),
-                ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          QuillToolbar.simple(
+            configurations: QuillSimpleToolbarConfigurations(
+              controller: _controller,
+              color: Theme.of(context).primaryColor,
+              showAlignmentButtons: true,
+              multiRowsDisplay: false,
+              showQuote: false,
+              showClipboardCopy: false,
+              showClipboardPaste: false,
+              showClipboardCut: false,
+              showSubscript: false,
+              showSuperscript: false,
+              sharedConfigurations: const QuillSharedConfigurations(
+                locale: Locale('pt', 'BR'),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: QuillEditor.basic(
+                focusNode: _textFocus,
+                  configurations: QuillEditorConfigurations(
+                    controller: _controller,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    placeholder: 'Escreva seu devocional aqui...',
+                    customStyles: DefaultStyles(
+                      placeHolder: DefaultListBlockStyle(
+                        TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(.6),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 24,
+                          fontStyle: FontStyle.italic
+                        ),
+                        const VerticalSpacing(0, 0),
+                        const VerticalSpacing(0, 0),
+                        null,
+                        null
+                      )
+                    )
+                  )
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         child: ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                foregroundColor: Colors.white,
+                fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
+                    borderRadius: BorderRadius.circular(12)
+                )
+            ),
             onPressed: (() {
+              _titleFocus.unfocus();
+              _textFocus.unfocus();
+              final styles = _controller.document.toDelta().toJson();
+              final textDivided = _controller.document.toPlainText().split('\n').where((line) => line.trim().isNotEmpty).toList();
+              final plainText = textDivided.join('\n').split('\n').take(4).join('\n');
               final devocional = Devocional(
                   createdAt: DateTime.now().toIso8601String(),
-                  referencia: _referenceController.text,
                   titulo: _titleController.text,
-                  texto: _textoController.text,
-                  textAlign: textAlignToInt(textAlign),
+                  styles: styles,
+                  plainText: plainText,
                   status: 0,
                   qtdCurtidas: 0,
-                  qtdComentarios: 0);
+                  qtdComentarios: 0
+              );
               showModalBottomSheet(
                   context: context,
                   backgroundColor: Theme.of(context).colorScheme.background,
@@ -165,10 +155,11 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                   isDismissible: false,
                   showDragHandle: true,
                   enableDrag: false,
-                  builder: (context) =>
-                      SaveBottomSheet(devocional: devocional));
+                  builder: (context) => SaveBottomSheet(devocional: devocional)
+              );
             }),
-            child: const Text('Salvar')),
+            child: const Text('Próximo')
+        ),
       ),
     );
   }

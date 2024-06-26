@@ -27,7 +27,6 @@ class DailyReadingDao {
 
   static final DailyReadingDao instance = DailyReadingDao._privateConstructor();
 
-
   Future<List<DailyRead>> getAll() async {
     List<DailyRead> dailyReads = [];
     final List<Map<String, dynamic>> result = await _plansInstance.query(_tableName);
@@ -70,8 +69,6 @@ class DailyReadingDao {
   }
 
   Future<bool> markChapter(String chapter, {required int read, required int progressId}) async {
-    bool allChaptersRead = false;
-
     await _plansInstance.update(
       _tableName,
       {_completed: read},
@@ -80,29 +77,9 @@ class DailyReadingDao {
     );
 
     return true;
-
-    // // Verifica se todos os capítulos do dia foram lidos
-    // List<Map<String, dynamic>> chapters = await bancoDeDados.query(
-    //   _tableName,
-    //   where: '$_progressId = ? AND $_dayNumber = ?',
-    //   whereArgs: [progressId, dayNumber],
-    // );
-    //
-    // print('CHAPTERSSSSSSS $chapters');
-    //
-    // allChaptersRead = chapters.every((chapter) => chapter['completed'] == 1);
-    //
-    // // if (allChaptersRead) {
-    // //   // Atualiza o progresso diário
-    // //   await bancoDeDados.rawUpdate(
-    // //       'UPDATE $_tableName SET $_completed = ? WHERE $_progressId = ? AND $_dayNumber = ?', [1, progressId, dayNumber]);
-    // // }
-    //
-    // return allChaptersRead;
   }
 
-  void dropDb() async {
-    await _plansInstance.delete(_tableName);
+  void dropDb({required int progressId}) async {
+    await _plansInstance.delete(_tableName, where: '$_progressId = ?', whereArgs: [progressId]);
   }
-
 }

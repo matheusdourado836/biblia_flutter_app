@@ -1,7 +1,7 @@
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:lite_rolling_switch/lite_rolling_switch.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -178,26 +178,35 @@ class _OptionsState extends State<Options> {
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
                       return SizedBox(
-                        width: 145,
+                        width: 140,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: LiteRollingSwitch(
-                            value: !themeValue.isOn,
-                            textOn: 'Escuro',
-                            textOff: 'Claro',
-                            colorOn: Theme.of(context).colorScheme.primary,
-                            colorOff: Theme.of(context).colorScheme.primary,
-                            iconOn: Icons.dark_mode_sharp,
-                            iconOff: Icons.light_mode_sharp,
-                            animationDuration:
-                                const Duration(milliseconds: 600),
-                            textSize: 16.0,
-                            onChanged: (bool state) {
-                              themeValue.toggleTheme();
-                            },
-                            onTap: (() {}),
-                            onDoubleTap: (() {}),
-                            onSwipe: (() {}),
+                          child: AnimatedToggleSwitch<bool>.dual(
+                            current: !themeValue.isOn,
+                            first: false,
+                            second: true,
+                            spacing: 55.0,
+                            style: const ToggleStyle(
+                              borderColor: Colors.transparent,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  spreadRadius: 1,
+                                  blurRadius: 2,
+                                  offset: Offset(0, 1.5),
+                                ),
+                              ],
+                            ),
+                            borderWidth: 5.0,
+                            height: 45,
+                            onChanged: (b) => themeValue.toggleTheme(),
+                            styleBuilder: (b) => ToggleStyle(indicatorColor: b ? Theme.of(context).cardTheme.color : Theme.of(context).colorScheme.primary),
+                            iconBuilder: (value) => value
+                                ? const Icon(Icons.dark_mode)
+                                : const Icon(Icons.light_mode_rounded, color: Colors.white,),
+                            textBuilder: (value) => value
+                                ? const Center(child: Text('Escuro'))
+                                : const Center(child: Text('Claro')),
                           ),
                         ),
                       );

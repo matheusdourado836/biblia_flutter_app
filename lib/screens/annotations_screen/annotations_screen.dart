@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AnnotationsScreen extends StatefulWidget {
-  const AnnotationsScreen({Key? key}) : super(key: key);
+  const AnnotationsScreen({super.key});
 
   @override
   State<AnnotationsScreen> createState() => _AnnotationsScreenState();

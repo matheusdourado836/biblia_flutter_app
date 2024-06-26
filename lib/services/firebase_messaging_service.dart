@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -59,30 +60,37 @@ class FirebaseMessagingService {
 
   _onMessageOpenedApp() {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      GoToVerseScreen().goToVersePage(
-          message.data["bookName"],
-          message.data["abbrev"],
-          int.parse(message.data["bookIndex"]),
-          int.parse(message.data["chapters"]),
-          int.parse(message.data["chapter"]),
-          int.parse(message.data["verseNumber"]));
+      if(!message.data.containsKey("route")) {
+        GoToVerseScreen().goToVersePage(
+            message.data["bookName"],
+            message.data["abbrev"],
+            int.parse(message.data["bookIndex"]),
+            int.parse(message.data["chapters"]),
+            int.parse(message.data["chapter"]),
+            int.parse(message.data["verseNumber"])
+        );
+      }else {
+        navigatorKey!.currentState!.pushNamed(message.data["route"]);
+      }
     });
-    FirebaseMessaging.instance.getInitialMessage().then((value) => {
-          if (value != null)
-            {
-              GoToVerseScreen().goToVersePage(
-                  value.data["bookName"],
-                  value.data["abbrev"],
-                  int.parse(value.data["bookIndex"]),
-                  int.parse(value.data["chapters"]),
-                  int.parse(value.data["chapter"]),
-                  int.parse(value.data["verseNumber"]))
-            }
+    FirebaseMessaging.instance.getInitialMessage().then((message) => {
+          if (message != null && !message.data.containsKey("route")) {
+            GoToVerseScreen().goToVersePage(
+              message.data["bookName"],
+              message.data["abbrev"],
+              int.parse(message.data["bookIndex"]),
+              int.parse(message.data["chapters"]),
+              int.parse(message.data["chapter"]),
+              int.parse(message.data["verseNumber"])
+            )
+          }else if(message?.data.containsKey("route") ?? false) {
+            navigatorKey!.currentState!.pushNamed(message!.data["route"], arguments: {"notification": true})
+          }
         });
   }
 
   Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage? message) async {
-    if (message != null) {
+    if (message != null && !message.data.containsKey("route")) {
       GoToVerseScreen().goToVersePage(
           message.data["bookName"],
           message.data["abbrev"],
@@ -90,6 +98,8 @@ class FirebaseMessagingService {
           int.parse(message.data["chapters"]),
           int.parse(message.data["chapter"]),
           int.parse(message.data["verseNumber"]));
+    }else if(message != null && message.data.containsKey("route")) {
+      navigatorKey!.currentState!.pushNamed(message.data["route"]);
     }
   }
 
@@ -97,7 +107,7 @@ class FirebaseMessagingService {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
-    if (notification != null && android != null) {
+    if (notification != null && android != null && !message.data.containsKey("route")) {
       String bookName = message.data["bookName"];
       String abbrev = message.data["abbrev"];
       String bookIndex = message.data["bookIndex"];
@@ -111,6 +121,17 @@ class FirebaseMessagingService {
           body: notification.body!,
           payload: '$bookName $abbrev $bookIndex $chapters $chapter $verseNumber',
         ),
+        null
+      );
+    }else if(notification != null && android != null && message.data.containsKey("route")) {
+      _notificationService.showNotification(
+        CustomNotification(
+          id: android.hashCode,
+          title: notification.title!,
+          body: notification.body!,
+          payload: 'route ${message.data["route"]}',
+        ),
+        message.data["route"]
       );
     }
   }

@@ -12,7 +12,7 @@ List<Map<int, dynamic>> allVersesTextSpan = [];
 class SearchingVerse extends StatefulWidget {
   final Function() function;
   final int chapter;
-  const SearchingVerse({Key? key, required this.function, required this.chapter}) : super(key: key);
+  const SearchingVerse({super.key, required this.function, required this.chapter});
 
   @override
   State<SearchingVerse> createState() => _SearchingVerseState();

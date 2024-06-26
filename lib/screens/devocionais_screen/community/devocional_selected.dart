@@ -1,55 +1,50 @@
-import 'package:biblia_flutter_app/helpers/int_to_textAlign.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 
-class DevocionalSelected extends StatelessWidget {
+class DevocionalSelected extends StatefulWidget {
   final Devocional devocional;
   const DevocionalSelected({super.key, required this.devocional});
+
+  @override
+  State<DevocionalSelected> createState() => _DevocionalSelectedState();
+}
+
+class _DevocionalSelectedState extends State<DevocionalSelected> {
+  QuillController? _controller;
+
+  @override
+  void initState() {
+    final document = Document.fromJson(widget.devocional.styles!);
+    _controller = QuillController(
+      readOnly: true,
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0));
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(devocional.referencia!),
+        title: Text(widget.devocional.titulo!),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * .8,
-            width: MediaQuery.of(context).size.width,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                      devocional.titulo!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 24, fontStyle: FontStyle.italic,
-                      ),
-                    textAlign: intToTextAlign(devocional.textAlign!),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: Text(
-                      devocional.texto!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 22
-                      ),
-                      textAlign: intToTextAlign(devocional.textAlign!),
-                    )
-                  )
-                ],
-              ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: QuillEditor.basic(
+              configurations: QuillEditorConfigurations(
+              controller: _controller!,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              checkBoxReadOnly: true,
+              showCursor: false
+              )
             ),
-          )
-        ],
+          ),
+        ),
       ),
     );
   }

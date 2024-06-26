@@ -56,7 +56,7 @@ class BibleService {
     return url;
   }
 
-  Future<Map<String, dynamic>> getOnlyImage() async {
+  Future<String> getOnlyImage() async {
     http.Response response = await client.get(
         Uri.parse(imageUrl),
         headers: {"Authorization": "$imageToken"});
@@ -65,10 +65,9 @@ class BibleService {
       throw HttpException(response.statusCode.toString());
     }
     final List<dynamic> photos = jsonDecode(response.body)['photos'];
-    final Map<String, dynamic> randomPhoto =
-    photos[Random().nextInt(photos.length)];
+    final Map<String, dynamic> randomPhoto = photos[Random().nextInt(photos.length)];
     final String url = randomPhoto['src']['large2x'];
 
-    return {"url": url, "bodyBytes": response.bodyBytes};
+    return url;
   }
 }

@@ -14,12 +14,11 @@ class ChapterScreen extends StatefulWidget {
   final int bookIndex;
   final int chapters;
   const ChapterScreen(
-      {Key? key,
+      {super.key,
       required this.bookName,
       required this.chapters,
       required this.abbrev,
-      required this.bookIndex})
-      : super(key: key);
+      required this.bookIndex});
 
   @override
   State<ChapterScreen> createState() => _ChapterScreenState();
