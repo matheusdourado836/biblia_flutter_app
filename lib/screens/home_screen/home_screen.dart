@@ -17,6 +17,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../data/devocional_provider.dart';
+
 late VersesProvider versesProvider;
 
 class HomeScreen extends StatefulWidget {
@@ -38,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
     bibleDataController.getBooks();
     getLayout();
     final chapterProvider = Provider.of<ChaptersProvider>(context, listen: false);
+    final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    devocionalProvider.getCompletedTutorials();
     chapterProvider.innerList = bibleDataController.books;
     versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     versesProvider.getFontSize();

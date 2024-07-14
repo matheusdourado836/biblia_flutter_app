@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/data/ai_helper.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/plans_provider.dart';
@@ -5,6 +6,7 @@ import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/annotation_widget.dart';
+import 'package:biblia_flutter_app/screens/ai_screen/ai_screen.dart';
 import 'package:biblia_flutter_app/screens/annotations_screen/annotations_screen.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/devocional_selected.dart';
@@ -51,29 +53,21 @@ void main() async {
       .updateRequestConfiguration(RequestConfiguration(testDeviceIds: ["2A2D11E674B401679B12723A6A640627"]));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  _themeMode =
-      (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
+  _themeMode = (prefs.getBool('themeMode') == null || prefs.getBool('themeMode')!) ? ThemeMode.light : ThemeMode.dark;
   await DatabaseHelper.initializeDatabases();
   await dotenv.load(fileName: ".env");
-  await bibleData.loadBibleData(['nvi', 'acf', 'aa', 'en_bbe', 'en_kjv', 'es_rvr', 'el_greek']);
+  await bibleData.loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
   BibleService().checkInternetConnectivity().then((value) async {
     if (value) {
       NotificationService notificationService = NotificationService();
       FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
       FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
-      await firebaseMessaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
+      await firebaseMessaging.requestPermission();
       firebaseMessaging.subscribeToTopic("versiculo_diario");
       firebaseMessagingService.initialize();
     }
   });
+  AiHelper().initializeAi();
   runApp(
     MultiProvider(
       providers: [
@@ -99,6 +93,8 @@ class MyApp extends StatelessWidget {
     screenWidth = MediaQuery.of(context).size.width.round();
     final themeProvider = Provider.of<ThemeProvider>(context);
     Provider.of<VersesProvider>(context, listen: false).loadUserData();
+    final versionProvider = Provider.of<VersionProvider>(context, listen: false);
+    versionProvider.getPreferredVersion();
     return MaterialApp(
       navigatorKey: navigatorKey,
       themeMode: (themeProvider.themeMode == null) ? _themeMode : themeProvider.themeMode,
@@ -109,6 +105,7 @@ class MyApp extends StatelessWidget {
       initialRoute: "home",
       routes: {
         "annotations_screen": (context) => const AnnotationsScreen(),
+        "ai_screen": (context) => const AiScreen(),
         "saved_verses": (context) => const SavedVerses(),
         "search_screen": (context) => const SearchScreen(),
         "devocionais_screen": (context) => const DevocionaisScreen(),

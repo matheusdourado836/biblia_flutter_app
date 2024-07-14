@@ -2,6 +2,7 @@ import 'package:biblia_flutter_app/services/devocional_service.dart';
 import 'package:biblia_flutter_app/services/thematic_service.dart';
 import 'package:flutter/material.dart';
 import '../models/devocional.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DevocionalProvider extends ChangeNotifier {
   static final DevocionalService _service = DevocionalService();
@@ -24,12 +25,29 @@ class DevocionalProvider extends ChangeNotifier {
 
   bool isLoading = false;
 
+  List<String> _tutorials = [];
+
+  List<String> get tutorials => _tutorials;
+
   Future<void> getDevocionais() async {
     isLoading = true;
+    notifyListeners();
     _devocionais = [];
     _devocionais = await _service.getDevocionais();
+    _devocionais.sort((a, b) => b.qtdCurtidas?.compareTo(a.qtdCurtidas ?? 0) ?? 0);
     isLoading = false;
     notifyListeners();
+    return;
+  }
+
+  Future<void> getUserDevocionais() async {
+    isLoading = true;
+    notifyListeners();
+    _devocionais = [];
+    _devocionais = await _service.getUserDevocionais();
+    isLoading = false;
+    notifyListeners();
+    return;
   }
 
   Future<void> getThematicDevocionais() async {
@@ -62,12 +80,16 @@ class DevocionalProvider extends ChangeNotifier {
     return await _service.postComment(devocionalId: devocionalId, comentario: comentario).whenComplete(() => getComments(devocionalId: devocionalId));
   }
 
-  Future<String> postDevocional({required Devocional devocional}) async {
-    return await _service.postDevocional(devocional: devocional).whenComplete(() => getDevocionais());
+  Future<void> reportComment({required Report report}) async {
+    return await _service.reportComment(report: report);
   }
 
-  Future<void> updateUserData(String id, Map<String, dynamic> info) async {
-    return await _service.updateUserData(id, info);
+  Future<String> postDevocional({required Devocional devocional}) async {
+    return await _service.postDevocional(devocional: devocional);
+  }
+
+  Future<void> updateUserData(String devocionalId, Map<String, dynamic> info) async {
+    return await _service.updateUserData(devocionalId, info);
   }
 
   Future<void> likePost({required String postId, required bool like}) async {
@@ -76,5 +98,23 @@ class DevocionalProvider extends ChangeNotifier {
 
   Future<bool> checkIfPostIsLiked({required String postId}) async {
    return await _service.checkIfPostIsLiked(postId: postId);
+  }
+
+  Future<void> countView(String devocionalId, String ownerDevocionalId) async {
+    return await _service.countView(devocionalId, ownerDevocionalId);
+  }
+
+  Future<void> getCompletedTutorials() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _tutorials = prefs.getStringList('tutorials') ?? [];
+    notifyListeners();
+  }
+
+  Future<void> markTutorial(int tutorialNumber) async {
+    if(!_tutorials.contains('tutorial $tutorialNumber')) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      _tutorials.add('tutorial $tutorialNumber');
+      prefs.setStringList('tutorials', _tutorials);
+    }
   }
 }

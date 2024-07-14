@@ -24,7 +24,7 @@ class BooksDao {
   saveChapters(String bookName) async {
     var itemExists = await find(bookName);
     if(itemExists.isEmpty) {
-      final List<dynamic> list = BibleData().data[0];
+      final List<dynamic> list = BibleData().data[0]["text"];
       final bookInfo = list.where((element) => element['name'] == bookName).toList();
       final chapters = bookInfo[0]['chapters'].length;
       final Map<String, dynamic> mapaDeCapitulos = toMap(bookName, setChapters(chapters, 0).toString(), 0);

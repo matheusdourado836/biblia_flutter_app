@@ -3,9 +3,10 @@ import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/init_plan_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../../../../helpers/format_date.dart';
+import '../../../../helpers/format_data.dart';
 import '../widgets/cancel_plan_dialog.dart';
 
 late PlansProvider _plansProvider;
@@ -54,7 +55,7 @@ class _InitPlanBaseScreenState extends State<InitPlanBaseScreen> {
             }
 
             if(value.currentPlan != null) {
-              return _DaysList(planType: widget.planType, qtdChapters: widget.qtdChapters, duration: widget.duration, bibleLength: widget.bibleLength, isNewTestament: widget.isNewTestament,);
+              return _DaysList(label: widget.label, planType: widget.planType, qtdChapters: widget.qtdChapters, bibleLength: widget.bibleLength, isNewTestament: widget.isNewTestament,);
             }
 
             return InitPlanWidget(
@@ -68,12 +69,12 @@ class _InitPlanBaseScreenState extends State<InitPlanBaseScreen> {
 }
 
 class _DaysList extends StatefulWidget {
+  final String label;
   final PlanType planType;
   final int qtdChapters;
-  final int duration;
   final int? bibleLength;
   final bool? isNewTestament;
-  const _DaysList({required this.planType, required this.qtdChapters, required this.duration, this.bibleLength, this.isNewTestament});
+  const _DaysList({required this.label, required this.planType, required this.qtdChapters, this.bibleLength, this.isNewTestament});
 
   @override
   State<_DaysList> createState() => _DaysListState();
@@ -99,6 +100,7 @@ class _DaysListState extends State<_DaysList> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
+              Text(widget.label),
               PopupMenuButton(
                   color: Theme.of(context).colorScheme.secondary,
                   itemBuilder: (context) {
@@ -163,7 +165,7 @@ class _DaysListState extends State<_DaysList> {
                 );
               }
 
-              return DaysByMonthList(qtdChapters: widget.qtdChapters, duration: widget.duration,);
+              return DaysByMonthList(qtdChapters: widget.qtdChapters);
             },
           ),
         )
@@ -174,8 +176,7 @@ class _DaysListState extends State<_DaysList> {
 
 class DaysByMonthList extends StatefulWidget {
   final int qtdChapters;
-  final int duration;
-  const DaysByMonthList({super.key, required this.duration, required this.qtdChapters});
+  const DaysByMonthList({super.key, required this.qtdChapters});
 
   @override
   State<DaysByMonthList> createState() => _DaysByMonthListState();
@@ -203,11 +204,12 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
   ];
 
   void generateDateList() {
+    final provider = Provider.of<PlansProvider>(context, listen: false);
     final day = int.parse(_plansProvider.currentPlan!.startDate!.split('/')[0]);
     final month = int.parse(_plansProvider.currentPlan!.startDate!.split('/')[1]);
     final year = int.parse(_plansProvider.currentPlan!.startDate!.split('/')[2]);
     DateTime startedDay = DateTime(year, month, day);
-    DateTime endDate = startedDay.add(Duration(days: widget.duration));
+    DateTime endDate = startedDay.add(Duration(days: provider.dailyReadsGrouped.length));
     List<Map<String, dynamic>> dates = [];
 
     for (DateTime date = startedDay; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
@@ -218,14 +220,6 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
       dateList = dates;
     });
   }
-
-  // void goTo({required int index, required int sublist}) async {
-  //   sublist == 1
-  //       ? await Scrollable.ensureVisible(firstSubListKeys[index].currentContext!,
-  //           duration: const Duration(milliseconds: 500))
-  //       : await Scrollable.ensureVisible(secondSubListKeys[index].currentContext!,
-  //           duration: const Duration(milliseconds: 500));
-  // }
 
   @override
   void initState() {
@@ -261,8 +255,6 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
 
   @override
   Widget build(BuildContext context) {
-    final screenOrientation = MediaQuery.of(context).orientation;
-    final screenSize = MediaQuery.of(context).size.width;
     return SingleChildScrollView(
       child: Consumer<PlansProvider>(
         builder: (context, value, _) {
@@ -300,26 +292,28 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
                     title: Text(month.replaceAll('*', ''), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     children: [
                       GridView.builder(
-                          controller: _controller,
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: daysByMonth[month]!.length,
-                          padding: const EdgeInsets.all(12.0),
-                          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 150.0,
-                              crossAxisSpacing: 10.0,
-                              mainAxisSpacing: 10.0,
-                              childAspectRatio: 1 / 1
-                          ),
-                          itemBuilder: (context, i) {
-                            final element = dateList.where((element) => element["date"] == daysByMonth[month]![i]["date"] && element["year"] == daysByMonth[month]![i]["year"]);
-                            final index = element.isNotEmpty ? dateList.indexOf(element.first) : 0;
+                        controller: _controller,
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: daysByMonth[month]!.length,
+                        padding: const EdgeInsets.all(12.0),
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 150.0,
+                            crossAxisSpacing: 10.0,
+                            mainAxisSpacing: 10.0,
+                            childAspectRatio: 1 / 1
+                        ),
+                        itemBuilder: (context, i) {
+                          final element = dateList.where((element) => element["date"] == daysByMonth[month]![i]["date"] && element["year"] == daysByMonth[month]![i]["year"]);
+                          final index = element.isNotEmpty ? dateList.indexOf(element.first) : 0;
+                          bool dailyReadCompleted = value.dailyReadsGrouped.length > 1 && value.dailyReadsGrouped[index].where((element) => element.completed == 1).length >= value.dailyReadsGrouped[index].length;
+                          int currentMonth = monthOrder.indexOf(month) + 1;
+                          if(now.day == int.parse(daysByMonth[month]![i]["date"].split('de')[0]) && now.month == currentMonth) {
                             return Stack(
-                              //key: firstSubListKeys[i],
                               children: <Widget>[
                                 Card(
                                   child: InkWell(
-                                    onTap: (() => Navigator.pushNamed(context, 'selected_day', arguments: {"day": index, "chaptersLength": widget.qtdChapters, "qtdDays": widget.duration, "dailyRead": value.dailyReads})),
+                                    onTap: (() => Navigator.pushNamed(context, 'selected_day', arguments: {"day": index, "chaptersLength": widget.qtdChapters, "qtdDays": value.dailyReadsGrouped.length, "dailyRead": value.dailyReads})),
                                     child: Center(
                                       child: Text(
                                         daysByMonth[month]![i]["date"],
@@ -330,15 +324,45 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
                                   ),
                                 ),
                                 SizedBox(
-                                    child: value.dailyReadsGrouped.length > 1 && value.dailyReadsGrouped[index].where((element) => element.completed == 1).length >=  widget.qtdChapters
-                                        ? Icon(
-                                      Icons.check_circle,
-                                      color: Theme.of(context).buttonTheme.colorScheme?.secondary,
-                                    )
-                                        : null),
+                                    child: value.dailyReadsGrouped.length > 1 && value.dailyReadsGrouped[index].where((element) => element.completed == 1).length >= value.dailyReadsGrouped[index].length
+                                        ? Icon(Icons.check_circle, color: Theme.of(context).buttonTheme.colorScheme?.secondary)
+                                        : null
+                                ),
                               ],
-                            );
-                          })
+                            ).animate(
+                                target: !dailyReadCompleted ? 1 : 0,
+                                onComplete: (c) {
+                                  if(!dailyReadCompleted) {
+                                    c.repeat();
+                                  }
+                                }
+                              )
+                              .moveY(begin: 10, end: -10, curve: Curves.easeInOut, duration: 800.ms)
+                              .then()
+                              .moveY(begin: -10, end: 10, curve: Curves.easeInOut);
+                          }
+                          return Stack(
+                            children: <Widget>[
+                              Card(
+                                child: InkWell(
+                                  onTap: (() => Navigator.pushNamed(context, 'selected_day', arguments: {"day": index, "chaptersLength": widget.qtdChapters, "qtdDays": value.dailyReadsGrouped.length, "dailyRead": value.dailyReads})),
+                                  child: Center(
+                                    child: Text(
+                                      daysByMonth[month]![i]["date"],
+                                      style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 16),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                  child: value.dailyReadsGrouped.length > 1 && value.dailyReadsGrouped[index].where((element) => element.completed == 1).length >= value.dailyReadsGrouped[index].length
+                                    ? Icon(Icons.check_circle, color: Theme.of(context).buttonTheme.colorScheme?.secondary)
+                                    : null
+                              ),
+                            ],
+                          );
+                        })
                     ],
                   ),
                 ],

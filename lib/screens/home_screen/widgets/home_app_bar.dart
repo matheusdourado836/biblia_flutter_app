@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import '../../../data/devocional_provider.dart';
 import '../../../data/theme_provider.dart';
 import '../../../helpers/alert_dialog.dart';
 import '../../../helpers/tutorial_widget.dart';
@@ -31,7 +32,6 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _HomeAppBarState extends State<HomeAppBar> {
-  ThemeProvider? _themeProvider;
   final TextEditingController _controller = TextEditingController();
   InterstitialAd? _interstitialAd;
   final start = ValueNotifier(false);
@@ -48,13 +48,23 @@ class _HomeAppBarState extends State<HomeAppBar> {
   }
 
   void showTutorial() {
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    initTargets();
-    _coachMark = TutorialCoachMark(
-        colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
-        targets: _targets,
-        hideSkip: true
-    )..show(context: context);
+    final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    if(!devocionalProvider.tutorials.contains('tutorial 1')) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      initTargets();
+      _coachMark = TutorialCoachMark(
+          onSkip: () {
+            devocionalProvider.markTutorial(1);
+            return true;
+          },
+          onFinish: () {
+            devocionalProvider.markTutorial(1);
+          },
+          colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
+          targets: _targets,
+          hideSkip: true
+      )..show(context: context);
+    }
   }
 
   void initTargets() {
@@ -91,8 +101,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   return TutorialWidget(
                       text: 'Experimente clicar aqui para receber um versículo aleatório para ler ou '
                           'compartilhar nas redes sociais',
-                      skip: 'Fechar',
-                      next: 'Próximo',
+                      skip: '',
+                      next: 'Finalizar',
                       onNext: (() {
                         c.skip();
                       }),

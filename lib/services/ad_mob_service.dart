@@ -19,6 +19,22 @@ class AdMobService {
     }
   }
 
+  static String get rewardedAdId {
+    if(Platform.isAndroid) {
+      return 'ca-app-pub-8180030689126961/9784021792';
+    }else {
+      return 'ca-app-pub-8180030689126961/9090990879';
+    }
+  }
+
+  static String? get aiInterstitialAdId {
+    if(Platform.isAndroid) {
+      return 'ca-app-pub-8180030689126961/9243034117';
+    }else {
+      return 'ca-app-pub-8180030689126961/2955793529';
+    }
+  }
+
   static final BannerAdListener bannerAdListener = BannerAdListener(
     onAdLoaded: (ad) => print('AD LOADED'),
     onAdFailedToLoad: (ad, error) {

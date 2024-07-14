@@ -52,7 +52,7 @@ class _ChapterCardState extends State<ChapterCard> {
                       value.toggleSearch(false);
                       final versionProvider = Provider.of<VersionProvider>(context, listen: false);
                       versesProvider.openBottomSheet(false);
-                      versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionIndex: versionProvider.options.indexOf(versionProvider.selectedOption));
+                      versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionName: versionProvider.selectedOption.toLowerCase().split(' ')[0]);
                       Navigator.pushNamed(context, 'verses_screen',
                           arguments: {
                             'bookName': widget.bookName,

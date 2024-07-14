@@ -44,7 +44,7 @@ class _SelectedDayWidgetState extends State<SelectedDayWidget> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text('Dia $i de ${widget.qtdDays - 1}'),
+        title: Text('Dia $i de ${widget.qtdDays}'),
       ),
       backgroundColor: Theme.of(context).primaryColor,
       body: Consumer<PlansProvider>(
@@ -53,21 +53,8 @@ class _SelectedDayWidgetState extends State<SelectedDayWidget> {
           return PageView.builder(
             controller: _controller,
             onPageChanged: (page) => setState(() => i = page + 1),
-            itemCount: value.chaptersDivided.length - 1,
+            itemCount: value.chaptersDivided.length,
             itemBuilder: (context, index) {
-              if(value.chaptersDivided[value.chaptersDivided.length - 1] == value.chaptersDivided[index + 1]) {
-                for(var i = 0; i < value.chaptersDivided[index + 1].length; i++) {
-                  if(!value.chaptersDivided[index].contains(value.chaptersDivided[index + 1][i])) {
-                    value.chaptersDivided[index].add(value.chaptersDivided[index + 1][i]);
-                  }
-                  for(var j = 0; j < dailyReads[index + 1].length; j++) {
-                    if(!dailyReads[index].contains(dailyReads[index + 1][j])) {
-                      dailyReads[index].add(dailyReads[index + 1][j]);
-                    }
-                  }
-                }
-              }
-
               return ListView.builder(
                 padding: const EdgeInsets.only(top: 16, right: 12),
                 itemCount: value.chaptersDivided[index].length,
@@ -98,8 +85,8 @@ class _SelectedDayWidgetState extends State<SelectedDayWidget> {
                           child: InkWell(
                             onTap: (() {
                               final versesProvider = Provider.of<VersesProvider>(context, listen: false);
-                              final book = _bibleData.data[0].where((element) => element["name"] == extractBookAndChapter(value.chaptersDivided[index][i])["bookName"]).first;
-                              final bookIndex = _bibleData.data[0].indexOf(book);
+                              final book = _bibleData.data[0]["text"].where((element) => element["name"] == extractBookAndChapter(value.chaptersDivided[index][i])["bookName"]).first;
+                              final bookIndex = _bibleData.data[0]["text"].indexOf(book);
                               final chapter = int.parse(extractBookAndChapter(value.chaptersDivided[index][i])["chapter"]!);
                               versesProvider.loadVerses(bookIndex, book["name"]);
                               Navigator.pushNamed(context, 'verses_screen', arguments: {

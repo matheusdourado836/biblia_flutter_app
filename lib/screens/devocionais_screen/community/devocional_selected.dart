@@ -1,7 +1,6 @@
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill/quill_delta.dart';
 
 class DevocionalSelected extends StatefulWidget {
   final Devocional devocional;

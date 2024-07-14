@@ -19,6 +19,7 @@ class SearchingVerse extends StatefulWidget {
 }
 
 class _SearchingVerseState extends State<SearchingVerse> {
+  final FocusNode _focusNode = FocusNode();
   late VersesProvider _versesProvider;
   late SearchVersesProvider _searchVersesProvider;
 
@@ -26,6 +27,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
   void initState() {
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
+    _focusNode.requestFocus();
     super.initState();
   }
 
@@ -86,6 +88,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
           Expanded(
             child: TextField(
               controller: textEditingController,
+              focusNode: _focusNode,
               style: Theme.of(context).textTheme.bodyMedium,
               autocorrect: false,
               decoration: const InputDecoration(

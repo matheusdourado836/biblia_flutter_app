@@ -139,11 +139,9 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                   width: double.infinity,
                   height: height * .55,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 const Text('Nenhuma Anotação ainda...',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
-                    textAlign: TextAlign.center)
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200), textAlign: TextAlign.center)
               ],
             );
           }
@@ -152,7 +150,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
               itemCount: value.listaAnnotations.length,
               itemBuilder: (context, index) {
                 Annotation annotation = value.listaAnnotations[index];
-                final List<dynamic> list = BibleData().data[0];
+                final List<dynamic> list = BibleData().data[0]["text"];
                 final bookInfo = list
                     .where((element) => element['name'] == annotation.book)
                     .toList();

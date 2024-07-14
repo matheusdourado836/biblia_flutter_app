@@ -44,13 +44,27 @@ class NotificationService {
           navigatorKey!.currentState!.pushNamed(payload.split(' ')[1]);
         }
         if(payload !=  null) {
+          String bookName = payload.split(' ')[0];
+          String abbrev = payload.split(' ')[1];
+          int bookIndex = int.parse(payload.split(' ')[2]);
+          int chapters = int.parse(payload.split(' ')[3]);
+          int chapter = int.parse(payload.split(' ')[4]);
+          int verseNumber = int.parse(payload.split(' ')[5]);
+          if(payload.split(' ')[0].contains('ª') || payload.split(' ')[0].contains('º') || payload.split(' ')[0].contains('°')) {
+            bookName = '${payload.split(' ')[0]} ${payload.split(' ')[1]}';
+            abbrev = payload.split(' ')[2];
+            bookIndex = int.parse(payload.split(' ')[3]);
+            chapters = int.parse(payload.split(' ')[4]);
+            chapter = int.parse(payload.split(' ')[5]);
+            verseNumber = int.parse(payload.split(' ')[6]);
+          }
           GoToVerseScreen().goToVersePage(
-              payload.split(' ')[0],
-              payload.split(' ')[1],
-              int.parse(payload.split(' ')[2]),
-              int.parse(payload.split(' ')[3]),
-              int.parse(payload.split(' ')[4]),
-              int.parse(payload.split(' ')[5])
+              bookName,
+              abbrev,
+              bookIndex,
+              chapters,
+              chapter,
+              verseNumber
           );
         }
       }

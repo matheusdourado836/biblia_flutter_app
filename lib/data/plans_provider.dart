@@ -84,7 +84,7 @@ class PlansProvider extends ChangeNotifier {
     notifyListeners();
     subscribeUser(planType: planId);
     generateChapters(planTypeToChapters(planType: planId), planId, bibleLength: bibleLength, isNewTestament: isNewTestament);
-    await generateDailyReadings(planId.code, durationDays + 1, planId);
+    await generateDailyReadings(planId.code, durationDays, planId);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt(planId.description, planId.code);
     _readingProgressDao.startReadingPlan(planId: planId, durationDays: durationDays);
@@ -114,12 +114,11 @@ class PlansProvider extends ChangeNotifier {
     _dailyReadsGrouped = [];
     final BibleData bibleData = BibleData();
     List<List<String>> partitions = [];
-    final length = bibleLength ??= bibleData.data[0].length;
+    final length = bibleLength ??= bibleData.data[0]["text"].length;
     final index = isNewTestament == null ? 0 : 39;
-    print('OLHA O INDEX AEEEE $index');
 
     for (var i = index; i < length; i++) {
-      final book = bibleData.data[0][i];
+      final book = bibleData.data[0]["text"][i];
       for (var j = 0; j < book["chapters"].length; j++) {
         _chapters.add('${book["name"]} ${j + 1}');
       }

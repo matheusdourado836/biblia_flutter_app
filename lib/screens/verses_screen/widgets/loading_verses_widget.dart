@@ -89,6 +89,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
   @override
   Widget build(BuildContext context) {
     listMap = widget.listVerses[_chapter];
+    listMap.removeWhere((verse) => verse["verse"].isEmpty);
     return Consumer<ThemeProvider>(
       builder: (context, themeValue, _) {
         return Padding(
@@ -113,7 +114,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                       }),
                       child: VerseArea(
                         chapter: _chapter,
-                        verseNumber: index + 1,
+                        verseNumber: listMap[index]["verseNumber"],
                         verse: versesDefault,
                         verseColor: verseColor,
                         annotation: listMap[index]["annotation"],
@@ -158,7 +159,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                   onTap: (() => onTap(context, index)),
                   child: VerseArea(
                     chapter: _chapter,
-                    verseNumber: index + 1,
+                    verseNumber: listMap[index]["verseNumber"],
                     verse: versesDefault,
                     verseColor: verseColor,
                     annotation: listMap[index]["annotation"],
@@ -215,7 +216,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                           if(verses.length > 5) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                    content: Text('Selecione até 5 versículos', textAlign: TextAlign.center)
+                                    content: Text('Selecione até o máximo de 5 versículos', textAlign: TextAlign.center)
                                 )
                             );
                             _versesProvider.openBottomSheet(false);

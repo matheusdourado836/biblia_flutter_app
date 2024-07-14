@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -14,6 +13,29 @@ class DevocionalService {
     try {
       List<Devocional> devocionais = [];
       await _database.collection('devocionais').where('status', isEqualTo: 0).get().then((res) {
+        if(res.docs.isNotEmpty) {
+          final docs = res.docs;
+          for(var devocional in docs) {
+            if(devocional.exists) {
+              devocionais.add(Devocional.fromJson(devocional.data()));
+            }
+
+          }
+        }
+      });
+
+      return devocionais;
+    }catch(e) {
+      print('NAO FOI POSSIVEL RECUPERAR OS DEVOCIONAIS $e');
+      return [];
+    }
+  }
+
+  Future<List<Devocional>> getUserDevocionais() async {
+    try {
+      final userToken = await _messaging.getToken();
+      List<Devocional> devocionais = [];
+      await _database.collection('devocionais').where('ownerId', isEqualTo: userToken).get().then((res) {
         if(res.docs.isNotEmpty) {
           final docs = res.docs;
           for(var devocional in docs) {
@@ -77,9 +99,17 @@ class DevocionalService {
   Future<void> postComment({required String devocionalId, required Comentario comentario}) async {
     final userToken = await _messaging.getToken();
     final commentJson = comentario.toJson();
-    commentJson["id"] = userToken;
-    await _database.collection('devocionais').doc(devocionalId).collection('comentarios').add(commentJson);
+    commentJson["autorId"] = userToken;
+    final docRef = await _database.collection('devocionais').doc(devocionalId).collection('comentarios').add(commentJson);
+    _database.collection('devocionais').doc(devocionalId).collection('comentarios').doc(docRef.id).update({'id': docRef.id});
     _database.collection('devocionais').doc(devocionalId).update({'qtdComentarios': FieldValue.increment(1)});
+  }
+
+  Future<void> reportComment({required Report report}) async {
+    final jsonReport = report.toJson();
+    jsonReport["reportId"] = '';
+    final docRef = await _database.collection('reports').add(jsonReport);
+    _database.collection('reports').doc(docRef.id).update({"reportId": docRef.id});
   }
 
   Future<String> postDevocional({required Devocional devocional}) async {
@@ -115,8 +145,8 @@ class DevocionalService {
     }
   }
 
-  Future<void> updateUserData(String id, Map<String, dynamic> info) async {
-    return await _database.collection('devocionais').doc(id).update(info);
+  Future<void> updateUserData(String devocionalId, Map<String, dynamic> info) async {
+    return await _database.collection('devocionais').doc(devocionalId).update(info);
   }
 
   Future<void> likePost({required String postId, required bool like}) async {
@@ -136,5 +166,12 @@ class DevocionalService {
     });
 
     return isLiked;
+  }
+
+  Future<void> countView(String devocionalId, String ownerDevocionalId) async {
+    final userToken = await _messaging.getToken();
+    if(userToken != ownerDevocionalId) {
+      _database.collection('devocionais').doc(devocionalId).update({'qtdViews': FieldValue.increment(1)});
+    }
   }
 }

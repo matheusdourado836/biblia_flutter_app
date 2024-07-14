@@ -178,11 +178,9 @@ class _SavedVersesState extends State<SavedVerses> {
                   width: double.infinity,
                   height: MediaQuery.of(context).size.height * .55,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 const Text('Nenhum Versículo Salvo ainda...',
-                    style: TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.w400),
-                    textAlign: TextAlign.center)
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200), textAlign: TextAlign.center)
               ],
             );
           }
@@ -208,7 +206,7 @@ class _SavedVersesState extends State<SavedVerses> {
         String book = objetosFiltrados[index].book;
         int chapter = objetosFiltrados[index].chapter;
         String verse = objetosFiltrados[index].verse;
-        String version = bibleDataController.getVersionName(list[index].version);
+        String version = list[index].version;
         int verseNumber = objetosFiltrados[index].verseNumber;
         String verseColor = objetosFiltrados[index].verseColor;
 
@@ -220,7 +218,7 @@ class _SavedVersesState extends State<SavedVerses> {
               for (var i = 0; i < allBooksList.length; i++) {
                 if (allBooksList[i]["bookName"] == book) {
                   _versionProvider.changeOptionBd(version);
-                  _versesProvider.loadVerses(allBooksList[i]["bookIndex"], book, versionIndex: list[index].version);
+                  _versesProvider.loadVerses(allBooksList[i]["bookIndex"], book, versionName: version);
                   GoToVerseScreen().goToVersePage(
                     book,
                     allBooksList[i]["abbrev"],

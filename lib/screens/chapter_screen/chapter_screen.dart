@@ -54,7 +54,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
         leading: IconButton(onPressed: (() {
           chaptersProvider.toggleSearch(false);
           Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
-        }), icon: const Icon(Icons.arrow_back)),
+        }), icon: Icon(Icons.adaptive.arrow_back)),
         title: Text(widget.bookName),
         actions: [
           IconButton(

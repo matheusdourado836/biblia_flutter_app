@@ -1,4 +1,4 @@
-import '../helpers/format_date.dart';
+import '../helpers/format_data.dart';
 
 class ReadingPlan {
   int? id;

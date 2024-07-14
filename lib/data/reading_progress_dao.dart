@@ -1,4 +1,3 @@
-import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
 import 'package:biblia_flutter_app/models/reading_plan.dart';
 import 'package:sqflite/sqflite.dart';

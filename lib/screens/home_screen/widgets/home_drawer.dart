@@ -1,11 +1,12 @@
 import 'dart:io';
-
+import 'dart:math';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import '../../../data/theme_provider.dart';
 import '../../../data/verses_provider.dart';
+import '../../../services/ad_mob_service.dart';
 
 class HomeDrawer extends StatefulWidget {
   const HomeDrawer({super.key});
@@ -15,6 +16,7 @@ class HomeDrawer extends StatefulWidget {
 }
 
 class _HomeDrawerState extends State<HomeDrawer> {
+  InterstitialAd? _interstitialAd;
   final versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
   int readBooks = 0;
 
@@ -23,6 +25,58 @@ class _HomeDrawerState extends State<HomeDrawer> {
     var formatedLevel = value.toStringAsFixed(2);
 
     return double.parse(formatedLevel);
+  }
+
+  void _createInterstitialAd() {
+    InterstitialAd.load(
+        adUnitId: AdMobService.aiInterstitialAdId!,
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (ad) => _interstitialAd = ad,
+          onAdFailedToLoad: (error) => _interstitialAd = null,
+        )
+    );
+  }
+
+  void _showInterstitialAd() {
+    if(_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            _createInterstitialAd();
+            Navigator.pushNamed(context, 'ai_screen');
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            ad.dispose();
+            _createInterstitialAd();
+            Navigator.pushNamed(context, 'ai_screen');
+          }
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
+    }
+  }
+
+  bool showAd() {
+    Random random = Random();
+
+    int randomInt = random.nextInt(2);
+
+    bool randomBool = randomInt == 1;
+
+    return randomBool;
+  }
+
+  @override
+  void initState() {
+    _createInterstitialAd();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _interstitialAd?.dispose();
+    super.dispose();
   }
 
   @override
@@ -35,6 +89,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             ? _LandscapeDrawer(
             readingProgressWidget: _readingProgressWidget(readBooks),
             savedVersesWidget: _savedVersesWidget(versesProvider.qtdVerses),
+            aiWidget: _aiWidget(),
             annotationsWidget: _annotationsWidget(versesProvider.qtdAnnotations),
             searchPassagesWidget: _searchPassagesWidget(),
             toggleModeWidget: _toggleModeWidget(),
@@ -44,6 +99,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
             : _PortraitDrawer(
             readingProgressWidget:_readingProgressWidget(readBooks),
             savedVersesWidget: _savedVersesWidget(versesProvider.qtdVerses),
+            aiWidget: _aiWidget(),
             annotationsWidget: _annotationsWidget(versesProvider.qtdAnnotations),
             searchPassagesWidget: _searchPassagesWidget(),
             toggleModeWidget: _toggleModeWidget(),
@@ -104,9 +160,26 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
+  Widget _aiWidget() {
+    return ListTileDrawer(
+      onTap: (() => (showAd()) ? _showInterstitialAd() : Navigator.pushNamed(context, 'ai_screen')),
+      leading: Icons.lightbulb,
+      title: 'Pesquisa com IA',
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Theme.of(context).colorScheme.primary),
+          color: Theme.of(context).colorScheme.primary
+        ),
+        child: const Text('BETA', style: TextStyle(fontSize: 8, color: Colors.white),),
+      ),
+    );
+  }
+
   Widget _savedVersesWidget(int qtdVerses) {
     return ListTileDrawer(
-      onTap: (() {Navigator.pushNamed(context, 'saved_verses');}),
+      onTap: (() => Navigator.pushNamed(context, 'saved_verses')),
       leading: Icons.bookmark,
       title: 'Versículos Salvos',
       trailing: Text('$qtdVerses', style: Theme.of(context).textTheme.bodyMedium),
@@ -115,7 +188,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
   Widget _annotationsWidget(qtdAnnotations) {
     return ListTileDrawer(
-      onTap: (() {Navigator.pushNamed(context, 'annotations_screen');}),
+      onTap: (() => Navigator.pushNamed(context, 'annotations_screen')),
       leading: Icons.create_rounded,
       title: 'Anotações',
       trailing: Text('$qtdAnnotations', style: Theme.of(context).textTheme.bodyMedium),
@@ -124,7 +197,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
   Widget _searchPassagesWidget() {
     return ListTileDrawer(
-       onTap: (() {Navigator.popAndPushNamed(context, 'search_screen');}),
+       onTap: (() => Navigator.popAndPushNamed(context, 'search_screen')),
        leading: Icons.search,
        title: 'Pesquisar passagens'
     );
@@ -163,7 +236,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     return Padding(
       padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 24.0) : EdgeInsets.zero,
       child: ListTileDrawer(
-        onTap: (() {Navigator.pushNamed(context, 'settings');}),
+        onTap: (() => Navigator.pushNamed(context, 'settings')),
         leading: Icons.settings,
         title: 'Configurações'
       ),
@@ -195,13 +268,14 @@ class ListTileDrawer extends StatelessWidget {
 
 class _PortraitDrawer extends StatelessWidget {
   final Widget readingProgressWidget;
+  final Widget aiWidget;
   final Widget savedVersesWidget;
   final Widget annotationsWidget;
   final Widget searchPassagesWidget;
   final Widget toggleModeWidget;
   final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _PortraitDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget});
+  const _PortraitDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget, required this.aiWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -218,6 +292,8 @@ class _PortraitDrawer extends StatelessWidget {
           savedVersesWidget,
           const SizedBox(height: 15),
           annotationsWidget,
+          const SizedBox(height: 15),
+          aiWidget,
           const SizedBox(height: 15),
           searchPassagesWidget,
           const SizedBox(height: 15),
@@ -243,6 +319,7 @@ class _PortraitDrawer extends StatelessWidget {
             children: [
               savedVersesWidget,
               annotationsWidget,
+              aiWidget,
               searchPassagesWidget,
               toggleModeWidget,
               devocionalWidget
@@ -258,13 +335,14 @@ class _PortraitDrawer extends StatelessWidget {
 
 class _LandscapeDrawer extends StatelessWidget {
   final Widget readingProgressWidget;
+  final Widget aiWidget;
   final Widget savedVersesWidget;
   final Widget annotationsWidget;
   final Widget searchPassagesWidget;
   final Widget toggleModeWidget;
   final Widget devocionalWidget;
   final Widget settingsWidget;
-  const _LandscapeDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget});
+  const _LandscapeDrawer({required this.readingProgressWidget, required this.savedVersesWidget, required this.annotationsWidget, required this.searchPassagesWidget, required this.toggleModeWidget, required this.devocionalWidget, required this.settingsWidget, required this.aiWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -287,6 +365,8 @@ class _LandscapeDrawer extends StatelessWidget {
                       savedVersesWidget,
                       const SizedBox(height: 15),
                       annotationsWidget,
+                      const SizedBox(height: 15),
+                      aiWidget,
                       const SizedBox(height: 15),
                       searchPassagesWidget,
                       const SizedBox(height: 15),

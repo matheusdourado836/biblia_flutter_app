@@ -29,7 +29,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  flutter_native_splash: ^2.3.9
+  flutter_native_splash: ^2.4.0
   sqflite: ^2.3.2
   http: ^1.2.1
   share_plus: ^9.0.0
@@ -64,9 +64,12 @@ dependencies:
   tutorial_coach_mark: ^1.2.11
   flutter_quill: ^9.4.2
   flutter_file_downloader: ^1.2.1
+  google_generative_ai: ^0.4.3
   provider:
   flutter:
     sdk: flutter
+  path_provider: any
+  path: any
 dependency_overrides:
   intl: ^0.19.0
 

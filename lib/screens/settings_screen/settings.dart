@@ -1,11 +1,14 @@
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/theme_provider.dart';
+import '../../helpers/version_to_name.dart';
+import '../../helpers/progress_dialog.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -33,12 +36,16 @@ class Options extends StatefulWidget {
 }
 
 class _OptionsState extends State<Options> {
+  late VersionProvider _versionProvider;
+  String _selectedVersion = 'NVI (Nova Versão Internacional)';
   double _sliderValue = 16.0;
   double _savedSliderValue = 16.0;
 
   @override
   void initState() {
+    _versionProvider = Provider.of<VersionProvider>(context, listen: false);
     getPreferences();
+    getVersion();
     super.initState();
   }
 
@@ -47,6 +54,18 @@ class _OptionsState extends State<Options> {
     setState(() {
       _sliderValue = prefs.getDouble('fontsize') ?? 16.0;
     });
+  }
+
+  void getVersion() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() => _selectedVersion = prefs.getString('version') ?? _selectedVersion);
+  }
+
+  void setNewPreferredVersion(String newValue) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() => _selectedVersion = newValue);
+    prefs.setString('version', _selectedVersion);
+    _versionProvider.changeSelectedOption = _selectedVersion;
   }
 
   @override
@@ -153,25 +172,97 @@ class _OptionsState extends State<Options> {
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Ordem dos livros:',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Expanded(child: OrderByDropDown())
-                  ],
-                ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Ordem dos livros:',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Expanded(child: OrderByDropDown())
+                ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
                     child: Text(
-                      'Preferência de Tema:',
+                      'Versão preferida:',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  Expanded(
+                    child: Consumer<VersionProvider>(
+                      builder: (context, value, _) {
+                        return DropdownButton(
+                          underline: Container(
+                            height: 0,
+                            color: Colors.transparent,
+                          ),
+                          style: Theme.of(context).dropdownMenuTheme.textStyle,
+                          isExpanded: true,
+                          itemHeight: 100.0,
+                          value: _selectedVersion,
+                          items: _versionProvider.options.map((option) {
+                            _versionProvider.setListItem(option.split(' ')[0]);
+                            if(value.getDownloadedVersion(versionToName(option))) {
+                              return DropdownMenuItem(
+                                value: option,
+                                child: InkWell(
+                                  onTap: () => showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (context) => ProgressDialog(versionName: versionToName(option))
+                                  ).whenComplete(() {
+                                    Navigator.pop(context);
+                                  }),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          option,
+                                          style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withOpacity(.5)),
+                                        ),
+                                      ),
+                                      const Icon(Icons.download, size: 16,)
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            return DropdownMenuItem(
+                              value: option,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0, left: 4, right: 4),
+                                child: Center(
+                                    child: Text(
+                                      option,
+                                      style: Theme.of(context).textTheme.titleSmall,
+                                    )
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setNewPreferredVersion(newValue!);
+                            _versionProvider.changeVersion(newValue.toString());
+                          },
+                          selectedItemBuilder: (BuildContext context) {
+                            return _versionProvider.versionsList;
+                          },
+                        );
+                      },
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Preferência de tema:',
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
@@ -242,47 +333,45 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
   @override
   Widget build(BuildContext context) {
     final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: DropdownButton<String>(
-        underline: Container(
-          height: 0,
-          color: Colors.transparent,
-        ),
-        itemHeight: 150,
-        style: Theme.of(context).dropdownMenuTheme.textStyle,
-        isExpanded: true,
-        value: _selectedOption,
-        onChanged: (String? newValue) {
-          setState(() {
-            _selectedOption = newValue!;
-          });
-          chaptersProvider.setOrderStyle(_selectedOption);
-        },
-        items: <String>[
-          'Padrão',
-          'Cronológica',
-          'Por estilo\n(pentateuco, históricos, proféticos)',
-        ].map<DropdownMenuItem<String>>((String value) {
-          reducedValues.add(Center(
-            child: (value.startsWith('Por'))
-                ? Text(value.substring(0, 10))
-                : Text(value),
-          ));
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Center(
-                child: Text(
+    return DropdownButton<String>(
+      underline: Container(
+        height: 0,
+        color: Colors.transparent,
+      ),
+      itemHeight: 100,
+      style: Theme.of(context).dropdownMenuTheme.textStyle,
+      isExpanded: true,
+      value: _selectedOption,
+      onChanged: (String? newValue) {
+        setState(() {
+          _selectedOption = newValue!;
+        });
+        chaptersProvider.setOrderStyle(_selectedOption);
+      },
+      items: <String>[
+        'Padrão',
+        'Cronológica',
+        'Por estilo\n(pentateuco, históricos, proféticos)',
+      ].map<DropdownMenuItem<String>>((String value) {
+        reducedValues.add(Center(
+          child: (value.startsWith('Por'))
+              ? Text(value.substring(0, 10))
+              : Text(value),
+        ));
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Center(
+            child: Text(
               value,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
-            )),
-          );
-        }).toList(),
-        selectedItemBuilder: (BuildContext context) {
-          return reducedValues;
-        },
-      ),
+            )
+          ),
+        );
+      }).toList(),
+      selectedItemBuilder: (BuildContext context) {
+        return reducedValues;
+      },
     );
   }
 

@@ -1,6 +1,7 @@
 class Devocional {
   String? id;
   String? ownerId;
+  String? contactEmail;
   String? createdAt;
   String? titulo;
   List<dynamic>? styles;
@@ -12,11 +13,13 @@ class Devocional {
   int? status;
   int? qtdComentarios;
   int? qtdCurtidas;
+  int? qtdViews;
   bool? public;
 
   Devocional(
       {this.id,
       this.ownerId,
+      this.contactEmail,
       this.createdAt,
       this.titulo,
       this.styles,
@@ -28,11 +31,13 @@ class Devocional {
       this.status,
       this.qtdComentarios,
       this.qtdCurtidas,
+      this.qtdViews,
       this.public});
 
   Devocional.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     ownerId = json['ownerId'];
+    contactEmail = json['contactEmail'];
     createdAt = json['createdAt'];
     titulo = json['titulo'];
     styles = json['styles'];
@@ -44,6 +49,7 @@ class Devocional {
     status = json['status'];
     qtdComentarios = json['qtdComentarios'];
     qtdCurtidas = json['qtdCurtidas'];
+    qtdViews = json['qtdViews'];
     public = json["public"];
   }
 
@@ -51,6 +57,7 @@ class Devocional {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['ownerId'] = ownerId;
+    data['contactEmail'] = contactEmail;
     data['createdAt'] = createdAt;
     data['titulo'] = titulo;
     data['styles'] = styles;
@@ -62,6 +69,7 @@ class Devocional {
     data['status'] = status;
     data['qtdComentarios'] = qtdComentarios;
     data['qtdCurtidas'] = qtdCurtidas;
+    data['qtdViews'] = qtdViews;
     data["public"] = public;
     return data;
   }
@@ -69,20 +77,23 @@ class Devocional {
 
 class Comentario {
   String? id;
+  String? autorId;
   String? name;
   String? comment;
   int qtdCurtidas;
   String? createdAt;
 
   Comentario(
-      {required this.name,
+      {this.id,
+        required this.name,
       required this.comment,
       required this.qtdCurtidas,
       required this.createdAt,
-      this.id,});
+      this.autorId,});
 
   factory Comentario.fromJson(Map<String, dynamic> json) => Comentario(
       id: json["id"],
+      autorId: json["autorId"],
       name: json["name"],
       comment: json["comment"],
       qtdCurtidas: json["qtdCurtidas"],
@@ -92,11 +103,54 @@ class Comentario {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data["id"] = id;
+    data["autorId"] = autorId;
     data["name"] = name;
     data["comment"] = comment;
     data["qtdCurtidas"] = qtdCurtidas;
     data["createdAt"] = createdAt;
 
+    return data;
+  }
+}
+
+class Report {
+  String? autor;
+  String? comment;
+  String? commentId;
+  String? devocionalId;
+  String? reportReason;
+  String? text;
+  String? createdAt;
+
+  Report({
+    required this.autor,
+    required this.comment,
+    required this.commentId,
+    required this.devocionalId,
+    required this.reportReason,
+    required this.text,
+    required this.createdAt,
+  });
+
+  Report.fromJson(Map<String, dynamic> json) {
+    autor = json["autor"];
+    comment = json["comment"];
+    commentId = json["commentId"];
+    devocionalId = json["devocionalId"];
+    reportReason = json["reportReason"];
+    text = json["text"];
+    createdAt = json["createdAt"];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data["autor"] = autor;
+    data["comment"] = comment;
+    data["commentId"] = commentId;
+    data["devocionalId"] = devocionalId;
+    data["reportReason"] = reportReason;
+    data["text"] = text;
+    data["createdAt"] = createdAt;
     return data;
   }
 }

@@ -56,16 +56,25 @@ class DailyReadingDao {
   }
 
   Future<void> generateDailyReadings(int progressId, int durationDays, List<List<String>> chapters) async {
+    final List<Map<String, dynamic>> chaptersMap = [];
     for (int day = 0; day < durationDays; day++) {
-      for (String chapter in chapters[day]) {
-        await _plansInstance.insert(_tableName, {
-          'progress_id': progressId,
-          'day_number': day + 1,
-          'chapter': chapter,
-          'completed': 0,
-        });
+      if(chapters.length > day) {
+        for (String chapter in chapters[day]) {
+          chaptersMap.add({
+            'progress_id': progressId,
+            'day_number': day + 1,
+            'chapter': chapter,
+            'completed': 0,
+          });
+          print('OLHA O CHAPTER AEEEE $chapter - DIA $day');
+        }
       }
     }
+    await _plansInstance.transaction((txn) async {
+      for(var chapter in chaptersMap) {
+        await txn.insert(_tableName, chapter);
+      }
+    });
   }
 
   Future<bool> markChapter(String chapter, {required int read, required int progressId}) async {

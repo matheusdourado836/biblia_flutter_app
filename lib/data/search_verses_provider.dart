@@ -30,11 +30,11 @@ class SearchVersesProvider extends ChangeNotifier {
     }
 
     for (int i = index; i < qtdBooks; i++) {
-      var book = bibleData.data[versionIndex][i]['name'];
-      var abbrev = bibleData.data[versionIndex][i]['abbrev'];
-      for (int j = 0; j < bibleData.data[versionIndex][i]['chapters'].length; j++) {
+      var book = bibleData.data[versionIndex]["text"][i]['name'];
+      var abbrev = bibleData.data[versionIndex]["text"][i]['abbrev'];
+      for (int j = 0; j < bibleData.data[versionIndex]["text"][i]['chapters'].length; j++) {
         var chapterIndex = j + 1;
-        var chapter = bibleData.data[versionIndex][i]['chapters'][j];
+        var chapter = bibleData.data[versionIndex]["text"][i]['chapters'][j];
         for (int y = 0; y < chapter.length; y++) {
           var verses = chapter[y].split(';');
           for (int k = 0; k < verses.length; k++) {
@@ -45,7 +45,7 @@ class SearchVersesProvider extends ChangeNotifier {
               results.add({
                 'book': book,
                 'abbrev': abbrev,
-                'qtdChapters': bibleData.data[versionIndex][i]['chapters'].length,
+                'qtdChapters': bibleData.data[versionIndex]["text"][i]['chapters'].length,
                 'chapter': chapterIndex,
                 'bookIndex': i,
                 'verse': verse,

@@ -38,9 +38,9 @@ class ThematicSelected extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(devocional.referencia ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color.fromRGBO(255, 255, 255, 0.85))),
+                    Text(devocional.referencia ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                     const SizedBox(height: 20),
-                    Text(devocional.passagem ?? '', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, color: Color.fromRGBO(255, 255, 255, 0.85)))
+                    Text(devocional.passagem ?? '', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white))
                   ],
                 ),
               ),

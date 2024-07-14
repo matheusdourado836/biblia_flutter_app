@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import '../../data/verses_provider.dart';
+import '../../helpers/version_to_name.dart';
+import '../../helpers/progress_dialog.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -43,7 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _findInSelectedOption = _findInOptions[0];
     _findInBooks.add('Todos');
     _selectedBook = 'Todos';
-    for (var book in _bibleData.data[0]) {
+    for (var book in _bibleData.data[0]["text"]) {
       _findInBooks.add(book["name"]);
     }
     super.initState();
@@ -51,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void onTap() {
     _versesProvider.clear();
-    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionIndex: versionProvider.options.indexOf(versionProvider.selectedOption));
+    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionName: _selectedOption.toLowerCase().split(' ')[0]);
     Navigator.pushNamed(context, 'verses_screen', arguments: map);
   }
 
@@ -72,7 +74,7 @@ class _SearchScreenState extends State<SearchScreen> {
           focusNode: _focusNode,
           style: Theme.of(context).textTheme.bodyMedium,
           onSubmitted: ((value) {
-            List<dynamic> allBooks = _bibleData.data[0];
+            List<dynamic> allBooks = _bibleData.data[0]["text"];
             final bookIndex = allBooks
                 .indexWhere((element) => element["name"] == _selectedBook);
             final versionIndex =
@@ -100,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.only(right: 8.0),
             child: ElevatedButton(
               onPressed: (() {
-                List<dynamic> allBooks = _bibleData.data[0];
+                List<dynamic> allBooks = _bibleData.data[0]["text"];
                 final bookIndex = allBooks
                     .indexWhere((element) => element["name"] == _selectedBook);
                 final versionIndex =
@@ -156,39 +158,66 @@ class _SearchScreenState extends State<SearchScreen> {
                             SizedBox(
                               width: MediaQuery.of(context).size.width * 0.30,
                               height: 30,
-                              child: DropdownButton(
-                                underline: Container(
-                                  height: 0,
-                                  color: Colors.transparent,
-                                ),
-                                style: Theme.of(context)
-                                    .dropdownMenuTheme
-                                    .textStyle,
-                                isExpanded: true,
-                                itemHeight: 80.0,
-                                value: versionProvider.selectedOption,
-                                items: versionProvider.options.map((option) {
-                                  versionProvider
-                                      .setListItem(option.split(' ')[0]);
-                                  return DropdownMenuItem(
-                                    value: option,
-                                    child: Text(
-                                      option,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall,
+                              child: Consumer<VersionProvider>(
+                                builder: (context, value, _) {
+                                  return DropdownButton(
+                                    underline: Container(
+                                      height: 0,
+                                      color: Colors.transparent,
                                     ),
+                                    style: Theme.of(context)
+                                        .dropdownMenuTheme
+                                        .textStyle,
+                                    isExpanded: true,
+                                    itemHeight: 120.0,
+                                    value: versionProvider.selectedOption,
+                                    items: versionProvider.options.map((option) {
+                                      versionProvider.setListItem(option.split(' ')[0]);
+                                      if(value.getDownloadedVersion(versionToName(option))) {
+                                        return DropdownMenuItem(
+                                          value: option,
+                                          child: InkWell(
+                                            onTap: () => showDialog(
+                                                context: context,
+                                                barrierDismissible: false,
+                                                builder: (context) => ProgressDialog(versionName: versionToName(option))
+                                            ).whenComplete(() {
+                                              Navigator.pop(context);
+                                              setState(() {});
+                                            }),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    option,
+                                                    style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withOpacity(.5)),
+                                                  ),
+                                                ),
+                                                const Icon(Icons.download, size: 16,)
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return DropdownMenuItem(
+                                        value: option,
+                                        child: Text(
+                                          option,
+                                          style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newValue) {
+                                      setState(() {
+                                        _selectedOption = newValue!;
+                                        versionProvider
+                                            .changeVersion(newValue.toString());
+                                      });
+                                    },
+                                    selectedItemBuilder: (BuildContext context) {
+                                      return versionProvider.versionsList;
+                                    },
                                   );
-                                }).toList(),
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    _selectedOption = newValue!;
-                                    versionProvider
-                                        .changeVersion(newValue.toString());
-                                  });
-                                },
-                                selectedItemBuilder: (BuildContext context) {
-                                  return versionProvider.versionsList;
                                 },
                               ),
                             )

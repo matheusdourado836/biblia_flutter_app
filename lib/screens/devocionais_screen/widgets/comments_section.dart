@@ -2,10 +2,9 @@ import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_skeleton.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/report_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 class CommentsSection extends StatefulWidget {
   final String devocionalId;
@@ -51,7 +50,6 @@ class _CommentsSectionState extends State<CommentsSection> {
       appBar: null,
       backgroundColor: Theme.of(context).colorScheme.background,
       body: Column(
-        //crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'Comentários',
@@ -86,7 +84,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                             children: [
                               const NoBgUser(),
                               const SizedBox(width: 8),
-                              Expanded(child: UserRow(comment: comentario))
+                              Expanded(child: UserRow(comment: comentario, devocionalId: widget.devocionalId,))
                             ],
                           )
                         ],
@@ -205,14 +203,14 @@ class _CommentsSectionState extends State<CommentsSection> {
 
 class UserRow extends StatefulWidget {
   final Comentario comment;
-  const UserRow({super.key, required this.comment});
+  final String devocionalId;
+  const UserRow({super.key, required this.comment, required this.devocionalId});
 
   @override
   State<UserRow> createState() => _UserRowState();
 }
 
 class _UserRowState extends State<UserRow> {
-  bool _liked = false;
   String timeAgo(String isoDate) {
     final DateTime date = DateTime.parse(isoDate);
     final DateTime now = DateTime.now();
@@ -266,7 +264,22 @@ class _UserRowState extends State<UserRow> {
             Material(
               color: Colors.transparent,
               child: InkWell(
-                  onTap: (() => setState(() => _liked = !_liked)),
+                  onTap: (() => showDialog(
+                      context: context,
+                      builder: (context) => ReportDialog(devocionalId: widget.devocionalId, comentario: widget.comment)
+                  ).then((res) {
+                    if(res == 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          elevation: 4,
+                          margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                          padding: const EdgeInsets.only(top: 16, bottom: 16),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          content: const Text('  Denúncia enviada com sucesso!', style: TextStyle(color: Colors.white),)
+                        )
+                      );
+                    }
+                  })),
                   splashColor: Colors.redAccent,
                   radius: 40,
                   borderRadius: BorderRadius.circular(50),

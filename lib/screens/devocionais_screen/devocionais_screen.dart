@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
@@ -12,6 +11,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../data/devocional_provider.dart';
 import '../../data/plans_provider.dart';
+import '../../models/devocional.dart';
 import 'community/feed_screen.dart';
 
 TutorialCoachMark? _coachMark;
@@ -33,88 +33,8 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    initTargets();
-    super.initState();
-  }
-
-  void initTargets() {
-    _targets = [
-      TargetFocus(
-        identify: 'journey-key',
-        keyTarget: _journeyKey,
-        shape: ShapeLightFocus.RRect,
-        contents: [
-          TargetContent(
-            align: ContentAlign.bottom,
-            builder: (context, c) {
-              return TutorialWidget(
-                text: 'Descubra novos devocionais temáticos e tenha uma reflexão para fortalecer sua fé',
-                skip: 'Pular',
-                next: 'Próximo',
-                onNext: (() {
-                  c.next();
-                }),
-                onSkip: (() => c.skip())
-              );
-            }
-          )
-        ]
-      ),
-      TargetFocus(
-        identify: 'community-key',
-        keyTarget: _communityKey,
-        shape: ShapeLightFocus.RRect,
-        contents: [
-          TargetContent(
-              align: ContentAlign.top,
-              builder: (context, c) {
-                return TutorialWidget(
-                    text: 'Venha conhecer nossa comunidade, onde você poderá ver, postar devocionais e suas reflexões pessoais para abençoar e edificar a fé de outras pessoas',
-                    skip: 'Pular',
-                    next: 'Próximo',
-                    onNext: (() {
-                      c.next();
-                      _scrollController.animateTo(
-                        _scrollController.position.maxScrollExtent,
-                        duration: const Duration(seconds: 1),
-                        curve: Curves.easeOut,
-                      );
-                    }),
-                    onSkip: (() => c.skip())
-                );
-              }
-          )
-        ]
-      ),
-      TargetFocus(
-        identify: 'plans-key',
-        keyTarget: _plansKey,
-        shape: ShapeLightFocus.RRect,
-        contents: [
-          TargetContent(
-              align: ContentAlign.top,
-              builder: (context, c) {
-                return TutorialWidget(
-                    text: 'Inicie um plano de leitura para te ajudar na sua leitura diária, escolha de acordo com seus objetivos',
-                    skip: 'Pular',
-                    next: 'Próximo',
-                    onNext: (() {
-                      c.next();
-                    }),
-                    onSkip: (() => c.skip())
-                );
-              }
-          )
-        ]
-      ),
-    ];
-  }
-
-  @override
   void dispose() {
     _scrollController.dispose();
-    _coachMark?.finish();
     super.dispose();
   }
 
@@ -130,12 +50,12 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
         children: [
           SingleChildScrollView(
             controller: _scrollController,
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                JornadaEspiritual(),
-                Comunidade(),
-                PlanosDeLeitura()
+                JornadaEspiritual(scrollController: _scrollController,),
+                const Comunidade(),
+                const PlanosDeLeitura()
               ],
             ),
           ),
@@ -156,7 +76,8 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
 }
 
 class JornadaEspiritual extends StatefulWidget {
-  const JornadaEspiritual({super.key});
+  final ScrollController scrollController;
+  const JornadaEspiritual({super.key, required this.scrollController});
 
   @override
   State<JornadaEspiritual> createState() => _JornadaEspiritualState();
@@ -171,8 +92,23 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     devocionalProvider.getThematicDevocionais().whenComplete(() {
       _removeBackground.value = true;
-      if(MediaQuery.of(context).orientation == Orientation.portrait) {
+      if(!devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+        initTargets();
         _coachMark = TutorialCoachMark(
+          onClickTarget: (target) async {
+            if(target.identify == 'journey-key') {
+              Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
+            }else if(target.identify == 'community-key') {
+              Scrollable.ensureVisible(_plansKey.currentContext!, duration: const Duration(milliseconds: 600));
+            }
+          },
+          onSkip: () {
+            devocionalProvider.markTutorial(2);
+            return true;
+          },
+          onFinish: () {
+            devocionalProvider.markTutorial(2);
+          },
             colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
             targets: _targets,
             hideSkip: true
@@ -180,6 +116,86 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
       }
     });
     super.initState();
+  }
+
+  void initTargets() {
+    _targets = [
+      TargetFocus(
+          identify: 'journey-key',
+          keyTarget: _journeyKey,
+          shape: ShapeLightFocus.RRect,
+          contents: [
+            TargetContent(
+                align: ContentAlign.bottom,
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Descubra novos devocionais temáticos e tenha uma reflexão para fortalecer sua fé',
+                      skip: 'Pular',
+                      next: 'Próximo',
+                      onNext: (() async {
+                        c.next();
+                        await Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
+                      }),
+                      onSkip: (() => c.skip())
+                  );
+                }
+            )
+          ]
+      ),
+      TargetFocus(
+          identify: 'community-key',
+          keyTarget: _communityKey,
+          shape: ShapeLightFocus.RRect,
+          contents: [
+            TargetContent(
+                align: ContentAlign.bottom,
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Venha conhecer nossa comunidade, onde você poderá ver, postar devocionais e suas reflexões pessoais para abençoar e edificar a fé de outras pessoas',
+                      skip: 'Pular',
+                      next: 'Próximo',
+                      onNext: (() {
+                        c.next();
+                        widget.scrollController.animateTo(
+                          widget.scrollController.position.maxScrollExtent,
+                          duration: const Duration(seconds: 1),
+                          curve: Curves.easeOut,
+                        );
+                      }),
+                      onSkip: (() => c.skip())
+                  );
+                }
+            )
+          ]
+      ),
+      TargetFocus(
+          identify: 'plans-key',
+          keyTarget: _plansKey,
+          shape: ShapeLightFocus.RRect,
+          contents: [
+            TargetContent(
+                align: ContentAlign.top,
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Inicie um plano de leitura para te ajudar na sua leitura diária, escolha de acordo com seus objetivos',
+                      skip: '',
+                      next: 'Finalizar',
+                      onNext: (() {
+                        c.skip();
+                      }),
+                      onSkip: (() => c.skip())
+                  );
+                }
+            )
+          ]
+      ),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _coachMark?.finish();
+    super.dispose();
   }
 
   @override
@@ -255,17 +271,19 @@ class Comunidade extends StatefulWidget {
 
 class _ComunidadeState extends State<Comunidade> {
   late Widget imageProvider;
+  List<Devocional> _devocionais = [];
 
   @override
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    devocionalProvider.getDevocionais();
+    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getDevocionais().whenComplete(() => _devocionais = devocionalProvider.devocionais));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: _communityKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
@@ -273,7 +291,6 @@ class _ComunidadeState extends State<Comunidade> {
           child: Text('Faça parte da nossa comunidade'),
         ),
         Container(
-          key: _communityKey,
           height: 300,
           color: Theme.of(context).cardTheme.color,
           child: Column(
@@ -296,7 +313,7 @@ class _ComunidadeState extends State<Comunidade> {
                         enlargeCenterPage: true,
                         enlargeFactor: .5
                       ),
-                      items: value.devocionais.map((devocional) {
+                      items: _devocionais.map((devocional) {
                         return Container(
                           padding: const EdgeInsets.all(12),
                           margin: const EdgeInsets.all(8),
@@ -375,10 +392,10 @@ class PlanosDeLeitura extends StatefulWidget {
 class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
   // TODO TEM QUE COLOCAR ISSO NO BANCO DE DADOS ANTES DE LANÇAR A ATUALIZAÇÃO
   static final List<Map<String, dynamic>> _plans = [
-    {"label": "Bíblia em 1 ano", "code": PlanType.ONE_YEAR, "duration": 396, "qtdChapters": 3},
-    {"label": "Bíblia toda em 3 meses", "code": PlanType.THREE_MONTHS, "duration": 91, "qtdChapters": 13},
-    {"label": "Novo testamento em 2 meses", "code": PlanType.TWO_MONTHS_NEW, "duration": 64, "qtdChapters": 4, "isNewTestament": true},
-    {"label": "Antigo testamento em 6 meses", "code": PlanType.SIX_MONTHS_OLD, "duration": 185, "qtdChapters": 5, "bibleLength": 39}
+    {"label": "Bíblia em 1 ano", "imgPath": "assets/images/one_year_plan.png", "code": PlanType.ONE_YEAR, "duration": 397, "qtdChapters": 3},
+    {"label": "Bíblia toda em 3 meses", "imgPath": "assets/images/three_month_plan.jpg","code": PlanType.THREE_MONTHS, "duration": 92, "qtdChapters": 13},
+    {"label": "Novo testamento em 2 meses","imgPath": "assets/images/two_month_new_plan.jpg", "code": PlanType.TWO_MONTHS_NEW, "duration": 66, "qtdChapters": 4, "isNewTestament": true},
+    {"label": "Antigo testamento em 6 meses","imgPath": "assets/images/six_month_old_plan.png", "code": PlanType.SIX_MONTHS_OLD, "duration": 186, "qtdChapters": 5, "bibleLength": 39}
   ];
   late PlansProvider _plansProvider;
   double percentageValue = 0;
@@ -458,7 +475,13 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                     width: 72,
                                     margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
                                     decoration: BoxDecoration(
-                                        color: Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1),
+                                        image: DecorationImage(
+                                          image: AssetImage(_plans[index]["imgPath"]),
+                                          fit: BoxFit.cover,
+                                          colorFilter: ColorFilter.mode(
+                                              Colors.black.withOpacity(0.3), BlendMode.darken
+                                          ),
+                                        ),
                                         borderRadius: BorderRadius.circular(4)
                                     ),
                                   ),
@@ -491,10 +514,15 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                                   children: [
                                                     Text('${snapshot.data!.toStringAsFixed(2)}%', style: const TextStyle(fontSize: 10)),
                                                     const SizedBox(height: 8),
-                                                    LinearProgressIndicator(
-                                                      value: snapshot.data! / 100,
-                                                      minHeight: 8,
-                                                      borderRadius: BorderRadius.circular(2),
+                                                    ConstrainedBox(
+                                                      constraints: const BoxConstraints(
+                                                        maxWidth: 250,
+                                                      ),
+                                                      child: LinearProgressIndicator(
+                                                        value: snapshot.data! / 100,
+                                                        minHeight: 8,
+                                                        borderRadius: BorderRadius.circular(2),
+                                                      ),
                                                     )
                                                   ],
                                                 );
@@ -528,7 +556,13 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                   width: 70,
                                   margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
                                   decoration: BoxDecoration(
-                                      color: Color.fromRGBO(Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1),
+                                      image: DecorationImage(
+                                        image: AssetImage(_plans[index]["imgPath"]),
+                                        fit: BoxFit.cover,
+                                        colorFilter: ColorFilter.mode(
+                                            Colors.black.withOpacity(0.3), BlendMode.darken
+                                        ),
+                                      ),
                                       borderRadius: BorderRadius.circular(4)
                                   ),
                                 ),

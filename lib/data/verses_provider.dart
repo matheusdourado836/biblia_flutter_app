@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
+import 'package:biblia_flutter_app/helpers/version_to_name.dart';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:biblia_flutter_app/models/verse.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
@@ -107,11 +108,13 @@ class VersesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {int versionIndex = 0}) {
+  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi'}) {
+    final versionNameFormatted = versionToName(versionName);
+    final bibleData = _bibleData.data.where((bible) => bible["version"] == versionNameFormatted).first;
     if (_listMapVerses.isEmpty) {
-      List<dynamic> chapters = _bibleData.data[versionIndex][bookIndex]['chapters'];
+      List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
       for (int i = 0; i < chapters.length; i++) {
-        refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
+        refreshFunction(bookName, bookIndex, i, versionName: versionNameFormatted);
       }
       notifyListeners();
       return _allVerses;
@@ -120,11 +123,12 @@ class VersesProvider extends ChangeNotifier {
     return _allVerses;
   }
 
-  void refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) {
+  void refreshFunction(String bookName, int bookIndex, int chapter, {String versionName = 'nvi'}) {
     final listColorsDb = [];
     _listMapVerses = [];
-    final List<dynamic> versesByChapter = _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
-    final List<dynamic> versesByChapterDefault = _bibleData.data[0][bookIndex]['chapters'][chapter];
+    final bibleData = _bibleData.data.where((bible) => bible["version"] == versionName).first;
+    final List<dynamic> versesByChapter = bibleData["text"][bookIndex]['chapters'][chapter];
+    final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
 
     for (var i = 0; i < versesByChapterDefault.length; i++) {
       if(_listaBd.isNotEmpty && _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).isNotEmpty) {
@@ -149,7 +153,7 @@ class VersesProvider extends ChangeNotifier {
         "verse": versesByChapter[i],
         "verseDefault": versesByChapterDefault[i],
         "verseColor": listColorsDb[i]["color"],
-        "version": versionIndex,
+        "version": versionName,
         "isSelected": false,
         "isEditing": false,
         "annotation": annotationFound.isEmpty ? null : annotationFound.first
@@ -221,12 +225,12 @@ class VersesProvider extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     final List<Map<String, dynamic>> allBooks = [];
-    for (var i = 0; i < _bibleData.data[0].length; i++) {
+    for (var i = 0; i < _bibleData.data[0]["text"].length; i++) {
       allBooks.add({
-        'bookName': _bibleData.data[0][i]["name"],
-        'abbrev': _bibleData.data[0][i]["abbrev"],
+        'bookName': _bibleData.data[0]["text"][i]["name"],
+        'abbrev': _bibleData.data[0]["text"][i]["abbrev"],
         'bookIndex': i,
-        'chapters': _bibleData.data[0][i]["chapters"].length
+        'chapters': _bibleData.data[0]["text"][i]["chapters"].length
       });
     }
 

@@ -53,7 +53,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
             chapter = snapshot.data!["chapter"];
             verseNumber = snapshot.data!["verseNumber"];
             verse = snapshot.data!["verse"];
-            final List<dynamic> bookReference = bibleData.data[0];
+            final List<dynamic> bookReference = bibleData.data[0]["text"];
             final book = bookReference.where((element) => element["abbrev"] == abbrev).first;
             bookIndex = bookReference.indexOf(book);
             chapters = book["chapters"].length;
@@ -66,11 +66,9 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                         width: width,
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5), BlendMode.darken),
+                            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
                             opacity: 0.8,
-                            image:
-                            CachedNetworkImageProvider(snapshot.data!["url"]),
+                            image: CachedNetworkImageProvider(snapshot.data!["url"]),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -87,8 +85,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 16.0, right: 16.0, bottom: 40.0),
+                                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 40.0),
                                 child: Text.rich(
                                   TextSpan(
                                       text: '$bookName $chapter:$verseNumber\n\n',

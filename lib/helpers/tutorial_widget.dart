@@ -30,7 +30,9 @@ class _TutorialWidgetState extends State<TutorialWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(onPressed: widget.onSkip, child: Text(widget.skip, style: Theme.of(context).textTheme.titleLarge!.copyWith(fontSize: 18))),
+              widget.skip.isEmpty
+                ? const SizedBox()
+                : TextButton(onPressed: widget.onSkip, child: Text(widget.skip, style: Theme.of(context).textTheme.titleLarge!.copyWith(fontSize: 18))),
               const SizedBox(width: 16),
               ElevatedButton(
                   style: ElevatedButton.styleFrom(

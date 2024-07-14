@@ -1,7 +1,8 @@
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/helpers/expandable_container.dart';
-import 'package:biblia_flutter_app/helpers/format_date.dart';
+import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/tab_item.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_section.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/create_devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
@@ -22,98 +23,243 @@ class FeedScreen extends StatefulWidget {
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> {
+class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
+  late final TabController _tabController = TabController(length: 3, vsync: this);
+  late final DevocionalProvider devocionalProvider;
+  int _selectedPage = 0;
+  List<Devocional> _approvedDevocionais = [];
+  List<Devocional> _pendingDevocionais = [];
+  List<Devocional> _rejectedDevocionais = [];
+  List<List<Devocional>> _userDevocionais = [];
+
   @override
   void initState() {
-    final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    devocionalProvider.getDevocionais();
+    devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      devocionalProvider.getDevocionais();
+    });
+    _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
     super.initState();
+  }
+
+  Widget buildIconButton(IconData icon, String description, int index, Function() onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: _selectedPage == index
+                  ? const Color(0xffffffff)
+                  : const Color(0x75ffffff),
+            ),
+            const SizedBox(height: 4),
+            Text(description, style: TextStyle(
+                fontSize: 10,
+                fontWeight: _selectedPage == index
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+                color: _selectedPage == index
+                    ? const Color(0xffffffff)
+                    : const Color(0x75ffffff)
+            ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     _isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     _horizontalPadding = _isPortrait ? 0 : 24;
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Posts da comunidade'),
-        actions: [
-          IconButton(onPressed: () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false), icon: const Icon(Icons.home))
-        ],
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Consumer<DevocionalProvider>(
-            builder: (context, value, _) {
-              if (value.isLoading) {
-                return const PostFeedSkeleton();
-              }
-        
-              if (value.devocionais.isEmpty) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/nothing_yet.png',
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * .55,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: (_selectedPage == 0) ? const Text('Posts da comunidade') : const Text('Seus posts'),
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        body: SafeArea(
+          child: RefreshIndicator.adaptive(
+            onRefresh: () => _selectedPage == 0 ? devocionalProvider.getDevocionais() : devocionalProvider.getUserDevocionais(),
+            child: Column(
+              children: [
+                (_selectedPage == 0)
+                  ? const SizedBox()
+                  : ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 40,
+                    margin: const EdgeInsets.fromLTRB(12, 20, 12, 8),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Theme.of(context).colorScheme.primary
                     ),
-                    const Text(
-                        'Nenhum post em nossa comunidade ainda...\nQue tal criar um agora?',
-                        style:
-                            TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
-                        textAlign: TextAlign.center)
-                  ],
-                );
-              }
-        
-              if (value.devocionais.isNotEmpty &&
-                  value.devocionais.first.bgImagem != null) {}
-        
-              return ListView.builder(
-                itemCount: value.devocionais.length,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final devocional = value.devocionais[index];
-                  if (index + 1 == value.devocionais.length) {
-                    return Column(
-                      children: [
-                        PostContainer(devocional: devocional),
-                        const SizedBox(height: 100),
-                      ],
+                    child: TabBar(
+                      controller: _tabController,
+                      indicatorWeight: 3,
+                      dividerColor: Colors.transparent,
+                      unselectedLabelColor: Theme.of(context).colorScheme.tertiary,
+                      labelColor: Colors.white,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      indicatorColor: Theme.of(context).colorScheme.secondary,
+                      onTap: (index) {
+                        setState(() {});
+                      },
+                      tabs: [
+                        TabItem(title: 'Aprovados', count: _approvedDevocionais.length),
+                        TabItem(title: 'Pendentes', count: _pendingDevocionais.length),
+                        TabItem(title: 'Rejeitados', count: _rejectedDevocionais.length),
+                      ]
+                    ),
+                  ),
+                ),
+                Consumer<DevocionalProvider>(
+                  builder: (context, value, _) {
+                    if (value.isLoading) {
+                      return const Expanded(child: PostFeedSkeleton());
+                    }
+
+                    if (value.devocionais.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Column(
+                          children: [
+                            Image.asset(
+                             'assets/images/nothing_yet.png',
+                              width: double.infinity,
+                              height: MediaQuery.of(context).size.height * .45,
+                            ),
+                            Text(
+                                _selectedPage == 2
+                                ? 'Você não fez nenhum post ainda...\nQue tal criar um agora?'
+                                : 'Nenhum post em nossa comunidade ainda...\nQue tal criar um agora?',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
+                                textAlign: TextAlign.center
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Expanded(
+                      child: ListView.builder(
+                        itemCount: (_selectedPage == 0) ? value.devocionais.length : _userDevocionais[_tabController.index].length,
+                        shrinkWrap: true,
+                        itemBuilder: (context, index) {
+                          final devocional = (_selectedPage == 0) ? value.devocionais[index] : _userDevocionais[_tabController.index][index];
+                          return Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              children: [
+                                _infoRow(devocional),
+                                PostContainer(devocional: devocional),
+                                if(index + 1 == value.devocionais.length)
+                                  const SizedBox(height: 100)
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     );
-                  }
-                  return PostContainer(devocional: devocional);
-                },
-              );
-            },
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: Container(
+          //height: 85,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              buildIconButton(Icons.search, 'Explorar', 0, () {
+                if(_selectedPage != 0) {
+                  devocionalProvider.getDevocionais();
+                }
+                setState(() => _selectedPage = 0);
+              }),
+              buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
+              buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
+                if(_selectedPage != 2) {
+                  devocionalProvider.getUserDevocionais().whenComplete(() {
+                    setState(() {
+                      _approvedDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 0).toList();
+                      _pendingDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 1).toList();
+                      _rejectedDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 2).toList();
+                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                    });
+                  });
+                }
+                setState(() => _selectedPage = 2);
+              }),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
+          onPressed: (() => showModalBottomSheet(
+              context: context,
+              constraints: BoxConstraints(
+                maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
+              ),
+              backgroundColor: Theme.of(context).colorScheme.background,
+              barrierColor: Theme.of(context).colorScheme.background,
+              elevation: 0,
+              useSafeArea: true,
+              showDragHandle: true,
+              isScrollControlled: true,
+              builder: (context) => const CreateDevocional())),
+          tooltip: 'Adicionar um devocional',
+          child: Icon(
+            Icons.add,
+            size: 26,
+            color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-        onPressed: (() => showModalBottomSheet(
-            context: context,
-            constraints: BoxConstraints(
-              maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
-            ),
-            backgroundColor: Theme.of(context).colorScheme.background,
-            barrierColor: Theme.of(context).colorScheme.background,
-            elevation: 0,
-            useSafeArea: true,
-            showDragHandle: true,
-            isScrollControlled: true,
-            builder: (context) => const CreateDevocional())),
-        tooltip: 'Adicionar um devocional',
-        child: Icon(
-          Icons.add,
-          size: 26,
-          color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
-        ),
-      ),
+    );
+  }
+
+  Widget _infoRow(Devocional devocional) {
+    if(_selectedPage == 0) {
+      return const SizedBox();
+    }
+    return Row(
+      children: [
+        const Text('Visualizações: '),
+        Text(formatInfoQuantity(devocional.qtdViews!)),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const Text('Público'),
+              Transform.scale(
+                scale: .70,
+                child: Switch(value: devocional.public!, onChanged: (newValue) {
+                  devocional.public = newValue;
+                  devocionalProvider.updateUserData(devocional.id!, {"public": devocional.public});
+                  setState(() {});
+                }),
+              )
+            ],
+          ),
+        )
+      ],
     );
   }
 }
@@ -144,9 +290,11 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
 
   void checkIfPostIsLiked() async {
     _liked = await devocionalProvider.checkIfPostIsLiked(postId: widget.devocional.id!);
-    setState(() {
-      _liked;
-    });
+    if(mounted) {
+      setState(() {
+        _liked;
+      });
+    }
   }
 
   void likePost() {
@@ -199,9 +347,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Container(
-      //height: _containerHeight,
-      width: MediaQuery.of(context).size.width,
-      margin: EdgeInsets.symmetric(vertical: 16.0, horizontal: _horizontalPadding),
+      margin: EdgeInsets.symmetric(horizontal: _horizontalPadding),
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -210,15 +356,17 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          print('OLHA AE EEE ${constraints.maxWidth}');
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               InkWell(
-                  onTap: (() => Navigator.pushNamed(
-                      context, 'devocional_selected',
-                      arguments: {"devocional": widget.devocional}
-                  )),
+                  onTap: (() {
+                    devocionalProvider.countView(widget.devocional.id!, widget.devocional.ownerId!);
+                    Navigator.pushNamed(
+                        context, 'devocional_selected',
+                        arguments: {"devocional": widget.devocional}
+                    );
+                  }),
                   onDoubleTap: (() {
                     setState(() => _liked = true);
                     devocionalProvider
@@ -235,8 +383,8 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                     alignment: Alignment.center,
                     children: [
                       (widget.devocional.bgImagem != null && widget.devocional.bgImagem!.isNotEmpty)
-                          ? bgImagem(height: constraints.maxWidth > 400 ? 400 : 200)
-                          : NoBgImage(title: widget.devocional.titulo!, height: constraints.maxWidth > 400 ? 400 : 200,),
+                          ? bgImagem(height: constraints.maxWidth > 400 ? 400 : 250)
+                          : NoBgImage(title: widget.devocional.titulo!, height: constraints.maxWidth > 400 ? 400 : 250,),
                       Align(
                           alignment: Alignment.center,
                           child: const Icon(
@@ -292,67 +440,62 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                       )
                     ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 4),
-                    child: SizedBox(
-                      height: 48,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          InkWell(
-                            onTap: (() => showModalBottomSheet(
-                                context: context,
-                                showDragHandle: true,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                elevation: 0,
-                                barrierColor:
-                                Theme.of(context).colorScheme.background,
-                                backgroundColor:
-                                Theme.of(context).colorScheme.background,
-                                builder: (context) => CommentsSection(
-                                    devocionalId: widget.devocional.id!))),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Icon(
-                                  Icons.chat_bubble,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                Text(widget.devocional.qtdComentarios!.toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Column(
+                  SizedBox(
+                    height: 48,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: (() => showModalBottomSheet(
+                              context: context,
+                              showDragHandle: true,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              elevation: 0,
+                              barrierColor: Theme.of(context).colorScheme.background,
+                              backgroundColor: Theme.of(context).colorScheme.background,
+                              builder: (context) => CommentsSection(
+                                  devocionalId: widget.devocional.id!))),
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                    onTap: (() {
-                                      setState(() => _liked = !_liked);
-                                      likePost();
-                                    }),
-                                    radius: 40,
-                                    borderRadius: BorderRadius.circular(50),
-                                    child: heartIcon(
-                                        icon: (_liked)
-                                            ? CupertinoIcons.heart_fill
-                                            : CupertinoIcons.heart,
-                                        color: (_liked)
-                                            ? Colors.red
-                                            : Colors.white)
-                                        .animate(target: _liked ? 0 : 1)
-                                        .scaleXY(begin: .8, duration: 100.ms)
-                                        .scaleXY(begin: 1.3, delay: 100.ms)),
+                              const Icon(
+                                Icons.chat_bubble,
+                                color: Colors.white,
+                                size: 20,
                               ),
-                              Text(widget.devocional.qtdCurtidas!.toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                              Text(formatInfoQuantity(widget.devocional.qtdComentarios!), style: const TextStyle(color: Colors.white, fontSize: 12)),
                             ],
-                          )
-                        ],
-                      ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                  onTap: (() {
+                                    setState(() => _liked = !_liked);
+                                    likePost();
+                                  }),
+                                  radius: 40,
+                                  borderRadius: BorderRadius.circular(50),
+                                  child: heartIcon(
+                                      icon: (_liked)
+                                          ? CupertinoIcons.heart_fill
+                                          : CupertinoIcons.heart,
+                                      color: (_liked)
+                                          ? Colors.red
+                                          : Colors.white)
+                                      .animate(target: _liked ? 0 : 1)
+                                      .scaleXY(begin: .8, duration: 100.ms)
+                                      .scaleXY(begin: 1.3, delay: 100.ms)),
+                            ),
+                            Text(formatInfoQuantity(widget.devocional.qtdCurtidas!), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          ],
+                        )
+                      ],
                     ),
                   )
                 ],

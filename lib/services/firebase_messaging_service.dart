@@ -114,6 +114,7 @@ class FirebaseMessagingService {
       String chapters = message.data["chapters"];
       String chapter = message.data["chapter"];
       String verseNumber = message.data["verseNumber"];
+      print('OLHA O PAYLOAD UUUUUUUUUUUUUUUUUUUUUU $bookName $abbrev $bookIndex $chapters $chapter $verseNumber');
       _notificationService.showNotification(
         CustomNotification(
           id: android.hashCode,

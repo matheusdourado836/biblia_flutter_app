@@ -38,8 +38,8 @@ class SearchBookWidget extends StatelessWidget {
               final versesProvider = Provider.of<VersesProvider>(context, listen: false);
               versesProvider.clear();
               Provider.of<ChaptersProvider>(context, listen: false).toggleSearch(false);
-              final book = bibleData.data[0].where((element) => element["name"] == bookName).first;
-              final bookIndex = bibleData.data[0].indexOf(book);
+              final book = bibleData.data[0]["text"].where((element) => element["name"] == bookName).first;
+              final bookIndex = bibleData.data[0]["text"].indexOf(book);
               Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': bookName, 'abbrev': abbrev, 'bookIndex': bookIndex, 'chapters': books[index].chapters,});
             }),
             child: Row(
