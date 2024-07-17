@@ -155,128 +155,130 @@ class _AiScreenState extends State<AiScreen> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: TextSelectionTheme(
-        data: const TextSelectionThemeData(
-          selectionColor: Colors.grey,
-          selectionHandleColor: Colors.black,
-        ),
-        child: SelectionArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4.0),
-                child: Center(
-                  child: Text(
-                    'Éden pode gerar informação incorreta. Considere verificar informações importantes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+      body: SafeArea(
+        child: TextSelectionTheme(
+          data: const TextSelectionThemeData(
+            selectionColor: Colors.grey,
+            selectionHandleColor: Colors.black,
+          ),
+          child: SelectionArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                  child: Center(
+                    child: Text(
+                      'Éden pode gerar informação incorreta. Considere verificar informações importantes.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                  child: history.isEmpty
-                      ? SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Container(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(18),
+                Expanded(
+                    child: history.isEmpty
+                        ? SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 300),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 15,
+                              horizontal: 20,
+                            ),
+                            margin: const EdgeInsets.all(16),
+                            child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
+                                'Posso ajudá-lo a entender passagens bíblicas, explicar conceitos teológicos, fornecer informações sobre personagens e eventos bíblicos, e responder perguntas sobre a fé cristã.\n'
+                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃', style: TextStyle(color: Colors.black),),
+                          )
+                        ],
+                      ),
+                    )
+                        : SelectionArea(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(12.0),
+                        itemCount: history.length,
+                        itemBuilder: (context, idx) {
+                          final content = history[idx];
+                          final text = content.parts
+                              .whereType<TextPart>()
+                              .map<String>((e) => e.text)
+                              .join('');
+                          return MessageWidget(
+                            text: text,
+                            isFromUser: content.role == 'user',
+                          );
+                        },
+                      ),
+                    )
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            maxHeight: 150,
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 15,
-                            horizontal: 20,
-                          ),
-                          margin: const EdgeInsets.all(16),
-                          child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
-                              'Posso ajudá-lo a entender passagens bíblicas, explicar conceitos teológicos, fornecer informações sobre personagens e eventos bíblicos, e responder perguntas sobre a fé cristã.\n'
-                              'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃', style: TextStyle(color: Colors.black),),
-                        )
-                      ],
-                    ),
-                  )
-                      : SelectionArea(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.all(12.0),
-                      itemCount: history.length,
-                      itemBuilder: (context, idx) {
-                        final content = history[idx];
-                        final text = content.parts
-                            .whereType<TextPart>()
-                            .map<String>((e) => e.text)
-                            .join('');
-                        return MessageWidget(
-                          text: text,
-                          isFromUser: content.role == 'user',
-                        );
-                      },
-                    ),
-                  )
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          maxHeight: 150,
-                        ),
-                        child: TextField(
-                          controller: _textController,
-                          focusNode: _textFieldFocus,
-                          maxLines: null,
-                          onSubmitted: (value) => _sendChatMessage(value),
-                          decoration: InputDecoration(
-                            hintText: 'Digite a pergunta aqui...',
-                            fillColor: Theme.of(context).colorScheme.secondary,
-                            filled: true,
-                            focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                            errorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                            focusedErrorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                            enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                          child: TextField(
+                            controller: _textController,
+                            focusNode: _textFieldFocus,
+                            maxLines: null,
+                            onSubmitted: (value) => _sendChatMessage(value),
+                            decoration: InputDecoration(
+                              hintText: 'Digite a pergunta aqui...',
+                              fillColor: Theme.of(context).colorScheme.secondary,
+                              filled: true,
+                              focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                              errorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                              focusedErrorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                              enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (!_loading)
-                      InkWell(
-                        onTap: (() {
-                          if(_qtdQuestions == 0) {
-                            showDialog(context: context, builder: (context) => AdDialog(
-                              onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
-                                Navigator.pop(context);
-                                setState(() => _qtdQuestions = rewardItem.amount.toInt());
-                              })
-                            )
-                            );
-                            return;
-                          }
-                          if(_textController.text.isNotEmpty) {
-                            _sendChatMessage(_textController.text);
-                          }
-                        }),
-                        child: Container(
-                          height: 50,
-                          width: 50,
-                          decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(50)
+                      const SizedBox(width: 8),
+                      if (!_loading)
+                        InkWell(
+                          onTap: (() {
+                            if(_qtdQuestions == 0) {
+                              showDialog(context: context, builder: (context) => AdDialog(
+                                onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
+                                  Navigator.pop(context);
+                                  setState(() => _qtdQuestions = rewardItem.amount.toInt());
+                                })
+                              )
+                              );
+                              return;
+                            }
+                            if(_textController.text.isNotEmpty) {
+                              _sendChatMessage(_textController.text);
+                            }
+                          }),
+                          child: Container(
+                            height: 50,
+                            width: 50,
+                            decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(50)
+                            ),
+                            child: const Icon(Icons.send, size: 22, color: Colors.white,),
                           ),
-                          child: const Icon(Icons.send, size: 22, color: Colors.white,),
-                        ),
-                      )
-                    else
-                      const CircularProgressIndicator(),
-                  ],
-                ),
-              )
-            ],
+                        )
+                      else
+                        const CircularProgressIndicator(),
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

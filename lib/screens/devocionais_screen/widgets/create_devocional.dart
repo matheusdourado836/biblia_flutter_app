@@ -168,6 +168,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                 focusNode: _textFocus,
                   configurations: QuillEditorConfigurations(
                     controller: _controller,
+                    isOnTapOutsideEnabled: true,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     placeholder: 'Escreva seu devocional aqui...',
                     customStyles: DefaultStyles(

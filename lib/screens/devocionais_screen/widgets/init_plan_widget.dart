@@ -80,14 +80,16 @@ class InitPlanWidget extends StatelessWidget {
                   ),
                 )
             ),
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    fixedSize: const Size(550, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                ),
-                onPressed: onPressed, child: const Text('Iniciar plano')
+            SafeArea(
+              child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      fixedSize: const Size(550, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                  ),
+                  onPressed: onPressed, child: const Text('Iniciar plano')
+              ),
             )
           ],
         ),

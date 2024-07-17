@@ -70,11 +70,38 @@ class VersesDao {
     return _versesInstance.delete(_tablename);
   }
 
+  String intToVersion(int verisionInt) {
+    switch(verisionInt) {
+      case 0:
+      return 'nvi';
+      case 1:
+      return 'acf';
+      case 2:
+      return 'ntlh';
+      case 3: 
+      return 'ra';
+      case 4: 
+      return 'kjv';
+      case 5:
+      return 'bbe';
+      case 6:
+      return 'rvr';
+      case 7:
+      return 'apee';
+      case 8:
+      return 'grego';
+      default:
+      return 'versao nao encontrada';
+    }
+  }
+
   List<VerseModel> toList(List<Map<String, dynamic>> mapaDeVersos) {
     final List<VerseModel> verses = [];
+    String version = '';
     for (Map<String, dynamic> linha in mapaDeVersos) {
+      version = (linha[_version] is int) ? intToVersion(linha[_version]) : linha[_version];
       final VerseModel verse =
-      VerseModel(verse: linha[_verse], verseColor: linha[_verseColor], book: linha[_bookName], version: linha[_version], chapter: linha[_chapter], verseNumber: linha[_verseNumber]);
+      VerseModel(verse: linha[_verse], verseColor: linha[_verseColor], book: linha[_bookName], version: version, chapter: linha[_chapter], verseNumber: linha[_verseNumber]);
       verses.add(verse);
     }
 

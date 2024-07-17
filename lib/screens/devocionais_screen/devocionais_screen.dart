@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
@@ -219,7 +221,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                 options: CarouselOptions(
                   padEnds: false,
                   enableInfiniteScroll: false,
-                  aspectRatio: (height <= 800) ? 10/4 : 16/4,
+                  aspectRatio: (height <= 800) ? 10/4 : Platform.isAndroid ? 16/4 : 12/4,
                   viewportFraction: .65
                 ),
                 items: value.thematicDevocionais.map((thematicDevocional) {
@@ -291,7 +293,7 @@ class _ComunidadeState extends State<Comunidade> {
           child: Text('Faça parte da nossa comunidade'),
         ),
         Container(
-          height: 300,
+          height: 350,
           color: Theme.of(context).cardTheme.color,
           child: Column(
             children: [
@@ -307,7 +309,6 @@ class _ComunidadeState extends State<Comunidade> {
 
                     return CarouselSlider(
                       options: CarouselOptions(
-                        height: 300,
                         autoPlay: true,
                         viewportFraction: 1,
                         enlargeCenterPage: true,
@@ -315,7 +316,7 @@ class _ComunidadeState extends State<Comunidade> {
                       ),
                       items: _devocionais.map((devocional) {
                         return Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(8),
                           margin: const EdgeInsets.all(8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

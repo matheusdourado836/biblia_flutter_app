@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
@@ -39,16 +41,15 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
 
   void initTts() {
     _flutterTts.getVoices.then((value) {
-      try{
-        List<Map> voices = List<Map>.from(value);
-        _ptVoice = voices.where((element) => element["name"].startsWith("pt")).toList().first;
-        _enVoice = voices.where((element) => element["name"].startsWith("en")).toList().first;
-        _esVoice = voices.where((element) => element["name"].startsWith("es")).toList().first;
-        _frVoice = voices.where((element) => element["name"].startsWith("fr")).toList().first;
-        setVoice(voices.where((element) => element["name"].startsWith("pt")).toList()[0]);
-      }catch(e) {
-        alertDialog(content: e.toString());
-      }
+      final name = Platform.isAndroid ? "name" : "locale";
+      List<Map> voices = List<Map>.from(value);
+        _ptVoice = voices.where((element) => element[name].startsWith("pt")).toList().first;
+        _enVoice = voices.where((element) => element[name].startsWith("en")).toList().first;
+        _esVoice = voices.where((element) => element[name].startsWith("es")).toList().first;
+        _frVoice = voices.where((element) => element[name].startsWith("fr")).toList().first;
+        setVoice(voices.where((element) => element[name].startsWith("pt")).toList()[0]);
+    }).onError((e, stackTrace) {
+      print('OLHA AEEEEEE $e /// ${stackTrace}');
     });
   }
 

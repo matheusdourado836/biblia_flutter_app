@@ -28,9 +28,16 @@ class BibleData {
       final String response = await rootBundle.loadString('assets/json/$version.json');
       data.add({"version": version, "text": json.decode(response)});
     }
-    final list = await getDownloadedVersions();
-    for(var version in list) {
-      data.add(version);
+    if(Platform.isAndroid) {
+      final list = await getDownloadedVersions();
+      for(var version in list) {
+        data.add(version);
+      }
+    }else {
+      final list = await listDownloadedFilesIOS();
+      for(var version in list) {
+        data.add(version);
+      }
     }
 
     _data = data;
@@ -57,6 +64,31 @@ class BibleData {
       return [];
     }
   }
+
+  Future<List<dynamic>> listDownloadedFilesIOS() async {
+  String versionsDirPath = await getVersionsDirectoryPath();
+
+  List<dynamic> files = Directory(versionsDirPath).listSync();
+  final pathList = [];
+  for(File file in files) {
+    pathList.add(file.path);
+  }
+
+  return await loadFromBd(pathList);
+}
+
+Future<String> getVersionsDirectoryPath() async {
+  Directory appDocDir = await getApplicationDocumentsDirectory();
+  String versionsDirPath = '${appDocDir.path}/versions';
+  
+  final versionsDir = Directory(versionsDirPath);
+  if (!await versionsDir.exists()) {
+    await versionsDir.create(recursive: true);
+  }
+
+  return versionsDirPath;
+}
+
 
   Future<List<dynamic>> loadFromBd(List<dynamic> paths) async {
     List<dynamic> data = [];

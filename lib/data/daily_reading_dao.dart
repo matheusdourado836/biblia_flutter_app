@@ -66,7 +66,6 @@ class DailyReadingDao {
             'chapter': chapter,
             'completed': 0,
           });
-          print('OLHA O CHAPTER AEEEE $chapter - DIA $day');
         }
       }
     }

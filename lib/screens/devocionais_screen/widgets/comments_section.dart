@@ -283,7 +283,7 @@ class _UserRowState extends State<UserRow> {
                   splashColor: Colors.redAccent,
                   radius: 40,
                   borderRadius: BorderRadius.circular(50),
-                  child: const Icon(Icons.report_outlined, size: 20,)
+                  child: const Icon(Icons.report_outlined, size: 24)
               ),
             )
           ],

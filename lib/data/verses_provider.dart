@@ -10,6 +10,7 @@ import 'package:biblia_flutter_app/models/verse.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -110,6 +111,7 @@ class VersesProvider extends ChangeNotifier {
 
   Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi'}) {
     final versionNameFormatted = versionToName(versionName);
+    print('VERSION CRUA $versionName /// VERSION FORMATTED $versionNameFormatted');
     final bibleData = _bibleData.data.where((bible) => bible["version"] == versionNameFormatted).first;
     if (_listMapVerses.isEmpty) {
       List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
@@ -178,7 +180,14 @@ class VersesProvider extends ChangeNotifier {
   }
 
   Future<File?> getOnlyImage() async {
+    final Dio dio = Dio();
+    Directory appDocDir = await getApplicationDocumentsDirectory();
     final image = await service.getOnlyImage();
+    String fileName = image.split('/').last.split('.')[0];
+    await dio.download(image.trim(), '${appDocDir.path}/$fileName');
+    
+    return await getDownloadedFile(fileName);
+
     return await FileDownloader.downloadFile(
       url: image.trim(),
       name: 'randomImage',
@@ -191,6 +200,18 @@ class VersesProvider extends ChangeNotifier {
       },
     );
   }
+
+  Future<File> getDownloadedFile(String fileName) async {
+  Directory appDocDir = await getApplicationDocumentsDirectory();
+  String filePath = '${appDocDir.path}/$fileName';
+  
+  File file = File(filePath);
+  if (await file.exists()) {
+    return file;
+  } else {
+    throw Exception('File not found: $fileName');
+  }
+}
 
   Future<Map<String, dynamic>> getRandomVerse() async {
     await service.getRandomVerse()

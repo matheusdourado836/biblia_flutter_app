@@ -13,9 +13,10 @@ class SearchBookWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if(books.isEmpty) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Image.asset('assets/images/not_found.png', width: 230, height: 230),
-          const Text('Livro não encontrado...\nverifique a ortografia e tente novamente', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+          const Text('Livro não encontrado...\nverifique a ortografia e tente novamente', style: TextStyle(fontWeight: FontWeight.w600), textAlign: TextAlign.center,),
         ],
       );
     }

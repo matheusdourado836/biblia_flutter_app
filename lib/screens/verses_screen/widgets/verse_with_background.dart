@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
@@ -175,7 +176,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                           ],
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: EdgeInsets.only(bottom: Platform.isAndroid ? 16.0 : 0.0),
                           child: ElevatedButton(
                             onPressed: (() {
                               Navigator.pop(context);
@@ -188,32 +189,34 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                           ),
                         ),
-                        SizedBox(
-                          height: 60,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: 10,
-                            itemBuilder: (context, index) {
-                              if(index == 0) {
-                                return NewImageContainer(onTap: (() => setState(() {
-                                    _selectedColor = null;
-                                    futureBackground = service.getRandomImage();
-                                  }))
+                        SafeArea(
+                          child: SizedBox(
+                            height: 60,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 10,
+                              itemBuilder: (context, index) {
+                                if(index == 0) {
+                                  return NewImageContainer(onTap: (() => setState(() {
+                                      _selectedColor = null;
+                                      futureBackground = service.getRandomImage();
+                                    }))
+                                  );
+                                }
+                                if(index == 9) {
+                                  return AddMoreContainer(onTap: (() => setState(() {
+                                    _generatedColors = [];
+                                    _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
+                                  })),
+                                  );
+                                }
+                                return ColorContainer(
+                                  color: _selectedColor,
+                                  listColors: _generatedColors[index],
+                                  onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
                                 );
-                              }
-                              if(index == 9) {
-                                return AddMoreContainer(onTap: (() => setState(() {
-                                  _generatedColors = [];
-                                  _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
-                                })),
-                                );
-                              }
-                              return ColorContainer(
-                                color: _selectedColor,
-                                listColors: _generatedColors[index],
-                                onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
-                              );
-                          }),
+                            }),
+                          ),
                         )
                       ],
                     ),

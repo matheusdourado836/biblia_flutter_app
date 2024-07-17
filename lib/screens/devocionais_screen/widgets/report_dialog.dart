@@ -20,6 +20,7 @@ class ReportDialog extends StatelessWidget {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     return AlertDialog(
       title: const Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Denunciar comentário'),

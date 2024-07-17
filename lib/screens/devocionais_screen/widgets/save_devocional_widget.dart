@@ -71,81 +71,83 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
         builder: (context, constraints) {
           final landscapeHeight = constraints.biggest.longestSide > 900 ? constraints.maxHeight * 1.3 : constraints.maxHeight * 3;
           boxHeight = constraints.maxHeight < constraints.biggest.longestSide ? landscapeHeight : (_isKeyboardVisible) ? constraints.maxHeight + 280 : constraints.maxHeight;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Form(
-              key: _key,
-              child: SizedBox(
-                height: boxHeight,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _PostContainer(devocional: widget.devocional, nameController: _nameController),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Publicar para todos'),
-                        const SizedBox(width: 12),
-                        Switch(
-                          value: _public,
-                          onChanged: ((newValue) {
-                            setState(() => _public = !_public);
-                            widget.devocional.public = _public;
-                          })
-                        )
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Adicionar título na imagem'),
-                        const SizedBox(width: 12),
-                        Switch(
-                          value: _addFrost,
-                          onChanged: ((newValue) {
-                            setState(() => _addFrost = !_addFrost);
-                            widget.devocional.hasFrost = _addFrost;
-                          })
-                        )
-                      ],
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: (() {
-                              if(_key.currentState!.validate()) {
-                                showDialog(
-                                    context: context,
-                                    builder: (context) => EmailDialog(devocional: widget.devocional)
-                                );
-                              }
-                            }),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                            ),
-                            child: const Text('Publicar')
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Form(
+                key: _key,
+                child: SizedBox(
+                  height: boxHeight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _PostContainer(devocional: widget.devocional, nameController: _nameController),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Publicar para todos'),
+                          const SizedBox(width: 12),
+                          Switch(
+                            value: _public,
+                            onChanged: ((newValue) {
+                              setState(() => _public = !_public);
+                              widget.devocional.public = _public;
+                            })
                           )
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Adicionar título na imagem'),
+                          const SizedBox(width: 12),
+                          Switch(
+                            value: _addFrost,
+                            onChanged: ((newValue) {
+                              setState(() => _addFrost = !_addFrost);
+                              widget.devocional.hasFrost = _addFrost;
+                            })
+                          )
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Expanded(
                             child: ElevatedButton(
-                                onPressed: (() => Navigator.pop(context)),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                                ),
-                                child: const Text('Cancelar')
+                              onPressed: (() {
+                                if(_key.currentState!.validate()) {
+                                  showDialog(
+                                      context: context,
+                                      builder: (context) => EmailDialog(devocional: widget.devocional)
+                                  );
+                                }
+                              }),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                              ),
+                              child: const Text('Publicar')
                             )
-                        ),
-                      ],
-                    )
-                  ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: ElevatedButton(
+                                  onPressed: (() => Navigator.pop(context)),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                                  ),
+                                  child: const Text('Cancelar')
+                              )
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 ),
               ),
             ),
