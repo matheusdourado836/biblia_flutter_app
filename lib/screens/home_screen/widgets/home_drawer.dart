@@ -161,18 +161,20 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Widget _aiWidget() {
+    final today = DateTime.now();
+    bool removeBadge = today.year == 2024 && today.month == 9 && today.day == 18;
     return ListTileDrawer(
       onTap: (() => (showAd()) ? _showInterstitialAd() : Navigator.pushNamed(context, 'ai_screen')),
       leading: Icons.lightbulb,
       title: 'Pesquisa com IA',
-      trailing: Container(
+      trailing: removeBadge ? const SizedBox() : Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: Theme.of(context).colorScheme.primary),
           color: Theme.of(context).colorScheme.primary
         ),
-        child: const Text('BETA', style: TextStyle(fontSize: 8, color: Colors.white),),
+        child: const Text('NOVO', style: TextStyle(fontSize: 8, color: Colors.white),),
       ),
     );
   }
@@ -225,10 +227,21 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Widget _devocionaisWidget() {
+    final today = DateTime.now();
+    bool removeBadge = today.year == 2024 && today.month == 9 && today.day == 18;
     return ListTileDrawer(
-        onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
-        leading: Icons.menu_book_rounded,
-        title: 'Devocionais'
+      onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
+      leading: Icons.menu_book_rounded,
+      title: 'Devocionais',
+      trailing: removeBadge ? const SizedBox() : Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Theme.of(context).colorScheme.primary),
+            color: Theme.of(context).colorScheme.primary
+        ),
+        child: const Text('NOVO', style: TextStyle(fontSize: 8, color: Colors.white),),
+      ),
     );
   }
 

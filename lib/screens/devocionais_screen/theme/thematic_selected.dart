@@ -25,7 +25,7 @@ class ThematicSelected extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              Image.asset(
+              Image.network(
                 fit: BoxFit.cover,
                 height: MediaQuery.of(context).size.height * .53,
                 devocional.bgImagem!,

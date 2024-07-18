@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 
 class ProgressDialog extends StatefulWidget {
   final String versionName;
-  const ProgressDialog({super.key, required this.versionName});
+  final String versionNameRaw;
+  const ProgressDialog({super.key, required this.versionName, required this.versionNameRaw});
 
   @override
   State<ProgressDialog> createState() => _ProgressDialogState();
@@ -23,26 +24,26 @@ class _ProgressDialogState extends State<ProgressDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       alignment: Alignment.center,
-      title: const Text('Baixando versão'),
+      title: Text('Baixando versão - ${widget.versionNameRaw}'),
       contentPadding: const EdgeInsets.all(24.0),
       content: Consumer<VersionProvider>(
         builder: (context, value, _) {
           if(value.downloadCompleted) {
             value.setDownloadProgress = false;
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           }
           if(value.downloadError.isNotEmpty) {
             return Center(
               child: Text(value.downloadError),
             );
           }
-          final progress = value.downloadProgress * 100 > 100 ? 100 : value.downloadProgress;
+          final progress = value.downloadProgress;
           return Row(
             children: [
               Text('Progresso: ${(progress.toStringAsFixed(0))}% ', style: const TextStyle(fontSize: 14),),
               Expanded(
                   child: LinearProgressIndicator(
-                    value: value.downloadProgress,
+                    value: progress / 100,
                     minHeight: 10,
                     borderRadius: BorderRadius.circular(2),
                     backgroundColor: Colors.black,

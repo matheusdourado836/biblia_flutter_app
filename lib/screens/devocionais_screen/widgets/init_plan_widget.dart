@@ -1,50 +1,18 @@
-import 'package:biblia_flutter_app/models/enums.dart';
+import 'package:biblia_flutter_app/models/plan.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-final Map<int, dynamic> _planTexts = {
-    PlanType.ONE_YEAR.code: {
-      "label": "A Bíblia em 1 ano",
-      "text": 'Aprofunde seu conhecimento e fortaleça sua fé com o Plano de Leitura da Bíblia em 1 Ano. Dedique alguns minutos diários para explorar as Escrituras com leituras acessíveis que oferecem lições e inspirações contínuas.\n\n'
-          'Comece hoje e transforme seu ano com a Palavra de Deus, reservando um momento diário para descobrir as maravilhas da Bíblia.',
-      "bgPath": 'assets/images/one_year.jpg'
-    },
-
-    PlanType.TWO_MONTHS_NEW.code: {
-      "label": "Novo Testamento em 2 meses",
-      "text": 'Apresentamos um plano de leitura do Novo Testamento em 2 meses. '
-          'Com leituras diárias acessíveis de aproximadamente 4 capítulos, você explorará a vida e os ensinamentos de Cristo, a formação da igreja primitiva e as cartas apostólicas. '
-          'Comece hoje e renove sua fé com a riqueza das Escrituras!',
-      "bgPath": 'assets/images/new.jpg'
-    },
-
-    PlanType.THREE_MONTHS.code: {
-      "label": "A Bíblia em 3 meses",
-      "text": 'Aprofunde sua intimidade com Deus e mergulhe na riqueza das Escrituras com nosso plano de leitura da Bíblia em 3 meses. '
-          'Pensado para cristãos maduros, ele guia você por aproximadamente 13 capítulos diários, desafiando e inspirando a cada dia.\n\n'
-          'Reserve um tempo diário para essa leitura e fortaleça sua fé, ampliando seu entendimento e cultivando uma relação mais íntima com Deus.',
-      "bgPath": 'assets/images/new.jpg'
-    },
-
-    PlanType.SIX_MONTHS_OLD.code: {
-      "label": "Velho testamento em 6 meses",
-      "text": 'Apresentamos um plano de leitura do Antigo Testamento em 6 meses, ideal para quem busca uma compreensão mais profunda da Palavra de Deus.\n\n'
-          'Com leituras diárias acessíveis de aproximadamente 5 capítulos, você descobrirá a história do povo de Israel, as profecias e os ensinamentos que formam a base da fé cristã.',
-      "bgPath": 'assets/images/three_old_bg.jpg'
-    }
-};
-
 class InitPlanWidget extends StatelessWidget {
-  final PlanType planType;
+  final Plan plan;
   final Function() onPressed;
-  const InitPlanWidget({super.key, required this.planType, required this.onPressed});
+  const InitPlanWidget({super.key, required this.plan, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    final key = _planTexts.keys.firstWhere((element) => element == planType.code);
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage(_planTexts[key]["bgPath"]),
+          image: CachedNetworkImageProvider(plan.bgSelectedImgPath),
             colorFilter: ColorFilter.mode(
                 Colors.black.withOpacity(0.5), BlendMode.darken
             ),
@@ -53,7 +21,7 @@ class InitPlanWidget extends StatelessWidget {
         )
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         child: Column(
           children: [
             SafeArea(
@@ -71,9 +39,9 @@ class InitPlanWidget extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(_planTexts[key]["label"], textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white),),
+                          Text(plan.label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white),),
                           const SizedBox(height: 40),
-                          Text(_planTexts[key]["text"], style: const TextStyle(color: Colors.white),),
+                          Text(plan.description.replaceAll('\\n', '\n'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.7),),
                         ],
                       ),
                     ),

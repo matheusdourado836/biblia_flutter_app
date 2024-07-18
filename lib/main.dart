@@ -200,15 +200,7 @@ class MyApp extends StatelessWidget {
             return PageTransition(
               type: PageTransitionType.bottomToTop,
               duration: 500.ms,
-              child: InitPlanBaseScreen(
-                planType: map?["planType"],
-                label: map?["label"],
-                qtdChapters: map?["qtdChapters"],
-                duration: map?["duration"],
-                bibleLength: map?["bibleLength"],
-                isNewTestament: map?["isNewTestament"],
-                openedFromNotification: map?["notification"],
-              ),
+              child: InitPlanBaseScreen(plan: map?["plan"]),
             );
           default:
             return null;

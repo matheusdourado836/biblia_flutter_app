@@ -28,16 +28,9 @@ class BibleData {
       final String response = await rootBundle.loadString('assets/json/$version.json');
       data.add({"version": version, "text": json.decode(response)});
     }
-    if(Platform.isAndroid) {
-      final list = await getDownloadedVersions();
-      for(var version in list) {
-        data.add(version);
-      }
-    }else {
-      final list = await listDownloadedFilesIOS();
-      for(var version in list) {
-        data.add(version);
-      }
+    final list = await listDownloadedFilesIOS();
+    for(var version in list) {
+      data.add(version);
     }
 
     _data = data;
@@ -99,8 +92,6 @@ Future<String> getVersionsDirectoryPath() async {
         final contents = await file.readAsString();
         data.add({"version": file.path.split('/').last.split('.')[0], "text": json.decode(contents)});
         await addVersionToList(path);
-      } else {
-        print('Arquivo não encontrado: $path');
       }
     }
     return data;
@@ -113,8 +104,6 @@ Future<String> getVersionsDirectoryPath() async {
       final contents = await file.readAsString();
       _data.add({"version": fileName, "text": json.decode(contents)});
       _downloadedVersions.add(fileName);
-    } else {
-      print('Arquivo não encontrado: $path');
     }
   }
 }

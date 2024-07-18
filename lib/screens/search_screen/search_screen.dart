@@ -180,10 +180,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                             onTap: () => showDialog(
                                                 context: context,
                                                 barrierDismissible: false,
-                                                builder: (context) => ProgressDialog(versionName: versionToName(option))
+                                                builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: option.split(' ')[0])
                                             ).whenComplete(() {
-                                              Navigator.pop(context);
-                                              setState(() {});
+                                              value.loadBibleData().whenComplete(() {
+                                                Navigator.pop(context);
+                                                setState(() {});
+                                              });
                                             }),
                                             child: Row(
                                               children: [

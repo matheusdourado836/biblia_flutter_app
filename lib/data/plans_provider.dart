@@ -4,6 +4,7 @@ import 'package:biblia_flutter_app/data/reading_progress_dao.dart';
 import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
 import 'package:biblia_flutter_app/models/daily_read.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
+import 'package:biblia_flutter_app/models/plan.dart';
 import 'package:biblia_flutter_app/models/reading_plan.dart';
 import 'package:biblia_flutter_app/services/plans_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -33,6 +34,10 @@ class PlansProvider extends ChangeNotifier {
 
   ReadingPlan? get currentPlan => _currentPlan;
 
+  List<Plan> _plans = [];
+
+  List<Plan> get plans => _plans;
+
   final List<ReadingPlan> _readingPlans = [];
 
   List<ReadingPlan> get readingPlans => _readingPlans;
@@ -59,6 +64,14 @@ class PlansProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> getPlans() async {
+    if(_plans.isEmpty) {
+      _plans = await _plansService.getPlans();
+      notifyListeners();
+    }
+    return;
+  }
+
   Future<bool> checkPlanStartedBybType({required PlanType planType}) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final result = prefs.getInt(planType.description);
@@ -79,17 +92,17 @@ class PlansProvider extends ChangeNotifier {
     return planCode != null;
   }
 
-  Future<void> startReadingPlan({required PlanType planId, required int durationDays, int? bibleLength, bool? isNewTestament}) async {
+  Future<void> startReadingPlan({required Plan plan}) async {
     _loading = true;
     notifyListeners();
-    subscribeUser(planType: planId);
-    generateChapters(planTypeToChapters(planType: planId), planId, bibleLength: bibleLength, isNewTestament: isNewTestament);
-    await generateDailyReadings(planId.code, durationDays, planId);
+    subscribeUser(planType: plan.planType);
+    generateChapters(planTypeToChapters(planType: plan.planType), plan.planType, bibleLength: plan.bibleLength, isNewTestament: plan.isNewTestament);
+    await generateDailyReadings(plan.planType.code, plan.duration, plan.planType);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt(planId.description, planId.code);
-    _readingProgressDao.startReadingPlan(planId: planId, durationDays: durationDays);
-    _currentPlan = await _readingProgressDao.find(planId: planId.code);
-    getDailyReads(progressId: planId.code);
+    prefs.setInt(plan.planType.description, plan.planType.code);
+    _readingProgressDao.startReadingPlan(planId: plan.planType, durationDays: plan.duration);
+    _currentPlan = await _readingProgressDao.find(planId: plan.planType.code);
+    getDailyReads(progressId: plan.planType.code);
     _loading = false;
   }
 

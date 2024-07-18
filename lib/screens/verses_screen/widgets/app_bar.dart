@@ -164,25 +164,34 @@ class _VersesAppBarState extends State<VersesAppBar> {
                       value.setListItem(option.split(' ')[0]);
                       if(value.getDownloadedVersion(versionToName(option))) {
                         final versionName = option.toLowerCase().split(' ')[0];
+                        final versionNameRaw = option.split(' ')[0];
                         return DropdownMenuItem(
                           value: option,
                           child: InkWell(
                             onTap: () {
-                              showDialog(context: context, barrierDismissible: false, builder: (context) => ProgressDialog(versionName: versionToName(option))).whenComplete(() {
-                                if (_versesProvider.bottomSheetOpened) {
-                                  Navigator.pop(context);
-                                  _versesProvider.openBottomSheet(false);
-                                }
-                                _versesProvider.resetVersesFoundCounter();
-                                setState(() {
-                                  listVerses = [];
-                                  initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: versionNameRaw,))
+                                  .then((res) {
+                                    if(res) {
+                                      if (_versesProvider.bottomSheetOpened) {
+                                        Navigator.pop(context);
+                                        _versesProvider.openBottomSheet(false);
+                                      }
+                                      _versesProvider.resetVersesFoundCounter();
+                                      setState(() {
+                                        listVerses = [];
+                                        initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
+                                      });
+                                      value.changeVersion(option);
+                                      value.loadBibleData().whenComplete(() {
+                                        _versesProvider.clear();
+                                        _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionName: versionName);
+                                        Navigator.pop(context);
+                                      });
+                                    }
                                 });
-                                _versesProvider.clear();
-                                value.changeVersion(option);
-                                _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionName: versionName);
-                                Navigator.pop(context);
-                              });
                             },
                             child: Row(
                               children: [

@@ -1,8 +1,7 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
-import 'package:biblia_flutter_app/models/enums.dart';
+import 'package:biblia_flutter_app/models/plan.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
 import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -151,9 +150,10 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           contents: [
             TargetContent(
                 align: ContentAlign.bottom,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 builder: (context, c) {
                   return TutorialWidget(
-                      text: 'Venha conhecer nossa comunidade, onde você poderá ver, postar devocionais e suas reflexões pessoais para abençoar e edificar a fé de outras pessoas',
+                      text: 'Venha conhecer nossa comunidade, onde você poderá interagir e postar devocionais para edificar a fé de outras pessoas',
                       skip: 'Pular',
                       next: 'Próximo',
                       onNext: (() {
@@ -240,7 +240,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                               decoration: BoxDecoration(
                                 image: DecorationImage(
                                   fit: BoxFit.cover,
-                                  image: AssetImage(thematicDevocional.bgImagem!),
+                                  image: CachedNetworkImageProvider(thematicDevocional.bgImagem!),
                                   colorFilter: ColorFilter.mode(
                                       Colors.black.withOpacity(0.25), BlendMode.darken
                                   ),
@@ -293,7 +293,7 @@ class _ComunidadeState extends State<Comunidade> {
           child: Text('Faça parte da nossa comunidade'),
         ),
         Container(
-          height: 350,
+          height: 320,
           color: Theme.of(context).cardTheme.color,
           child: Column(
             children: [
@@ -346,7 +346,7 @@ class _ComunidadeState extends State<Comunidade> {
                               Expanded(
                                 child: Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.white
@@ -391,27 +391,26 @@ class PlanosDeLeitura extends StatefulWidget {
 }
 
 class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
-  // TODO TEM QUE COLOCAR ISSO NO BANCO DE DADOS ANTES DE LANÇAR A ATUALIZAÇÃO
-  static final List<Map<String, dynamic>> _plans = [
-    {"label": "Bíblia em 1 ano", "imgPath": "assets/images/one_year_plan.png", "code": PlanType.ONE_YEAR, "duration": 397, "qtdChapters": 3},
-    {"label": "Bíblia toda em 3 meses", "imgPath": "assets/images/three_month_plan.jpg","code": PlanType.THREE_MONTHS, "duration": 92, "qtdChapters": 13},
-    {"label": "Novo testamento em 2 meses","imgPath": "assets/images/two_month_new_plan.jpg", "code": PlanType.TWO_MONTHS_NEW, "duration": 66, "qtdChapters": 4, "isNewTestament": true},
-    {"label": "Antigo testamento em 6 meses","imgPath": "assets/images/six_month_old_plan.png", "code": PlanType.SIX_MONTHS_OLD, "duration": 186, "qtdChapters": 5, "bibleLength": 39}
-  ];
+  late final List<Plan> _plans;
   late PlansProvider _plansProvider;
   double percentageValue = 0;
 
   @override
   void initState() {
     _plansProvider = Provider.of<PlansProvider>(context, listen: false);
-    checkStartedPlans();
+    getPlans().whenComplete(() => checkStartedPlans());
     super.initState();
+  }
+  
+  Future<void> getPlans() async {
+    await _plansProvider.getPlans();
+    _plans = _plansProvider.plans;
   }
 
   Future<List<bool>> checkStartedPlans() async {
     final List<bool> startedPlans = [];
-    for(var plan in _plans) {
-      final res = await _plansProvider.checkPlanStartedBybType(planType: plan["code"]);
+    for(var plan in _plansProvider.plans) {
+      final res = await _plansProvider.checkPlanStartedBybType(planType: plan.planType);
       startedPlans.add(res);
     }
     return startedPlans;
@@ -419,7 +418,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
 
   Future<double> calculateReadPercentage(int index) async {
     double percentage = 0;
-    final res = await _plansProvider.findReadingPlan(planId: _plans[index]["code"].code);
+    final res = await _plansProvider.findReadingPlan(planId: _plans[index].planType.code);
     if(res != null) {
       final totalDays = res.durationDays!;
       final currentDay = res.currentDay!;
@@ -443,6 +442,9 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
           ),
           Consumer<PlansProvider>(
             builder: (context, value, _) {
+              if(value.plans.isEmpty) {
+                return const CircularProgressIndicator();
+              }
               return FutureBuilder(
                   future: checkStartedPlans(),
                   builder: (context, snapshot) {
@@ -459,14 +461,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                               onTap: (() => Navigator.pushNamed(
                                   context,
                                   'plans_base',
-                                  arguments: {
-                                    "planType": _plans[index]["code"],
-                                    "label": _plans[index]["label"],
-                                    "qtdChapters": _plans[index]["qtdChapters"],
-                                    "duration": _plans[index]["duration"],
-                                    "bibleLength": _plans[index]["bibleLength"],
-                                    "isNewTestament": _plans[index]["isNewTestament"],
-                                  }
+                                  arguments: {"plan": _plans[index]}
                                 )
                               ),
                               child: Row(
@@ -477,7 +472,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                     margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
                                     decoration: BoxDecoration(
                                         image: DecorationImage(
-                                          image: AssetImage(_plans[index]["imgPath"]),
+                                          image: CachedNetworkImageProvider(_plans[index].imgPath),
                                           fit: BoxFit.cover,
                                           colorFilter: ColorFilter.mode(
                                               Colors.black.withOpacity(0.3), BlendMode.darken
@@ -491,7 +486,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
+                                        Text(_plans[index].label, style: const TextStyle(fontSize: 14)),
                                         const SizedBox(height: 8),
                                         FutureBuilder(
                                             future: calculateReadPercentage(index),
@@ -541,14 +536,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                             onTap: (() => Navigator.pushNamed(
                                 context,
                                 'plans_base',
-                                arguments: {
-                                  "planType": _plans[index]["code"],
-                                  "label": _plans[index]["label"],
-                                  "qtdChapters": _plans[index]["qtdChapters"],
-                                  "duration": _plans[index]["duration"],
-                                  "bibleLength": _plans[index]["bibleLength"],
-                                  "isNewTestament": _plans[index]["isNewTestament"],
-                                }
+                                arguments: {"plan": _plans[index]}
                             )),
                             child: Row(
                               children: [
@@ -558,7 +546,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                   margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
                                   decoration: BoxDecoration(
                                       image: DecorationImage(
-                                        image: AssetImage(_plans[index]["imgPath"]),
+                                        image: CachedNetworkImageProvider(_plans[index].imgPath),
                                         fit: BoxFit.cover,
                                         colorFilter: ColorFilter.mode(
                                             Colors.black.withOpacity(0.3), BlendMode.darken
@@ -568,7 +556,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                                   ),
                                 ),
                                 Expanded(
-                                  child: Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
+                                  child: Text(_plans[index].label, style: const TextStyle(fontSize: 14)),
                                 )
                               ],
                             ),

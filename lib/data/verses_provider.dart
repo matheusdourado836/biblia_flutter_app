@@ -14,7 +14,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/alert_dialog.dart';
@@ -111,7 +110,6 @@ class VersesProvider extends ChangeNotifier {
 
   Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi'}) {
     final versionNameFormatted = versionToName(versionName);
-    print('VERSION CRUA $versionName /// VERSION FORMATTED $versionNameFormatted');
     final bibleData = _bibleData.data.where((bible) => bible["version"] == versionNameFormatted).first;
     if (_listMapVerses.isEmpty) {
       List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
@@ -131,7 +129,16 @@ class VersesProvider extends ChangeNotifier {
     final bibleData = _bibleData.data.where((bible) => bible["version"] == versionName).first;
     final List<dynamic> versesByChapter = bibleData["text"][bookIndex]['chapters'][chapter];
     final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
-
+    final lastVerse = versesByChapter.last as String;
+    if(lastVerse.startsWith('[') || lastVerse.startsWith(' [')) {
+      final parts = lastVerse.split(']')[0].split('-');
+      final initialVerse = int.parse(parts[0].replaceAll('[', ''));
+      final finalVerse = int.parse(parts[1]);
+      final difference = finalVerse - initialVerse;
+      for(var i = 0; i < difference; i++) {
+        versesByChapter.add('');
+      }
+    }
     for (var i = 0; i < versesByChapterDefault.length; i++) {
       if(_listaBd.isNotEmpty && _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).isNotEmpty) {
         final verseFound = _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).first;
@@ -187,18 +194,6 @@ class VersesProvider extends ChangeNotifier {
     await dio.download(image.trim(), '${appDocDir.path}/$fileName');
     
     return await getDownloadedFile(fileName);
-
-    return await FileDownloader.downloadFile(
-      url: image.trim(),
-      name: 'randomImage',
-      downloadDestination: DownloadDestinations.appFiles,
-      onDownloadError: (String error) {
-        return null;
-      },
-      onDownloadCompleted: (String path) {
-        print('FILE DOWNLOADED TO PATH: $path');
-      },
-    );
   }
 
   Future<File> getDownloadedFile(String fileName) async {

@@ -214,10 +214,11 @@ class _SavedVersesState extends State<SavedVerses> {
           padding: const EdgeInsets.all(12.0),
           child: InkWell(
             onTap: (() {
+              final versionName = _versionProvider.options.firstWhere((v) => v.toLowerCase().split(' ')[0].trim() == version.trim());
               _versesProvider.clear();
               for (var i = 0; i < allBooksList.length; i++) {
                 if (allBooksList[i]["bookName"] == book) {
-                  _versionProvider.changeOptionBd(version);
+                  _versionProvider.changeOptionBd(versionName);
                   _versesProvider.loadVerses(allBooksList[i]["bookIndex"], book, versionName: version);
                   GoToVerseScreen().goToVersePage(
                     book,
@@ -315,7 +316,7 @@ class _SavedVersesState extends State<SavedVerses> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '$book $chapter:$verseNumber (${version.split(' ')[0]})',
+                            '$book $chapter:$verseNumber (${version.split(' ')[0].toUpperCase()})',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           RoundContainer(

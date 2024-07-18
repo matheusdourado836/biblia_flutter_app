@@ -51,11 +51,12 @@ class DevocionalProvider extends ChangeNotifier {
   }
 
   Future<void> getThematicDevocionais() async {
-    isLoading = true;
-    _thematicDevocionais = [];
-    _thematicDevocionais = await _thematicService.getDevocionais();
-    isLoading = false;
-    notifyListeners();
+    if(_thematicDevocionais.isEmpty) {
+      isLoading = true;
+      _thematicDevocionais = await _thematicService.getDevocionais();
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> getPendingDevocionais() async {

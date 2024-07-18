@@ -49,7 +49,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         _frVoice = voices.where((element) => element[name].startsWith("fr")).toList().first;
         setVoice(voices.where((element) => element[name].startsWith("pt")).toList()[0]);
     }).onError((e, stackTrace) {
-      print('OLHA AEEEEEE $e /// ${stackTrace}');
+      alertDialog(title: 'Erro', content: 'Não foi possível carregar as vozes\n${e.toString()}');
     });
   }
 
