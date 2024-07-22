@@ -45,7 +45,7 @@ class FrostedContainer extends StatelessWidget {
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(title, maxLines: 4, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18),),
+                child: Text(title, maxLines: 4, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),),
               ),
             ),
           ],

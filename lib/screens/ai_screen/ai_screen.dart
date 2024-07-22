@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:biblia_flutter_app/data/ai_helper.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/screens/ai_screen/ad_dialog.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
+import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/bible_data.dart';
@@ -303,40 +306,46 @@ class _AiScreenState extends State<AiScreen> {
       ),
     );
   }
-  Future<void> _sendChatMessage(String message) async {
-    setState(() => _loading = true);
-    String text = '';
+  void _sendChatMessage(String message) {
+    BibleService().checkInternetConnectivity().then((res) async {
+      if(res) {
+        setState(() => _loading = true);
+        String text = '';
 
-    try {
-      final response = await _chat.sendMessage(
-        Content.text(message),
-      );
-      text = response.text ?? '';
+        try {
+          final response = await _chat.sendMessage(
+            Content.text(message),
+          );
+          text = response.text ?? '';
 
-      if (text.isEmpty) {
-        _showError('Resposta vazia.');
-        return;
-      } else {
-        setState(() {
-          _qtdQuestions--;
-          _loading = false;
-          _contents.add(Content('user', [TextPart(message)]));
-          _contents.add(Content('model', [TextPart(text)]));
-          _scrollDown();
-        });
-        _saveChatHistory();
+          if (text.isEmpty) {
+            _showError('Resposta vazia.');
+            return;
+          } else {
+            setState(() {
+              _qtdQuestions--;
+              _loading = false;
+              _contents.add(Content('user', [TextPart(message)]));
+              _contents.add(Content('model', [TextPart(text)]));
+              _scrollDown();
+            });
+            _saveChatHistory();
+          }
+        } catch (e) {
+          _showError(e.toString());
+          setState(() => _loading = false);
+        } finally {
+          _textController.clear();
+          setState(() {
+            _loading = false;
+          });
+
+          _textFieldFocus.unfocus();
+        }
+      }else {
+        alertDialog(content: 'É preciso estar conectado à internet para conversar com a Éden');
       }
-    } catch (e) {
-      _showError(e.toString());
-      setState(() => _loading = false);
-    } finally {
-      _textController.clear();
-      setState(() {
-        _loading = false;
-      });
-
-      _textFieldFocus.unfocus();
-    }
+    });
   }
 
   void _showError(String message) {
@@ -551,27 +560,25 @@ class VerseDialog extends StatelessWidget {
           )
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      content: SizedBox(
-        height: 150 * verses.length.toDouble(),
-        width: width,
-        child: SelectionArea(
-          child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: verses.length,
-              itemBuilder: (context, index) {
-                int verseStart = int.parse(verse.contains('-') ? verse.split('-')[0] : verse) + index;
-                return Padding(
+      content: SelectionArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for(var i = 0; i < verses.length; i++)
+                Padding(
                   padding: const EdgeInsets.all(4),
                   child: Text.rich(TextSpan(
-                      text: '$verseStart  ',
+                      text: '${int.parse(verse.contains('-') ? verse.split('-')[0] : verse) + i}  ',
                       style: themeColors.verseNumberColor(themeProvider.isOn),
                       children: <TextSpan>[
-                        TextSpan(text: verses[index], style: themeColors.verseColor(themeProvider.isOn))
+                        TextSpan(text: verses[i], style: themeColors.verseColor(themeProvider.isOn))
                       ]
                   )
                   ),
-                );
-              }),
+                ),
+            ],
+          ),
         ),
       ),
       actions: [

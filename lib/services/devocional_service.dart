@@ -10,23 +10,32 @@ class DevocionalService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
-  Future<List<Devocional>> getDevocionais() async {
+  Future<List<Devocional>?> getDevocionais({int? limit}) async {
     try {
       List<Devocional> devocionais = [];
-      await _database.collection('devocionais').where('status', isEqualTo: 0).get().then((res) {
+      QuerySnapshot<Map<String, dynamic>>? docs;
+      final docRef = limit == null
+        ? _database.collection('devocionais').where('status', isEqualTo: 0).where('public', isEqualTo: true)
+        : _database.collection('devocionais').where('status', isEqualTo: 0).where('public', isEqualTo: true).orderBy('qtdCurtidas', descending: true).limit(limit);
+      docs = await docRef.get().then((res) {
         if(res.docs.isNotEmpty) {
           final docs = res.docs;
           for(var devocional in docs) {
             if(devocional.exists) {
               devocionais.add(Devocional.fromJson(devocional.data()));
             }
-
           }
         }
+        return res;
       });
+
+      if(docs == null) {
+        return null;
+      }
 
       return devocionais;
     }catch(e) {
+      print(e);
       alertDialog(title: 'Erro', content: 'Não foi possível carregar os devocionais\n${e.toString()}');
       return [];
     }

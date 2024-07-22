@@ -174,7 +174,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
                                 barrierDismissible: false,
                                 builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: versionNameRaw,))
                                   .then((res) {
-                                    if(res) {
+                                    if(res ?? false) {
                                       if (_versesProvider.bottomSheetOpened) {
                                         Navigator.pop(context);
                                         _versesProvider.openBottomSheet(false);

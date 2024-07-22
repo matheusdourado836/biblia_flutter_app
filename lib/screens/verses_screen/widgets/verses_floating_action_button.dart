@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
@@ -43,11 +42,11 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     _flutterTts.getVoices.then((value) {
       final name = Platform.isAndroid ? "name" : "locale";
       List<Map> voices = List<Map>.from(value);
-        _ptVoice = voices.where((element) => element[name].startsWith("pt")).toList().first;
+        _ptVoice = voices.where((element) => element[name].startsWith("pt-BR")).toList().first;
         _enVoice = voices.where((element) => element[name].startsWith("en")).toList().first;
-        _esVoice = voices.where((element) => element[name].startsWith("es")).toList().first;
+        _esVoice = voices.where((element) => element[name].startsWith("es")).toList()[1];
         _frVoice = voices.where((element) => element[name].startsWith("fr")).toList().first;
-        setVoice(voices.where((element) => element[name].startsWith("pt")).toList()[0]);
+        setVoice(voices.where((element) => element[name].startsWith("pt-BR")).toList().first);
     }).onError((e, stackTrace) {
       alertDialog(title: 'Erro', content: 'Não foi possível carregar as vozes\n${e.toString()}');
     });
@@ -108,6 +107,11 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         setState(() {_count = 0; _resetCounter = false;});
       }
       if(_count == widget.verses.length) {
+        if(_chapter == _chapters) {
+          Navigator.pop(context);
+          reset();
+          return;
+        }
         reset();
         goToNextChapter();
         initNextChapter();
@@ -428,7 +432,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                     setState(() => _selectedLanguage = newValue!);
                     updateSpeechLanguage(_selectedLanguage);
                   },
-                  items: <String>['English (US)', 'Português (BR)', 'Português (PT)', 'Espanhol (ES)', 'Francês (FR)']
+                  items: <String>['Português (BR)', 'English (US)', 'Espanhol (ES)', 'Francês (FR)']
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,

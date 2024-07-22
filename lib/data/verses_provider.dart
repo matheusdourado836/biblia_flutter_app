@@ -255,9 +255,8 @@ class VersesProvider extends ChangeNotifier {
 
   Future<void> shareImageAndText() async {
     try {
-      final boundary =
-          globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 2.0);
+      final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final image = await boundary.toImage(pixelRatio: 4.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {

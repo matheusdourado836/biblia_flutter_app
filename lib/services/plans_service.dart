@@ -7,9 +7,10 @@ class PlansService {
   final FirebaseFirestore _database = FirebaseFirestore.instance;
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
-  Future<List<Plan>> getPlans() async {
+  Future<List<Plan>?> getPlans() async {
     List<Plan> plans = [];
-    await _database.collection('plans').get().then((res) {
+    QuerySnapshot<Map<String, dynamic>>? docs;
+    docs = await _database.collection('plans').get().then((res) {
       if(res.docs.isNotEmpty) {
         for(var doc in res.docs) {
           if(doc.exists) {
@@ -17,7 +18,13 @@ class PlansService {
           }
         }
       }
+
+      return res;
     });
+
+    if(docs == null) {
+      return null;
+    }
 
     return plans;
   }

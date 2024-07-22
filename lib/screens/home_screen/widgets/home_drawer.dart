@@ -114,7 +114,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     final screenSize = MediaQuery.of(context).size.width;
     final screenOrientation = MediaQuery.of(context).orientation;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Container(
         height: (screenOrientation == Orientation.landscape && screenSize < 900) ? MediaQuery.of(context).size.height * .57 : MediaQuery.of(context).size.height * .29,
         decoration: BoxDecoration(
@@ -142,7 +142,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   ),
                   Text(
                     '    Progresso: ${_formatValue(readBooks / 66)}%',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
@@ -151,7 +151,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 0.0, 12.0),
               child: Text(
                 'Livros Lidos:\n$readBooks / 66',
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
               ),
             ),
           ],
@@ -222,7 +222,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
          },
        ),
        titleTextStyle: Theme.of(context).textTheme.bodyMedium,
-       title: const Text('Trocar modo do app')
+       title: const Text('Trocar modo do app', style: TextStyle(fontSize: 14))
     );
   }
 
@@ -272,7 +272,7 @@ class ListTileDrawer extends StatelessWidget {
         leading,
       ),
       titleTextStyle: Theme.of(context).textTheme.bodyMedium,
-      title: Text(title),
+      title: Text(title, style: const TextStyle(fontSize: 14),),
       trailing: trailing,
     );
   }
@@ -301,7 +301,6 @@ class _PortraitDrawer extends StatelessWidget {
                 : Column(
         children: [
           readingProgressWidget,
-          const SizedBox(height: 15),
           savedVersesWidget,
           const SizedBox(height: 15),
           annotationsWidget,
@@ -374,7 +373,6 @@ class _LandscapeDrawer extends StatelessWidget {
                   Column(
                     children: [
                       readingProgressWidget,
-                      const SizedBox(height: 15),
                       savedVersesWidget,
                       const SizedBox(height: 15),
                       annotationsWidget,

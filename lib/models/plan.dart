@@ -4,7 +4,6 @@ class Plan {
   final String label;
   final String description;
   final String imgPath;
-  final String bgSelectedImgPath;
   final PlanType planType;
   final int duration;
   final int qtdChapters;
@@ -15,7 +14,6 @@ class Plan {
     required this.label,
     required this.description,
     required this.imgPath,
-    required this.bgSelectedImgPath,
     required this.planType,
     required this.duration,
     required this.qtdChapters,
@@ -27,7 +25,6 @@ class Plan {
     label: json["label"],
     description: json["description"],
     imgPath: json["imgPath"],
-    bgSelectedImgPath: json["bgSelectedImgPath"],
     planType: PlanType.fromCode(json["code"]),
     duration: json["duration"],
     qtdChapters: json["qtdChapters"],

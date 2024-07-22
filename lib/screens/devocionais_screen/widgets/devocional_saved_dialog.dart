@@ -94,6 +94,7 @@ class _EmailDialogState extends State<EmailDialog> {
                 setState(() => _isLoading = false);
                 if (value.isNotEmpty) {
                   saveUserPost(value);
+
                   showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -117,7 +118,7 @@ class _DevocionalSavedDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Obrigado por compartilhar seu momento conosco!', textAlign: TextAlign.center,),
-      content: const Text('Iremos analisar se o seu devocional está de acordo com as nossas normas e rapidamente iremos disponibilizá-lo em nosso feed', textAlign: TextAlign.center,),
+      content: const Text('Iremos analisar se o seu post está de acordo com as nossas normas e rapidamente iremos disponibilizá-lo no feed.', textAlign: TextAlign.center,),
       actions: [
         TextButton(onPressed: (() => Navigator.popUntil(context, (route) => route.settings.name == 'feed_screen')), child: const Text('Ok'))
       ],

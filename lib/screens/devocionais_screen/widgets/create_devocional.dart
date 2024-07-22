@@ -23,6 +23,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _textFocus = FocusNode();
   final GlobalKey quillKey = GlobalKey();
+  TutorialCoachMark? _coachMark;
   List<TargetFocus> _targets = [];
 
 
@@ -31,7 +32,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
     if(!devocionalProvider.tutorials.contains('tutorial 3')) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       initTargets();
-      TutorialCoachMark(
+      _coachMark = TutorialCoachMark(
           onSkip: () {
             devocionalProvider.markTutorial(3);
             return true;
@@ -42,7 +43,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
           colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
           targets: _targets,
           hideSkip: true
-      ).show(context: context);
+      )..show(context: context);
     }
   }
 
@@ -95,6 +96,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
     _controller.dispose();
     _titleFocus.dispose();
     _textFocus.dispose();
+    _coachMark?.finish();
     super.dispose();
   }
 

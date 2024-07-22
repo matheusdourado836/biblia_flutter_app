@@ -7,9 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DevocionalProvider extends ChangeNotifier {
   static final DevocionalService _service = DevocionalService();
   static final ThematicService _thematicService = ThematicService();
-  List<Devocional> _devocionais = [];
+  List<Devocional>? _devocionais = [];
 
-  List<Devocional> get devocionais => _devocionais;
+  List<Devocional>? get devocionais => _devocionais;
 
   List<ThematicDevocional> _thematicDevocionais = [];
 
@@ -25,16 +25,30 @@ class DevocionalProvider extends ChangeNotifier {
 
   bool isLoading = false;
 
+  bool isLoadingThematic = false;
+
   List<String> _tutorials = [];
 
   List<String> get tutorials => _tutorials;
 
-  Future<void> getDevocionais() async {
+  Future<void> getDevocionais({int? limit}) async {
     isLoading = true;
     notifyListeners();
     _devocionais = [];
-    _devocionais = await _service.getDevocionais();
-    _devocionais.sort((a, b) => b.qtdCurtidas?.compareTo(a.qtdCurtidas ?? 0) ?? 0);
+    _devocionais = await _service.getDevocionais(limit: limit);
+    if(_devocionais?.isNotEmpty ?? false) {
+      _devocionais!.sort((a, b) {
+        final createdDateA = DateTime.parse(a.createdAt!);
+        final createdDateB = DateTime.parse(b.createdAt!);
+        if(createdDateA.difference(DateTime.now()).inDays == 0) {
+          return 0;
+        }
+        if(createdDateA.day == createdDateB.day && createdDateA.month == createdDateB.month && createdDateA.year == createdDateB.year) {
+          return a.qtdCurtidas! > b.qtdCurtidas! ? 0 : 1;
+        }
+        return createdDateA.isBefore(createdDateB) ? 1 : 0;
+      });
+    }
     isLoading = false;
     notifyListeners();
     return;
@@ -45,6 +59,16 @@ class DevocionalProvider extends ChangeNotifier {
     notifyListeners();
     _devocionais = [];
     _devocionais = await _service.getUserDevocionais();
+    if(_devocionais?.isNotEmpty ?? false) {
+      _devocionais!.sort((a, b) {
+        final createdDateA = DateTime.parse(a.createdAt!);
+        final createdDateB = DateTime.parse(b.createdAt!);
+        if(createdDateA.day == createdDateB.day && createdDateA.month == createdDateB.month && createdDateA.year == createdDateB.year) {
+          return a.qtdCurtidas! > b.qtdCurtidas! ? 0 : 1;
+        }
+        return createdDateA.isBefore(createdDateB) ? 1 : 0;
+      });
+    }
     isLoading = false;
     notifyListeners();
     return;
@@ -52,9 +76,10 @@ class DevocionalProvider extends ChangeNotifier {
 
   Future<void> getThematicDevocionais() async {
     if(_thematicDevocionais.isEmpty) {
-      isLoading = true;
+      isLoadingThematic = true;
+      notifyListeners();
       _thematicDevocionais = await _thematicService.getDevocionais();
-      isLoading = false;
+      isLoadingThematic = false;
       notifyListeners();
     }
   }
@@ -76,7 +101,7 @@ class DevocionalProvider extends ChangeNotifier {
   }
 
   Future<void> postComment({required String devocionalId, required Comentario comentario}) async {
-    final devocional = _devocionais.where((devocional) => devocional.id! == devocionalId).first;
+    final devocional = _devocionais!.where((devocional) => devocional.id! == devocionalId).first;
     devocional.qtdComentarios = devocional.qtdComentarios! + 1;
     return await _service.postComment(devocionalId: devocionalId, comentario: comentario).whenComplete(() => getComments(devocionalId: devocionalId));
   }

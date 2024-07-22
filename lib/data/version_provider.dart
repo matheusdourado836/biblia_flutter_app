@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/bible_data.dart';
+import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path_provider/path_provider.dart';
@@ -93,31 +94,45 @@ class VersionProvider extends ChangeNotifier {
 
   void downloadVersion({required String versionName}) async {
     try {
-      Dio dio = Dio();
-      String appDocDirPath = await getVersionsDirectoryPath();
-      final storage = FirebaseStorage.instance;
-      final ref = storage.ref().child('bible_versions/$versionName.json');
-      final downloadUrl = await ref.getDownloadURL();
-      final Response response = await dio.download(
-        downloadUrl, 
-        '$appDocDirPath/$versionName.json',
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            _downloadProgress = (received / total) * 100;
+      _downloadProgress = 0;
+      downloadError = '';
+      _downloadCompleted = false;
+      await BibleService().checkInternetConnectivity().then((res) async {
+        if(res) {
+          notifyListeners();
+          Dio dio = Dio();
+          String appDocDirPath = await getVersionsDirectoryPath();
+          final storage = FirebaseStorage.instance;
+          storage.setMaxDownloadRetryTime(const Duration(seconds: 10));
+          final ref = storage.ref().child('bible_versions/$versionName.json');
+          final downloadUrl = await ref.getDownloadURL().catchError((err) {
+            print('OLHA O ERRO AEEEE $err');
+          });
+          final Response response = await dio.download(
+              downloadUrl,
+              '$appDocDirPath/$versionName.json',
+              onReceiveProgress: (received, total) {
+                if (total != -1) {
+                  _downloadProgress = (received / total) * 100;
+                  notifyListeners();
+                }
+              });
+
+          if (response.statusCode == 200) {
+            _downloadCompleted = true;
+            await loadBibleData();
+            _downloadProgress = 0;
+            downloadError = '';
+            notifyListeners();
+          } else {
+            downloadError = 'Erro ao baixar a versão: ${response.statusCode}';
             notifyListeners();
           }
-        });
-
-        if (response.statusCode == 200) {
-          _downloadCompleted = true;
-          await loadBibleData();
-          _downloadProgress = 0;
-          downloadError = '';
-          notifyListeners();
-        } else {
-          downloadError = 'Erro ao baixar a versão: ${response.statusCode}';
+        }else {
+          downloadError = 'Você parece não estar conectado à internet. Verifique sua conexão e tente novamente.';
           notifyListeners();
         }
+      });
     }catch (e) {
       downloadError = 'Erro ao baixar versão: ${e.toString()}';
       notifyListeners();

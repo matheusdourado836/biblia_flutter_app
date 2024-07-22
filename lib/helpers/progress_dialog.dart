@@ -24,7 +24,7 @@ class _ProgressDialogState extends State<ProgressDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       alignment: Alignment.center,
-      title: Text('Baixando versão - ${widget.versionNameRaw}'),
+      title: Text('Baixando versão - ${widget.versionNameRaw}', style: const TextStyle(fontSize: 20),),
       contentPadding: const EdgeInsets.all(24.0),
       content: Consumer<VersionProvider>(
         builder: (context, value, _) {
@@ -33,8 +33,25 @@ class _ProgressDialogState extends State<ProgressDialog> {
             Navigator.pop(context, true);
           }
           if(value.downloadError.isNotEmpty) {
-            return Center(
-              child: Text(value.downloadError),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(value.downloadError),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.surface,
+                      ),
+                      onPressed: () => value.downloadVersion(versionName: widget.versionName),
+                      child: const Text('Tentar novamente')
+                    ),
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar', style: TextStyle(decoration: TextDecoration.underline),))
+                  ],
+                )
+              ],
             );
           }
           final progress = value.downloadProgress;

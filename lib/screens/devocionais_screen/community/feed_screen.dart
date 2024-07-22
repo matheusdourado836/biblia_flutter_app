@@ -7,11 +7,16 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_s
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/create_devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
+import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+
+import '../../../data/theme_provider.dart';
+import '../../../helpers/tutorial_widget.dart';
 
 bool _isPortrait = true;
 double _horizontalPadding = 0;
@@ -25,18 +30,85 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   late final TabController _tabController = TabController(length: 3, vsync: this);
+  final GlobalKey postKey = GlobalKey();
   late final DevocionalProvider devocionalProvider;
   int _selectedPage = 0;
   List<Devocional> _approvedDevocionais = [];
   List<Devocional> _pendingDevocionais = [];
   List<Devocional> _rejectedDevocionais = [];
   List<List<Devocional>> _userDevocionais = [];
+  TutorialCoachMark? _coachMark;
+  List<TargetFocus> _targets = [];
+  bool _hasInternetConnection = false;
+
+  void showTutorial() {
+    final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    if(!devocionalProvider.tutorials.contains('tutorial 5') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      initTargets();
+      _coachMark = TutorialCoachMark(
+        onClickTarget: (target) {
+          Navigator.pushNamed(
+              context, 'devocional_selected',
+              arguments: {"devocional": devocionalProvider.devocionais!.first}
+          );
+          devocionalProvider.markTutorial(5);
+        },
+          onSkip: () {
+            devocionalProvider.markTutorial(5);
+            return true;
+          },
+          onFinish: () {
+            devocionalProvider.markTutorial(5);
+          },
+          colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).canvasColor,
+          targets: _targets,
+          hideSkip: true
+      )..show(context: context);
+    }
+  }
+
+  void initTargets() {
+    _targets = [
+      TargetFocus(
+          identify: 'post-key',
+          keyTarget: postKey,
+          shape: ShapeLightFocus.RRect,
+          contents: [
+            TargetContent(
+                align: ContentAlign.bottom,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Clique no devocional para ler o texto completo ou clique 2 vezes para curtir',
+                      skip: '',
+                      next: 'Fechar',
+                      onNext: (() => c.next()),
+                      onSkip: (() => c.skip())
+                  );
+                }
+            ),
+          ]
+      ),
+    ];
+  }
+
+  Future<void> checkInternetConnection() async {
+    _hasInternetConnection = await BibleService().checkInternetConnectivity();
+    setState(() => _hasInternetConnection);
+    return;
+  }
 
   @override
   void initState() {
+    checkInternetConnection();
     devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      devocionalProvider.getDevocionais();
+      devocionalProvider.getDevocionais().whenComplete(() {
+        if(devocionalProvider.devocionais?.isNotEmpty ?? false) {
+          showTutorial();
+        }
+      });
     });
     _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
     super.initState();
@@ -72,6 +144,12 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _coachMark?.finish();
+    super.dispose();
   }
 
   @override
@@ -127,7 +205,26 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                       return const Expanded(child: PostFeedSkeleton());
                     }
 
-                    if (value.devocionais.isEmpty) {
+                    if(value.devocionais == null) {
+                      return Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text('Não foi possível carregar os devocionais', textAlign: TextAlign.center,),
+                            IconButton(
+                              onPressed: () {
+                                value.getDevocionais();
+                                checkInternetConnection();
+                              },
+                              icon: const Icon(Icons.refresh)
+                            )
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (value.devocionais!.isEmpty) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Column(
@@ -151,17 +248,20 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
 
                     return Expanded(
                       child: ListView.builder(
-                        itemCount: (_selectedPage == 0) ? value.devocionais.length : _userDevocionais[_tabController.index].length,
+                        itemCount: (_selectedPage == 0) ? value.devocionais!.length : _userDevocionais[_tabController.index].length,
                         shrinkWrap: true,
                         itemBuilder: (context, index) {
-                          final devocional = (_selectedPage == 0) ? value.devocionais[index] : _userDevocionais[_tabController.index][index];
+                          final devocional = (_selectedPage == 0) ? value.devocionais![index] : _userDevocionais[_tabController.index][index];
                           return Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Column(
                               children: [
                                 _infoRow(devocional),
-                                PostContainer(devocional: devocional),
-                                if(index + 1 == value.devocionais.length)
+                                PostContainer(
+                                  key: index == 0 ? postKey : null,
+                                  devocional: devocional
+                                ),
+                                if(index + 1 == value.devocionais!.length)
                                   const SizedBox(height: 100)
                               ],
                             ),
@@ -198,9 +298,9 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                 if(_selectedPage != 2) {
                   devocionalProvider.getUserDevocionais().whenComplete(() {
                     setState(() {
-                      _approvedDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 0).toList();
-                      _pendingDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 1).toList();
-                      _rejectedDevocionais = devocionalProvider.devocionais.where((devocional) => devocional.status == 2).toList();
+                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
                       _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
                     });
                   });
@@ -210,27 +310,30 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-          onPressed: (() => showModalBottomSheet(
-              context: context,
-              constraints: BoxConstraints(
-                maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
+        floatingActionButton: (_hasInternetConnection)
+          ? FloatingActionButton(
+              backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
+              onPressed: (() => showModalBottomSheet(
+                  context: context,
+                  constraints: BoxConstraints(
+                      maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  barrierColor: Theme.of(context).colorScheme.background,
+                  elevation: 0,
+                  useSafeArea: true,
+                  showDragHandle: true,
+                  isScrollControlled: true,
+                  builder: (context) => const CreateDevocional()
+              )),
+              tooltip: 'Adicionar um devocional',
+              child: Icon(
+                Icons.add,
+                size: 26,
+                color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
               ),
-              backgroundColor: Theme.of(context).colorScheme.background,
-              barrierColor: Theme.of(context).colorScheme.background,
-              elevation: 0,
-              useSafeArea: true,
-              showDragHandle: true,
-              isScrollControlled: true,
-              builder: (context) => const CreateDevocional())),
-          tooltip: 'Adicionar um devocional',
-          child: Icon(
-            Icons.add,
-            size: 26,
-            color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
-          ),
-        ),
+            )
+        : null,
       ),
     );
   }
@@ -318,25 +421,38 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
         color: color,
         size: 21,
   );
-  
-  Widget bgImagem({required double height}) => Container(
-    height: height,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(8),
-        image: DecorationImage(
-            colorFilter: (widget.devocional.hasFrost ?? false)
-                ? ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken)
-                : null,
-            fit: BoxFit.cover, image: CachedNetworkImageProvider(widget.devocional.bgImagem!)
-        )
-    ),
-    child: (widget.devocional.hasFrost ?? false)
-        ? Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: FrostedContainer(title: widget.devocional.titulo!),
-    ) : const SizedBox(),
-  );
+
+  Widget bgImagem({required double height, required BoxConstraints constraints}) {
+    if(widget.devocional.bgImagem == null || widget.devocional.bgImagem!.isEmpty) {
+      return NoBgImage(title: widget.devocional.titulo!, height: constraints.maxWidth > 400 ? 400 : 250,);
+    }
+    return CachedNetworkImage(
+      imageUrl: widget.devocional.bgImagem!,
+      imageBuilder: (context, image) {
+        return Container(
+          height: height,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                  colorFilter: (widget.devocional.hasFrost ?? false)
+                      ? ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken)
+                      : null,
+                  fit: BoxFit.cover, image: image
+              )
+          ),
+          child: (widget.devocional.hasFrost ?? false)
+              ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FrostedContainer(title: widget.devocional.titulo!),
+          ) : const SizedBox(),
+        );
+      },
+      placeholder: (context, url) {
+        return const CircularProgressIndicator();
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -382,20 +498,24 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      (widget.devocional.bgImagem != null && widget.devocional.bgImagem!.isNotEmpty)
-                          ? bgImagem(height: constraints.maxWidth > 400 ? 400 : 250)
-                          : NoBgImage(title: widget.devocional.titulo!, height: constraints.maxWidth > 400 ? 400 : 250,),
+                      bgImagem(height: constraints.maxWidth > 400 ? 400 : 250, constraints: constraints),
                       Align(
                           alignment: Alignment.center,
-                          child: const Icon(
+                          child: Icon(
                             CupertinoIcons.heart_fill,
-                            size: 100,
+                            size: 122,
                             color: Colors.red,
+                            shadows: kElevationToShadow[4],
                           )
                               .animate(controller: controller, value: 1)
-                              .scaleXY(begin: .8, duration: 150.ms)
-                              .scaleXY(begin: 1.3, delay: 150.ms)
-                              .scaleXY(delay: 500.ms, end: 0)
+                              .scaleXY(begin: .8, duration: 180.ms)
+                              .scaleXY(begin: 1.2, delay: 180.ms)
+                              .scaleXY(begin: 1.2, duration: 180.ms)
+                              .scaleXY(begin: .8, delay: 360.ms)
+                              // .moveY(delay: 650.ms, duration: 800.ms, begin: 0, end: -500)
+                              // .shake(duration: 500.ms)
+                              .fadeOut(delay: 500.ms)
+                              //.scaleXY(delay: 1000.ms, end: 0)
                       )
                     ],
                   )),

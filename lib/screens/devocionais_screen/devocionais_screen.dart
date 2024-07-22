@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/models/plan.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/theme/thematic_skeleton.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
 import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -91,31 +91,31 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    devocionalProvider.getThematicDevocionais().whenComplete(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getThematicDevocionais().whenComplete(() {
       _removeBackground.value = true;
-      if(!devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+      if(devocionalProvider.thematicDevocionais.isNotEmpty && !devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
         initTargets();
         _coachMark = TutorialCoachMark(
-          onClickTarget: (target) async {
-            if(target.identify == 'journey-key') {
-              Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
-            }else if(target.identify == 'community-key') {
-              Scrollable.ensureVisible(_plansKey.currentContext!, duration: const Duration(milliseconds: 600));
-            }
-          },
-          onSkip: () {
-            devocionalProvider.markTutorial(2);
-            return true;
-          },
-          onFinish: () {
-            devocionalProvider.markTutorial(2);
-          },
+            onClickTarget: (target) async {
+              if(target.identify == 'journey-key') {
+                Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
+              }else if(target.identify == 'community-key') {
+                Scrollable.ensureVisible(_plansKey.currentContext!, duration: const Duration(milliseconds: 600));
+              }
+            },
+            onSkip: () {
+              devocionalProvider.markTutorial(2);
+              return true;
+            },
+            onFinish: () {
+              devocionalProvider.markTutorial(2);
+            },
             colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
             targets: _targets,
             hideSkip: true
         )..show(context: context);
       }
-    });
+    }));
     super.initState();
   }
 
@@ -130,7 +130,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                 align: ContentAlign.bottom,
                 builder: (context, c) {
                   return TutorialWidget(
-                      text: 'Descubra novos devocionais temáticos e tenha uma reflexão para fortalecer sua fé',
+                      text: 'Conheça a seção de palavras temáticas e sempre tenha uma palavra nova para ser edificado nas áreas de sua vida.',
                       skip: 'Pular',
                       next: 'Próximo',
                       onNext: (() async {
@@ -177,6 +177,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           contents: [
             TargetContent(
                 align: ContentAlign.top,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 builder: (context, c) {
                   return TutorialWidget(
                       text: 'Inicie um plano de leitura para te ajudar na sua leitura diária, escolha de acordo com seus objetivos',
@@ -202,7 +203,6 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.longestSide;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -213,15 +213,25 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           const SizedBox(height: 20),
           Consumer<DevocionalProvider>(
             builder: (context, value, _) {
-              if(value.thematicDevocionais.isEmpty) {
+              if(value.isLoadingThematic) {
                 return const LoadingWidget();
+              }
+              if(value.thematicDevocionais.isEmpty) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Não foi possível carregar os devocionais temáticos', textAlign: TextAlign.center,),
+                    IconButton(onPressed: () => value.getThematicDevocionais(), icon: const Icon(Icons.refresh))
+                  ],
+                );
               }
 
               return CarouselSlider(
                 options: CarouselOptions(
                   padEnds: false,
                   enableInfiniteScroll: false,
-                  aspectRatio: (height <= 800) ? 10/4 : Platform.isAndroid ? 16/4 : 12/4,
+                  aspectRatio: 10/4,
                   viewportFraction: .65
                 ),
                 items: value.thematicDevocionais.map((thematicDevocional) {
@@ -235,17 +245,25 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Container(
-                              height: 120,
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image: CachedNetworkImageProvider(thematicDevocional.bgImagem!),
-                                  colorFilter: ColorFilter.mode(
-                                      Colors.black.withOpacity(0.25), BlendMode.darken
+                            child: CachedNetworkImage(
+                              imageUrl: thematicDevocional.bgImagem!,
+                              imageBuilder: (context, image) {
+                                return Container(
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        fit: BoxFit.cover,
+                                        image: image,
+                                        colorFilter: ColorFilter.mode(
+                                            Colors.black.withOpacity(0.25), BlendMode.darken
+                                        ),
+                                      )
                                   ),
-                                )
-                              ),
+                                );
+                              },
+                              placeholder: (context, url) {
+                                return const ThematicSkeleton();
+                              },
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -273,19 +291,18 @@ class Comunidade extends StatefulWidget {
 
 class _ComunidadeState extends State<Comunidade> {
   late Widget imageProvider;
-  List<Devocional> _devocionais = [];
+  List<Devocional>? _devocionais = [];
 
   @override
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getDevocionais().whenComplete(() => _devocionais = devocionalProvider.devocionais));
+    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getDevocionais(limit: 5).whenComplete(() => _devocionais = devocionalProvider.devocionais));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      key: _communityKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
@@ -293,17 +310,29 @@ class _ComunidadeState extends State<Comunidade> {
           child: Text('Faça parte da nossa comunidade'),
         ),
         Container(
+          key: _communityKey,
           height: 320,
           color: Theme.of(context).cardTheme.color,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: Consumer<DevocionalProvider>(
                   builder: (context, value, _) {
                     if(value.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: PostFeedSkeleton(),
+                      return const PostFeedSkeleton();
+                    }
+
+                    if(_devocionais == null) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Não foi possível carregar os devocionais', style: TextStyle(color: Colors.white),),
+                          IconButton(
+                              onPressed: () => value.getDevocionais(limit: 5).whenComplete(() => _devocionais = value.devocionais),
+                              icon: const Icon(Icons.refresh, color: Colors.white,)
+                          )
+                        ],
                       );
                     }
 
@@ -314,8 +343,9 @@ class _ComunidadeState extends State<Comunidade> {
                         enlargeCenterPage: true,
                         enlargeFactor: .5
                       ),
-                      items: _devocionais.map((devocional) {
+                      items: _devocionais!.map((devocional) {
                         return Container(
+                          width: 650,
                           padding: const EdgeInsets.all(8),
                           margin: const EdgeInsets.all(8),
                           child: Column(
@@ -428,6 +458,63 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
     return percentage;
   }
 
+  Widget imageSkeleton() => Shimmer.fromColors(
+    baseColor: Colors.grey,
+    highlightColor: Colors.white,
+    child: Container(
+      height: 72,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+          color: Colors.grey,
+          borderRadius: BorderRadius.circular(50)
+      ),
+    ),
+  );
+  
+  Widget planBgImage(Plan plan) {
+    if(plan.imgPath.startsWith('assets')) {
+      return Container(
+        height: 72,
+        width: 72,
+        margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+        decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(plan.imgPath),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.3), BlendMode.darken
+              ),
+            ),
+            borderRadius: BorderRadius.circular(4)
+        ),
+      );
+    }
+    
+    return CachedNetworkImage(
+      imageUrl: plan.imgPath,
+      imageBuilder: (context, image) {
+        return Container(
+          height: 72,
+          width: 72,
+          margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                image: image,
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.3), BlendMode.darken
+                ),
+              ),
+              borderRadius: BorderRadius.circular(4)
+          ),
+        );
+      },
+      placeholder: (context, url) {
+        return imageSkeleton();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -443,13 +530,13 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
           Consumer<PlansProvider>(
             builder: (context, value, _) {
               if(value.plans.isEmpty) {
-                return const CircularProgressIndicator();
+                return imageSkeleton();
               }
               return FutureBuilder(
                   future: checkStartedPlans(),
                   builder: (context, snapshot) {
                     if(snapshot.connectionState == ConnectionState.waiting) {
-                      return const LoadingWidget();
+                      return imageSkeleton();
                     }else {
                       return ListView.builder(
                         itemCount: _plans.length,
@@ -466,21 +553,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                               ),
                               child: Row(
                                 children: [
-                                  Container(
-                                    height: 72,
-                                    width: 72,
-                                    margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
-                                    decoration: BoxDecoration(
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(_plans[index].imgPath),
-                                          fit: BoxFit.cover,
-                                          colorFilter: ColorFilter.mode(
-                                              Colors.black.withOpacity(0.3), BlendMode.darken
-                                          ),
-                                        ),
-                                        borderRadius: BorderRadius.circular(4)
-                                    ),
-                                  ),
+                                  planBgImage(_plans[index]),
                                   Expanded(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -540,21 +613,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                             )),
                             child: Row(
                               children: [
-                                Container(
-                                  height: 70,
-                                  width: 70,
-                                  margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
-                                  decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                        image: CachedNetworkImageProvider(_plans[index].imgPath),
-                                        fit: BoxFit.cover,
-                                        colorFilter: ColorFilter.mode(
-                                            Colors.black.withOpacity(0.3), BlendMode.darken
-                                        ),
-                                      ),
-                                      borderRadius: BorderRadius.circular(4)
-                                  ),
-                                ),
+                                planBgImage(_plans[index]),
                                 Expanded(
                                   child: Text(_plans[index].label, style: const TextStyle(fontSize: 14)),
                                 )
