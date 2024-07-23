@@ -3,6 +3,7 @@ import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/convert_colors.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/helpers/version_to_name.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
 import 'package:flutter/material.dart';
@@ -214,10 +215,11 @@ class _SavedVersesState extends State<SavedVerses> {
           padding: const EdgeInsets.all(12.0),
           child: InkWell(
             onTap: (() {
+              final versionName = _versionProvider.options.firstWhere((v) => v.toLowerCase().split(' ')[0].trim() == nameToVersion(version.trim()));
               _versesProvider.clear();
               for (var i = 0; i < allBooksList.length; i++) {
                 if (allBooksList[i]["bookName"] == book) {
-                  _versionProvider.changeOptionBd(version);
+                  _versionProvider.changeOptionBd(versionName);
                   _versesProvider.loadVerses(allBooksList[i]["bookIndex"], book, versionName: version);
                   GoToVerseScreen().goToVersePage(
                     book,
@@ -315,7 +317,7 @@ class _SavedVersesState extends State<SavedVerses> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '$book $chapter:$verseNumber (${version.split(' ')[0]})',
+                            '$book $chapter:$verseNumber (${nameToVersion(version).toUpperCase()})',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           RoundContainer(

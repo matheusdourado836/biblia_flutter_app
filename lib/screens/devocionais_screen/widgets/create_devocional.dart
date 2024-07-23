@@ -23,6 +23,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _textFocus = FocusNode();
   final GlobalKey quillKey = GlobalKey();
+  TutorialCoachMark? _coachMark;
   List<TargetFocus> _targets = [];
 
 
@@ -31,7 +32,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
     if(!devocionalProvider.tutorials.contains('tutorial 3')) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       initTargets();
-      TutorialCoachMark(
+      _coachMark = TutorialCoachMark(
           onSkip: () {
             devocionalProvider.markTutorial(3);
             return true;
@@ -42,7 +43,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
           colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
           targets: _targets,
           hideSkip: true
-      ).show(context: context);
+      )..show(context: context);
     }
   }
 
@@ -95,6 +96,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
     _controller.dispose();
     _titleFocus.dispose();
     _textFocus.dispose();
+    _coachMark?.finish();
     super.dispose();
   }
 
@@ -169,6 +171,9 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                   configurations: QuillEditorConfigurations(
                     controller: _controller,
                     isOnTapOutsideEnabled: true,
+                    onTapOutside: (p, e) {
+                      _textFocus.unfocus();
+                    },
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     placeholder: 'Escreva seu devocional aqui...',
                     customStyles: DefaultStyles(
@@ -189,55 +194,55 @@ class _CreateDevocionalState extends State<CreateDevocional> {
               ),
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)
-                )
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)
+                    )
+                ),
+                onPressed: (() {
+                  _titleFocus.unfocus();
+                  _textFocus.unfocus();
+                  final styles = _controller.document.toDelta().toJson();
+                  final textDivided = _controller.document.toPlainText().split('\n').where((line) => line.trim().isNotEmpty).toList();
+                  final plainText = textDivided.join('\n').split('\n').take(4).join('\n');
+                  final devocional = Devocional(
+                      createdAt: DateTime.now().toIso8601String(),
+                      contactEmail: null,
+                      titulo: _titleController.text,
+                      styles: styles,
+                      plainText: plainText,
+                      status: 1,
+                      qtdCurtidas: 0,
+                      qtdViews: 0,
+                      qtdComentarios: 0
+                  );
+                  if(_formKey.currentState!.validate()) {
+                    if(_controller.document.isEmpty()) {
+                      showDialog(context: context, builder: (context) => AlertDialog(
+                        title: const Text('Erro'),
+                        content: const Text('Não é possível enviar um devocional vazio.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+                        ],
+                      ));
+                      return;
+                    }
+                    Navigator.push(
+                        context,
+                        PageTransition(type: PageTransitionType.rightToLeftWithFade, child: SaveDevocionalWidget(devocional: devocional))
+                    );
+                  }
+                }),
+                child: const Text('Próximo')
             ),
-            onPressed: (() {
-              _titleFocus.unfocus();
-              _textFocus.unfocus();
-              final styles = _controller.document.toDelta().toJson();
-              final textDivided = _controller.document.toPlainText().split('\n').where((line) => line.trim().isNotEmpty).toList();
-              final plainText = textDivided.join('\n').split('\n').take(4).join('\n');
-              final devocional = Devocional(
-                  createdAt: DateTime.now().toIso8601String(),
-                  contactEmail: null,
-                  titulo: _titleController.text,
-                  styles: styles,
-                  plainText: plainText,
-                  status: 1,
-                  qtdCurtidas: 0,
-                  qtdViews: 0,
-                  qtdComentarios: 0
-              );
-              if(_formKey.currentState!.validate()) {
-                if(_controller.document.isEmpty()) {
-                  showDialog(context: context, builder: (context) => AlertDialog(
-                    title: const Text('Erro'),
-                    content: const Text('Não é possível enviar um devocional vazio.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
-                    ],
-                  ));
-                  return;
-                }
-                Navigator.push(
-                    context,
-                    PageTransition(type: PageTransitionType.rightToLeftWithFade, child: SaveDevocionalWidget(devocional: devocional))
-                );
-              }
-            }),
-            child: const Text('Próximo')
-        ),
+          )
+        ],
       ),
     );
   }

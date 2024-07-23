@@ -1,6 +1,7 @@
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,12 +26,12 @@ class ThematicSelected extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              Image.asset(
-                fit: BoxFit.cover,
+              CachedNetworkImage(
+                imageUrl: devocional.bgImagem!,
                 height: MediaQuery.of(context).size.height * .53,
-                devocional.bgImagem!,
-                color: Colors.black.withOpacity(0.7),
+                fit: BoxFit.cover,
                 colorBlendMode: BlendMode.darken,
+                color: Colors.black.withOpacity(0.7),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -1,8 +1,7 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/data/bible_data.dart';
+import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
@@ -78,65 +77,62 @@ class VersionProvider extends ChangeNotifier {
   }
 
   Future<String> getVersionsDirectoryPath() async {
-  Directory appDocDir = await getApplicationDocumentsDirectory();
-  String versionsDirPath = '${appDocDir.path}/versions';
-  
-  final versionsDir = Directory(versionsDirPath);
-  if (!await versionsDir.exists()) {
-    await versionsDir.create(recursive: true);
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String versionsDirPath = '${appDocDir.path}/versions';
+
+    final versionsDir = Directory(versionsDirPath);
+    if (!await versionsDir.exists()) {
+      await versionsDir.create(recursive: true);
+    }
+
+    return versionsDirPath;
   }
 
-  return versionsDirPath;
-}
+  Future<void> loadBibleData() async {
+    return await BibleData().loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
+  }
 
   void downloadVersion({required String versionName}) async {
     try {
-      Dio dio = Dio();
-      String appDocDirPath = await getVersionsDirectoryPath();
-      final storage = FirebaseStorage.instance;
-      final ref = storage.ref().child('bible_versions/$versionName.json');
-      final downloadUrl = await ref.getDownloadURL();
-      final Response response = await dio.download(
-        downloadUrl, 
-        '$appDocDirPath/$versionName.json',
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            _downloadProgress = total.toDouble();
-              notifyListeners();
-          }
-        });
+      _downloadProgress = 0;
+      downloadError = '';
+      _downloadCompleted = false;
+      await BibleService().checkInternetConnectivity().then((res) async {
+        if(res) {
+          notifyListeners();
+          Dio dio = Dio();
+          String appDocDirPath = await getVersionsDirectoryPath();
+          final storage = FirebaseStorage.instance;
+          storage.setMaxDownloadRetryTime(const Duration(seconds: 10));
+          final ref = storage.ref().child('bible_versions/$versionName.json');
+          final downloadUrl = await ref.getDownloadURL().catchError((err) {
+            print('OLHA O ERRO AEEEE $err');
+          });
+          final Response response = await dio.download(
+              downloadUrl,
+              '$appDocDirPath/$versionName.json',
+              onReceiveProgress: (received, total) {
+                if (total != -1) {
+                  _downloadProgress = (received / total) * 100;
+                  notifyListeners();
+                }
+              });
 
-        if (response.statusCode == 200) {
-          _downloadCompleted = true;
-          await BibleData().loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
-          _downloadProgress = 0;
-          downloadError = '';
-          Future.delayed(const Duration(milliseconds: 500), () => notifyListeners());
-        } else {
-          downloadError = 'Erro ao baixar a versão: ${response.statusCode}';
+          if (response.statusCode == 200) {
+            _downloadCompleted = true;
+            await loadBibleData();
+            _downloadProgress = 0;
+            downloadError = '';
+            notifyListeners();
+          } else {
+            downloadError = 'Erro ao baixar a versão: ${response.statusCode}';
+            notifyListeners();
+          }
+        }else {
+          downloadError = 'Você parece não estar conectado à internet. Verifique sua conexão e tente novamente.';
           notifyListeners();
         }
-      // FileDownloader.downloadFile(
-      //   url: downloadUrl,
-      //   name: '$versionName.json',
-      //   downloadDestination: DownloadDestinations.appFiles,
-      //   onProgress: (string, progress) {
-      //     _downloadProgress = progress;
-      //     notifyListeners();
-      //   },
-      //   onDownloadCompleted: (path) async {
-      //     _downloadCompleted = true;
-      //     await BibleData().loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
-      //     _downloadProgress = 0;
-      //     downloadError = '';
-      //     Future.delayed(const Duration(milliseconds: 500), () => notifyListeners());
-      //     print('Download concluído em: $path');
-      //   },
-      //   onDownloadError: (errorMessage) {
-      //     downloadError = 'Erro ao baixar a versão: $errorMessage';
-      //     notifyListeners();
-      //   },
-      // );
+      });
     }catch (e) {
       downloadError = 'Erro ao baixar versão: ${e.toString()}';
       notifyListeners();

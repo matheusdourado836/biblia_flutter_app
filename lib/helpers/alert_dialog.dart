@@ -9,12 +9,15 @@ alertDialog({String content = 'Não foi possível completar o login', String tit
           titlePadding: const EdgeInsets.all(0),
           title: Container(
             height: 90,
-            color: Theme.of(context).colorScheme.error.withOpacity(0.6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.error.withOpacity(0.80),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(27), topRight: Radius.circular(27))
+            ),
             child: Center(
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Theme.of(context).colorScheme.onBackground, fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -25,11 +28,11 @@ alertDialog({String content = 'Não foi possível completar o login', String tit
                 style: ElevatedButton.styleFrom(
                   textStyle: const TextStyle(color: Colors.white),
                   minimumSize: const Size(80, 36),
-                  backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.65)),
+                  backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.80)),
                 onPressed: () => Navigator.pop(context),
-                child: Text(
+                child: const Text(
                   'OK',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             )

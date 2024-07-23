@@ -36,11 +36,8 @@ class AdMobService {
   }
 
   static final BannerAdListener bannerAdListener = BannerAdListener(
-    onAdLoaded: (ad) => print('AD LOADED'),
     onAdFailedToLoad: (ad, error) {
       ad.dispose();
-      print('DEU RUIM CARREGAR O AD $error ${ad.adUnitId}');
     },
-    onAdOpened: (ad) => print('ABRIU HEIN')
   );
 }

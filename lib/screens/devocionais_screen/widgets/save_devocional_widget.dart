@@ -178,6 +178,7 @@ class _PostContainerState extends State<_PostContainer> {
   String todayDate = '';
   bool _loadingImage = false;
   List<TargetFocus> _targets = [];
+  TutorialCoachMark? _coachMark;
 
   pick(ImageSource source, bool profile) async {
     var storageStatus = await Permission.storage.status;
@@ -430,7 +431,7 @@ class _PostContainerState extends State<_PostContainer> {
     if(!devocionalProvider.tutorials.contains('tutorial 4') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       initTargets();
-      TutorialCoachMark(
+      _coachMark = TutorialCoachMark(
           onSkip: () {
             devocionalProvider.markTutorial(4);
             return true;
@@ -441,7 +442,7 @@ class _PostContainerState extends State<_PostContainer> {
           colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).canvasColor,
           targets: _targets,
           hideSkip: true
-      ).show(context: context);
+      )..show(context: context);
     }
   }
 
@@ -520,6 +521,7 @@ class _PostContainerState extends State<_PostContainer> {
       apiImage!.deleteSync();
     }
     clearCache();
+    _coachMark?.finish();
     super.dispose();
   }
 

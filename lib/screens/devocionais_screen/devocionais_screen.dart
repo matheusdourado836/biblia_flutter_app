@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
-import 'package:biblia_flutter_app/models/enums.dart';
+import 'package:biblia_flutter_app/models/plan.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/theme/thematic_skeleton.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
 import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -92,31 +91,31 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    devocionalProvider.getThematicDevocionais().whenComplete(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getThematicDevocionais().whenComplete(() {
       _removeBackground.value = true;
-      if(!devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+      if(devocionalProvider.thematicDevocionais.isNotEmpty && !devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
         initTargets();
         _coachMark = TutorialCoachMark(
-          onClickTarget: (target) async {
-            if(target.identify == 'journey-key') {
-              Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
-            }else if(target.identify == 'community-key') {
-              Scrollable.ensureVisible(_plansKey.currentContext!, duration: const Duration(milliseconds: 600));
-            }
-          },
-          onSkip: () {
-            devocionalProvider.markTutorial(2);
-            return true;
-          },
-          onFinish: () {
-            devocionalProvider.markTutorial(2);
-          },
+            onClickTarget: (target) async {
+              if(target.identify == 'journey-key') {
+                Scrollable.ensureVisible(_communityKey.currentContext!, duration: const Duration(milliseconds: 600));
+              }else if(target.identify == 'community-key') {
+                Scrollable.ensureVisible(_plansKey.currentContext!, duration: const Duration(milliseconds: 600));
+              }
+            },
+            onSkip: () {
+              devocionalProvider.markTutorial(2);
+              return true;
+            },
+            onFinish: () {
+              devocionalProvider.markTutorial(2);
+            },
             colorShadow: (_themeProvider!.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
             targets: _targets,
             hideSkip: true
         )..show(context: context);
       }
-    });
+    }));
     super.initState();
   }
 
@@ -131,7 +130,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                 align: ContentAlign.bottom,
                 builder: (context, c) {
                   return TutorialWidget(
-                      text: 'Descubra novos devocionais temáticos e tenha uma reflexão para fortalecer sua fé',
+                      text: 'Conheça a seção de palavras temáticas e sempre tenha uma palavra nova para ser edificado nas áreas de sua vida.',
                       skip: 'Pular',
                       next: 'Próximo',
                       onNext: (() async {
@@ -151,9 +150,10 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           contents: [
             TargetContent(
                 align: ContentAlign.bottom,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 builder: (context, c) {
                   return TutorialWidget(
-                      text: 'Venha conhecer nossa comunidade, onde você poderá ver, postar devocionais e suas reflexões pessoais para abençoar e edificar a fé de outras pessoas',
+                      text: 'Venha conhecer nossa comunidade, onde você poderá interagir e postar devocionais para edificar a fé de outras pessoas',
                       skip: 'Pular',
                       next: 'Próximo',
                       onNext: (() {
@@ -177,6 +177,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           contents: [
             TargetContent(
                 align: ContentAlign.top,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 builder: (context, c) {
                   return TutorialWidget(
                       text: 'Inicie um plano de leitura para te ajudar na sua leitura diária, escolha de acordo com seus objetivos',
@@ -202,7 +203,6 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.longestSide;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -213,15 +213,25 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
           const SizedBox(height: 20),
           Consumer<DevocionalProvider>(
             builder: (context, value, _) {
-              if(value.thematicDevocionais.isEmpty) {
+              if(value.isLoadingThematic) {
                 return const LoadingWidget();
+              }
+              if(value.thematicDevocionais.isEmpty) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Não foi possível carregar os devocionais temáticos', textAlign: TextAlign.center,),
+                    IconButton(onPressed: () => value.getThematicDevocionais(), icon: const Icon(Icons.refresh))
+                  ],
+                );
               }
 
               return CarouselSlider(
                 options: CarouselOptions(
                   padEnds: false,
                   enableInfiniteScroll: false,
-                  aspectRatio: (height <= 800) ? 10/4 : Platform.isAndroid ? 16/4 : 12/4,
+                  aspectRatio: 10/4,
                   viewportFraction: .65
                 ),
                 items: value.thematicDevocionais.map((thematicDevocional) {
@@ -235,17 +245,25 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Container(
-                              height: 120,
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image: AssetImage(thematicDevocional.bgImagem!),
-                                  colorFilter: ColorFilter.mode(
-                                      Colors.black.withOpacity(0.25), BlendMode.darken
+                            child: CachedNetworkImage(
+                              imageUrl: thematicDevocional.bgImagem!,
+                              imageBuilder: (context, image) {
+                                return Container(
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        fit: BoxFit.cover,
+                                        image: image,
+                                        colorFilter: ColorFilter.mode(
+                                            Colors.black.withOpacity(0.25), BlendMode.darken
+                                        ),
+                                      )
                                   ),
-                                )
-                              ),
+                                );
+                              },
+                              placeholder: (context, url) {
+                                return const ThematicSkeleton();
+                              },
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -273,19 +291,18 @@ class Comunidade extends StatefulWidget {
 
 class _ComunidadeState extends State<Comunidade> {
   late Widget imageProvider;
-  List<Devocional> _devocionais = [];
+  List<Devocional>? _devocionais = [];
 
   @override
   void initState() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getDevocionais().whenComplete(() => _devocionais = devocionalProvider.devocionais));
+    WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getDevocionais(limit: 5).whenComplete(() => _devocionais = devocionalProvider.devocionais));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      key: _communityKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
@@ -293,17 +310,29 @@ class _ComunidadeState extends State<Comunidade> {
           child: Text('Faça parte da nossa comunidade'),
         ),
         Container(
-          height: 350,
+          key: _communityKey,
+          height: 320,
           color: Theme.of(context).cardTheme.color,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: Consumer<DevocionalProvider>(
                   builder: (context, value, _) {
                     if(value.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: PostFeedSkeleton(),
+                      return const PostFeedSkeleton();
+                    }
+
+                    if(_devocionais == null) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Não foi possível carregar os devocionais', style: TextStyle(color: Colors.white),),
+                          IconButton(
+                              onPressed: () => value.getDevocionais(limit: 5).whenComplete(() => _devocionais = value.devocionais),
+                              icon: const Icon(Icons.refresh, color: Colors.white,)
+                          )
+                        ],
                       );
                     }
 
@@ -314,8 +343,9 @@ class _ComunidadeState extends State<Comunidade> {
                         enlargeCenterPage: true,
                         enlargeFactor: .5
                       ),
-                      items: _devocionais.map((devocional) {
+                      items: _devocionais!.map((devocional) {
                         return Container(
+                          width: 650,
                           padding: const EdgeInsets.all(8),
                           margin: const EdgeInsets.all(8),
                           child: Column(
@@ -346,7 +376,7 @@ class _ComunidadeState extends State<Comunidade> {
                               Expanded(
                                 child: Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.white
@@ -391,27 +421,26 @@ class PlanosDeLeitura extends StatefulWidget {
 }
 
 class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
-  // TODO TEM QUE COLOCAR ISSO NO BANCO DE DADOS ANTES DE LANÇAR A ATUALIZAÇÃO
-  static final List<Map<String, dynamic>> _plans = [
-    {"label": "Bíblia em 1 ano", "imgPath": "assets/images/one_year_plan.png", "code": PlanType.ONE_YEAR, "duration": 397, "qtdChapters": 3},
-    {"label": "Bíblia toda em 3 meses", "imgPath": "assets/images/three_month_plan.jpg","code": PlanType.THREE_MONTHS, "duration": 92, "qtdChapters": 13},
-    {"label": "Novo testamento em 2 meses","imgPath": "assets/images/two_month_new_plan.jpg", "code": PlanType.TWO_MONTHS_NEW, "duration": 66, "qtdChapters": 4, "isNewTestament": true},
-    {"label": "Antigo testamento em 6 meses","imgPath": "assets/images/six_month_old_plan.png", "code": PlanType.SIX_MONTHS_OLD, "duration": 186, "qtdChapters": 5, "bibleLength": 39}
-  ];
+  late final List<Plan> _plans;
   late PlansProvider _plansProvider;
   double percentageValue = 0;
 
   @override
   void initState() {
     _plansProvider = Provider.of<PlansProvider>(context, listen: false);
-    checkStartedPlans();
+    getPlans().whenComplete(() => checkStartedPlans());
     super.initState();
+  }
+  
+  Future<void> getPlans() async {
+    await _plansProvider.getPlans();
+    _plans = _plansProvider.plans;
   }
 
   Future<List<bool>> checkStartedPlans() async {
     final List<bool> startedPlans = [];
-    for(var plan in _plans) {
-      final res = await _plansProvider.checkPlanStartedBybType(planType: plan["code"]);
+    for(var plan in _plansProvider.plans) {
+      final res = await _plansProvider.checkPlanStartedBybType(planType: plan.planType);
       startedPlans.add(res);
     }
     return startedPlans;
@@ -419,7 +448,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
 
   Future<double> calculateReadPercentage(int index) async {
     double percentage = 0;
-    final res = await _plansProvider.findReadingPlan(planId: _plans[index]["code"].code);
+    final res = await _plansProvider.findReadingPlan(planId: _plans[index].planType.code);
     if(res != null) {
       final totalDays = res.durationDays!;
       final currentDay = res.currentDay!;
@@ -427,6 +456,63 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
     }
 
     return percentage;
+  }
+
+  Widget imageSkeleton() => Shimmer.fromColors(
+    baseColor: Colors.grey,
+    highlightColor: Colors.white,
+    child: Container(
+      height: 72,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+          color: Colors.grey,
+          borderRadius: BorderRadius.circular(50)
+      ),
+    ),
+  );
+  
+  Widget planBgImage(Plan plan) {
+    if(plan.imgPath.startsWith('assets')) {
+      return Container(
+        height: 72,
+        width: 72,
+        margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+        decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(plan.imgPath),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.3), BlendMode.darken
+              ),
+            ),
+            borderRadius: BorderRadius.circular(4)
+        ),
+      );
+    }
+    
+    return CachedNetworkImage(
+      imageUrl: plan.imgPath,
+      imageBuilder: (context, image) {
+        return Container(
+          height: 72,
+          width: 72,
+          margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
+          decoration: BoxDecoration(
+              image: DecorationImage(
+                image: image,
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.3), BlendMode.darken
+                ),
+              ),
+              borderRadius: BorderRadius.circular(4)
+          ),
+        );
+      },
+      placeholder: (context, url) {
+        return imageSkeleton();
+      },
+    );
   }
 
   @override
@@ -443,11 +529,14 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
           ),
           Consumer<PlansProvider>(
             builder: (context, value, _) {
+              if(value.plans.isEmpty) {
+                return imageSkeleton();
+              }
               return FutureBuilder(
                   future: checkStartedPlans(),
                   builder: (context, snapshot) {
                     if(snapshot.connectionState == ConnectionState.waiting) {
-                      return const LoadingWidget();
+                      return imageSkeleton();
                     }else {
                       return ListView.builder(
                         itemCount: _plans.length,
@@ -459,39 +548,18 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                               onTap: (() => Navigator.pushNamed(
                                   context,
                                   'plans_base',
-                                  arguments: {
-                                    "planType": _plans[index]["code"],
-                                    "label": _plans[index]["label"],
-                                    "qtdChapters": _plans[index]["qtdChapters"],
-                                    "duration": _plans[index]["duration"],
-                                    "bibleLength": _plans[index]["bibleLength"],
-                                    "isNewTestament": _plans[index]["isNewTestament"],
-                                  }
+                                  arguments: {"plan": _plans[index]}
                                 )
                               ),
                               child: Row(
                                 children: [
-                                  Container(
-                                    height: 72,
-                                    width: 72,
-                                    margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
-                                    decoration: BoxDecoration(
-                                        image: DecorationImage(
-                                          image: AssetImage(_plans[index]["imgPath"]),
-                                          fit: BoxFit.cover,
-                                          colorFilter: ColorFilter.mode(
-                                              Colors.black.withOpacity(0.3), BlendMode.darken
-                                          ),
-                                        ),
-                                        borderRadius: BorderRadius.circular(4)
-                                    ),
-                                  ),
+                                  planBgImage(_plans[index]),
                                   Expanded(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
+                                        Text(_plans[index].label, style: const TextStyle(fontSize: 14)),
                                         const SizedBox(height: 8),
                                         FutureBuilder(
                                             future: calculateReadPercentage(index),
@@ -541,34 +609,13 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                             onTap: (() => Navigator.pushNamed(
                                 context,
                                 'plans_base',
-                                arguments: {
-                                  "planType": _plans[index]["code"],
-                                  "label": _plans[index]["label"],
-                                  "qtdChapters": _plans[index]["qtdChapters"],
-                                  "duration": _plans[index]["duration"],
-                                  "bibleLength": _plans[index]["bibleLength"],
-                                  "isNewTestament": _plans[index]["isNewTestament"],
-                                }
+                                arguments: {"plan": _plans[index]}
                             )),
                             child: Row(
                               children: [
-                                Container(
-                                  height: 70,
-                                  width: 70,
-                                  margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
-                                  decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                        image: AssetImage(_plans[index]["imgPath"]),
-                                        fit: BoxFit.cover,
-                                        colorFilter: ColorFilter.mode(
-                                            Colors.black.withOpacity(0.3), BlendMode.darken
-                                        ),
-                                      ),
-                                      borderRadius: BorderRadius.circular(4)
-                                  ),
-                                ),
+                                planBgImage(_plans[index]),
                                 Expanded(
-                                  child: Text(_plans[index]["label"], style: const TextStyle(fontSize: 14)),
+                                  child: Text(_plans[index].label, style: const TextStyle(fontSize: 14)),
                                 )
                               ],
                             ),

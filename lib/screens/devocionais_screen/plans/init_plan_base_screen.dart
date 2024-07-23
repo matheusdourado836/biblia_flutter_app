@@ -1,6 +1,6 @@
 import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
-import 'package:biblia_flutter_app/models/enums.dart';
+import 'package:biblia_flutter_app/models/plan.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/init_plan_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,14 +12,9 @@ import '../widgets/cancel_plan_dialog.dart';
 late PlansProvider _plansProvider;
 
 class InitPlanBaseScreen extends StatefulWidget {
-  final PlanType planType;
-  final String label;
-  final int qtdChapters;
-  final int duration;
-  final int? bibleLength;
-  final bool? isNewTestament;
+  final Plan plan;
   final bool? openedFromNotification;
-  const InitPlanBaseScreen({super.key, required this.planType, required this.qtdChapters, this.openedFromNotification, required this.duration, this.bibleLength, required this.label, this.isNewTestament});
+  const InitPlanBaseScreen({super.key, required this.plan, this.openedFromNotification});
 
   @override
   State<InitPlanBaseScreen> createState() => _InitPlanBaseScreenState();
@@ -29,8 +24,8 @@ class _InitPlanBaseScreenState extends State<InitPlanBaseScreen> {
   @override
   void initState() {
     _plansProvider = Provider.of<PlansProvider>(context, listen: false);
-    _plansProvider.checkIfPlanStarted(planType: widget.planType);
-    _plansProvider.checkPlanNotificationStatus(planType: widget.planType);
+    _plansProvider.checkIfPlanStarted(planType: widget.plan.planType);
+    _plansProvider.checkPlanNotificationStatus(planType: widget.plan.planType);
     checkNotificationPermission();
     super.initState();
   }
@@ -55,12 +50,12 @@ class _InitPlanBaseScreenState extends State<InitPlanBaseScreen> {
             }
 
             if(value.currentPlan != null) {
-              return _DaysList(label: widget.label, planType: widget.planType, qtdChapters: widget.qtdChapters, bibleLength: widget.bibleLength, isNewTestament: widget.isNewTestament,);
+              return _DaysList(plan: widget.plan);
             }
 
             return InitPlanWidget(
-                planType: widget.planType,
-                onPressed: () => value.startReadingPlan(planId: widget.planType, durationDays: widget.duration, bibleLength: widget.bibleLength, isNewTestament: widget.isNewTestament)
+                plan: widget.plan,
+                onPressed: () => value.startReadingPlan(plan: widget.plan)
             );
           }
       ),
@@ -69,12 +64,8 @@ class _InitPlanBaseScreenState extends State<InitPlanBaseScreen> {
 }
 
 class _DaysList extends StatefulWidget {
-  final String label;
-  final PlanType planType;
-  final int qtdChapters;
-  final int? bibleLength;
-  final bool? isNewTestament;
-  const _DaysList({required this.label, required this.planType, required this.qtdChapters, this.bibleLength, this.isNewTestament});
+  final Plan plan;
+  const _DaysList({required this.plan});
 
   @override
   State<_DaysList> createState() => _DaysListState();
@@ -84,8 +75,8 @@ class _DaysListState extends State<_DaysList> {
 
   @override
   void initState() {
-    _plansProvider.getDailyReads(progressId: widget.planType.code);
-    _plansProvider.generateChapters(widget.qtdChapters, widget.planType, bibleLength: widget.bibleLength, isNewTestament: widget.isNewTestament);
+    _plansProvider.getDailyReads(progressId: widget.plan.planType.code);
+    _plansProvider.generateChapters(widget.plan.qtdChapters, widget.plan.planType, bibleLength: widget.plan.bibleLength, isNewTestament: widget.plan.isNewTestament);
     super.initState();
   }
 
@@ -100,7 +91,7 @@ class _DaysListState extends State<_DaysList> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
-              Text(widget.label),
+              Text(widget.plan.label),
               PopupMenuButton(
                   color: Theme.of(context).colorScheme.secondary,
                   itemBuilder: (context) {
@@ -114,7 +105,7 @@ class _DaysListState extends State<_DaysList> {
                                 if(!value.planNotificationStatus) {
 
                                 }
-                                value.updatePlanNotification(planType: widget.planType, status: !value.planNotificationStatus);
+                                value.updatePlanNotification(planType: widget.plan.planType, status: !value.planNotificationStatus);
                               }),
                               icon: Icon(
                                   (!value.planNotificationStatus) ? Icons.notifications : Icons.notifications_off,
@@ -129,7 +120,7 @@ class _DaysListState extends State<_DaysList> {
                         padding: EdgeInsets.zero,
                         child: TextButton.icon(
                           onPressed: (() {
-                            _plansProvider.dropDb(planType: widget.planType, progressId: widget.planType.code);
+                            _plansProvider.dropDb(planType: widget.plan.planType, progressId: widget.plan.planType.code);
                           }),
                           icon: const Icon(Icons.info, color: Colors.white), label: const Text('Informações', style: TextStyle(color: Colors.white)),
                         ),
@@ -142,7 +133,7 @@ class _DaysListState extends State<_DaysList> {
                               builder: (context) => CancelPlanDialog(
                                   execute: (() {
                                     Navigator.pop(context, true);
-                                    _plansProvider.dropDb(planType: widget.planType, progressId: widget.planType.code);
+                                    _plansProvider.dropDb(planType: widget.plan.planType, progressId: widget.plan.planType.code);
                                     setState(() {});
                                   })
                               )
@@ -165,7 +156,7 @@ class _DaysListState extends State<_DaysList> {
                 );
               }
 
-              return DaysByMonthList(qtdChapters: widget.qtdChapters);
+              return DaysByMonthList(qtdChapters: widget.plan.qtdChapters);
             },
           ),
         )

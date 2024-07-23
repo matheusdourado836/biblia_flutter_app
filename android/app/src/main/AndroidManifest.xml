@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bibleWise.biblia_flutter_app"
+<<<<<<< HEAD
     android:versionCode="43"
+=======
+    android:versionCode="46"
+>>>>>>> 73c1e3be816620f848414631e22aaf64dcbe7a09
     android:versionName="7.0.0" >
     <queries>
         <intent>

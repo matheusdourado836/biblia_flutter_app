@@ -114,7 +114,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     final screenSize = MediaQuery.of(context).size.width;
     final screenOrientation = MediaQuery.of(context).orientation;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Container(
         height: (screenOrientation == Orientation.landscape && screenSize < 900) ? MediaQuery.of(context).size.height * .57 : MediaQuery.of(context).size.height * .29,
         decoration: BoxDecoration(
@@ -142,7 +142,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                   ),
                   Text(
                     '    Progresso: ${_formatValue(readBooks / 66)}%',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
@@ -151,7 +151,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
               padding: const EdgeInsets.fromLTRB(20.0, 16.0, 0.0, 12.0),
               child: Text(
                 'Livros Lidos:\n$readBooks / 66',
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16),
               ),
             ),
           ],
@@ -161,18 +161,20 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Widget _aiWidget() {
+    final today = DateTime.now();
+    bool removeBadge = today.year == 2024 && today.month == 9 && today.day == 18;
     return ListTileDrawer(
       onTap: (() => (showAd()) ? _showInterstitialAd() : Navigator.pushNamed(context, 'ai_screen')),
       leading: Icons.lightbulb,
       title: 'Pesquisa com IA',
-      trailing: Container(
+      trailing: removeBadge ? const SizedBox() : Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: Theme.of(context).colorScheme.primary),
           color: Theme.of(context).colorScheme.primary
         ),
-        child: const Text('BETA', style: TextStyle(fontSize: 8, color: Colors.white),),
+        child: const Text('NOVO', style: TextStyle(fontSize: 8, color: Colors.white),),
       ),
     );
   }
@@ -220,15 +222,26 @@ class _HomeDrawerState extends State<HomeDrawer> {
          },
        ),
        titleTextStyle: Theme.of(context).textTheme.bodyMedium,
-       title: const Text('Trocar modo do app')
+       title: const Text('Trocar modo do app', style: TextStyle(fontSize: 14))
     );
   }
 
   Widget _devocionaisWidget() {
+    final today = DateTime.now();
+    bool removeBadge = today.year == 2024 && today.month == 9 && today.day == 18;
     return ListTileDrawer(
-        onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
-        leading: Icons.menu_book_rounded,
-        title: 'Devocionais'
+      onTap: (() => Navigator.pushNamed(context, 'devocionais_screen')),
+      leading: Icons.menu_book_rounded,
+      title: 'Devocionais',
+      trailing: removeBadge ? const SizedBox() : Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Theme.of(context).colorScheme.primary),
+            color: Theme.of(context).colorScheme.primary
+        ),
+        child: const Text('NOVO', style: TextStyle(fontSize: 8, color: Colors.white),),
+      ),
     );
   }
 
@@ -259,7 +272,7 @@ class ListTileDrawer extends StatelessWidget {
         leading,
       ),
       titleTextStyle: Theme.of(context).textTheme.bodyMedium,
-      title: Text(title),
+      title: Text(title, style: const TextStyle(fontSize: 14),),
       trailing: trailing,
     );
   }
@@ -288,7 +301,6 @@ class _PortraitDrawer extends StatelessWidget {
                 : Column(
         children: [
           readingProgressWidget,
-          const SizedBox(height: 15),
           savedVersesWidget,
           const SizedBox(height: 15),
           annotationsWidget,
@@ -361,7 +373,6 @@ class _LandscapeDrawer extends StatelessWidget {
                   Column(
                     children: [
                       readingProgressWidget,
-                      const SizedBox(height: 15),
                       savedVersesWidget,
                       const SizedBox(height: 15),
                       annotationsWidget,

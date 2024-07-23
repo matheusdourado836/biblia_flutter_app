@@ -212,9 +212,12 @@ class _OptionsState extends State<Options> {
                                   onTap: () => showDialog(
                                       context: context,
                                       barrierDismissible: false,
-                                      builder: (context) => ProgressDialog(versionName: versionToName(option))
+                                      builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: option.split(' ')[0])
                                   ).whenComplete(() {
-                                    Navigator.pop(context);
+                                    value.loadBibleData().whenComplete(() {
+                                      Navigator.pop(context);
+                                      setState(() {});
+                                    });
                                   }),
                                   child: Row(
                                     children: [

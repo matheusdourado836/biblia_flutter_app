@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -28,7 +29,7 @@ class ThematicService {
 
       return thematicDevocionais;
     }catch(e) {
-      print('NAO FOI POSSIVEL RECUPERAR OS DEVOCIONAIS $e');
+      alertDialog(title: 'Erro', content: 'Não foi possível recuperar os devocionais\n${e.toString()}');
       return [];
     }
   }

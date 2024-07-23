@@ -17,3 +17,20 @@ String versionToName(String version) {
       return formattedVersion;
   }
 }
+
+String nameToVersion(String name) {
+  switch(name) {
+    case 'el_greek':
+      return 'grego';
+    case 'en_kjv':
+      return 'kjv';
+    case 'en_bbe':
+      return 'bbe';
+    case 'fr':
+      return 'apee';
+    case 'es_rvr':
+      return 'rvr';
+    default:
+      return name;
+  }
+}
