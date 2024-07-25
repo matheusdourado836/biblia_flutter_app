@@ -43,7 +43,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
 
   void showTutorial() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
-    if(!devocionalProvider.tutorials.contains('tutorial 5') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+    if(!devocionalProvider.tutorials.contains('tutorial 5') && MediaQuery.of(context).orientation == Orientation.portrait) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       initTargets();
       _coachMark = TutorialCoachMark(

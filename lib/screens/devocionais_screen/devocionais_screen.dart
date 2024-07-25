@@ -93,7 +93,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) => devocionalProvider.getThematicDevocionais().whenComplete(() {
       _removeBackground.value = true;
-      if(devocionalProvider.thematicDevocionais.isNotEmpty && !devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600)) {
+      if(devocionalProvider.thematicDevocionais.isNotEmpty && (!devocionalProvider.tutorials.contains('tutorial 2') && (MediaQuery.of(context).orientation == Orientation.portrait || MediaQuery.of(context).size.height > 600))) {
         initTargets();
         _coachMark = TutorialCoachMark(
             onClickTarget: (target) async {
@@ -231,7 +231,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                 options: CarouselOptions(
                   padEnds: false,
                   enableInfiniteScroll: false,
-                  aspectRatio: 10/4,
+                  aspectRatio: MediaQuery.of(context).size.width > 500 ? 16/4 : 10/4,
                   viewportFraction: .65
                 ),
                 items: value.thematicDevocionais.map((thematicDevocional) {

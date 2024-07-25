@@ -159,7 +159,6 @@ class _CommentsSectionState extends State<CommentsSection> {
                                   final comment = Comentario(
                                     name: _nameController.text,
                                     comment: _commentController.text,
-                                    qtdCurtidas: 0,
                                     createdAt: DateTime.now().toIso8601String(),
                                   );
                                   _devocionalProvider.postComment(devocionalId: widget.devocionalId, comentario: comment).whenComplete(() {

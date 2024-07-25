@@ -40,6 +40,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     return Scaffold(
       body: FutureBuilder<Map<String, dynamic>>(
         future: futureRandomVerses,
@@ -97,7 +98,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                                               fontFamily: 'Poppins',
                                               fontWeight: FontWeight.w500,
                                               color: Colors.white,
-                                              fontSize: calculateFontSize(verse.length)
+                                              fontSize: calculateFontSize(verse.length, height)
                                             )
                                         )
                                       ]),

@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../data/verses_provider.dart';
 import '../../../data/version_provider.dart';
 import '../../../helpers/version_to_name.dart';
-import 'loading_verses_widget.dart';
+import 'verses_widget.dart';
 
 class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String bookName;
@@ -70,7 +70,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
     final double dx = (width - width * .2) * -1;
     return AppBar(
       titleSpacing: 0,
-      leadingWidth: 70,
+      leadingWidth: 85,
       toolbarHeight: kToolbarHeight + 20,
       automaticallyImplyLeading: false,
       leading: Padding(

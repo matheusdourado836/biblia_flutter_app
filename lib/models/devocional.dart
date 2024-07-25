@@ -80,14 +80,12 @@ class Comentario {
   String? autorId;
   String? name;
   String? comment;
-  int qtdCurtidas;
   String? createdAt;
 
   Comentario(
       {this.id,
         required this.name,
       required this.comment,
-      required this.qtdCurtidas,
       required this.createdAt,
       this.autorId,});
 
@@ -96,7 +94,6 @@ class Comentario {
       autorId: json["autorId"],
       name: json["name"],
       comment: json["comment"],
-      qtdCurtidas: json["qtdCurtidas"],
       createdAt: json["createdAt"]
   );
 
@@ -106,7 +103,6 @@ class Comentario {
     data["autorId"] = autorId;
     data["name"] = name;
     data["comment"] = comment;
-    data["qtdCurtidas"] = qtdCurtidas;
     data["createdAt"] = createdAt;
 
     return data;
