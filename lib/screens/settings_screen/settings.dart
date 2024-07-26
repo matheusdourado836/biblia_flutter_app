@@ -70,8 +70,6 @@ class _OptionsState extends State<Options> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final textColor = themeProvider.isOn ? Colors.black : Colors.white;
     return Consumer<VersesProvider>(
       builder: (context, versesValue, _) {
         versesValue.getFontSize();
@@ -98,9 +96,7 @@ class _OptionsState extends State<Options> {
                                   title: Text(
                                       '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: _sliderValue,
-                                          color: textColor)),
+                                      style: TextStyle(fontSize: _sliderValue)),
                                   content: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -113,16 +109,13 @@ class _OptionsState extends State<Options> {
                                       Slider(
                                           inactiveColor: Theme.of(context)
                                               .colorScheme
-                                              .background,
+                                              .secondary,
                                           value: _sliderValue,
                                           min: 8.0,
                                           max: 40.0,
                                           onChanged: (double value) {
-                                            setState(() {
-                                              _sliderValue = value;
-                                            });
-                                            versesValue.newFontSize(
-                                                _sliderValue, false);
+                                            setState(() => _sliderValue = value);
+                                            versesValue.newFontSize(_sliderValue, false);
                                           }),
                                     ],
                                   ),
@@ -272,14 +265,14 @@ class _OptionsState extends State<Options> {
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
                       return SizedBox(
-                        width: 140,
+                        width: 150,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: AnimatedToggleSwitch<bool>.dual(
                             current: !themeValue.isOn,
                             first: false,
                             second: true,
-                            spacing: 55.0,
+                            spacing: 50.0,
                             style: const ToggleStyle(
                               borderColor: Colors.transparent,
                               boxShadow: [

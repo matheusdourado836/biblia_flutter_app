@@ -21,8 +21,11 @@ import '../verses_screen.dart';
 
 ItemScrollController? itemScrollController;
 final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
+bool isChapterRead = false;
+DailyRead? dailyRead;
+bool isLastDay = false;
 
-class LoadingVersesWidget extends StatefulWidget {
+class VersesWidget extends StatefulWidget {
   final String bookName;
   final String abbrev;
   final int bookIndex;
@@ -31,7 +34,7 @@ class LoadingVersesWidget extends StatefulWidget {
   final bool? readingPlan;
   final Map<int, dynamic> listVerses;
 
-  const LoadingVersesWidget({
+  const VersesWidget({
     super.key,
     required this.bookName,
     required this.abbrev,
@@ -42,27 +45,24 @@ class LoadingVersesWidget extends StatefulWidget {
   });
 
   @override
-  State<LoadingVersesWidget> createState() => _LoadingVersesWidgetState();
+  State<VersesWidget> createState() => _VersesWidgetState();
 }
 
-class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
+class _VersesWidgetState extends State<VersesWidget> {
   List<Map<String, dynamic>> listMap = [];
   final ThemeColors themeColors = ThemeColors();
   final BibleDataController bibleDataController = BibleDataController();
   final BooksDao booksDao = BooksDao();
-  bool isChapterRead = false;
   int _chapter = 1;
   PlansProvider? _planProvider;
   late VersesProvider _versesProvider;
-  DailyRead? _dailyRead;
-  bool _isLastDay = false;
 
   @override
   void initState() {
     if(widget.readingPlan != null) {
       _planProvider = Provider.of<PlansProvider>(context, listen: false);
-      _dailyRead = _planProvider!.dailyReads.firstWhere((element) => element.chapter == '${widget.bookName} ${widget.chapter}');
-      _isLastDay = _planProvider!.dailyReadsGrouped[_planProvider!.dailyReadsGrouped.length - 2].contains(_dailyRead);
+      dailyRead = _planProvider!.dailyReads.firstWhere((element) => element.chapter == '${widget.bookName} ${widget.chapter}');
+      isLastDay = _planProvider!.dailyReadsGrouped[_planProvider!.dailyReadsGrouped.length - 2].contains(dailyRead);
     }
     _chapter = widget.chapter;
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
@@ -132,10 +132,10 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                             }
                             setState(() => isChapterRead = !isChapterRead);
                           }else {
-                            final currentPlan = PlanType.fromCode(_dailyRead!.progressId!);
-                            _dailyRead!.completed == 1 ? _dailyRead!.completed = 0 : _dailyRead!.completed = 1;
-                            _planProvider!.markChapter(_dailyRead!.chapter!, read: _dailyRead!.completed!, progressId: _dailyRead!.progressId!, update: true);
-                            _planProvider!.checkIfCompletedDailyRead(planId: _dailyRead!.progressId!, qtdChapterRequired: planTypeToChapters(planType: currentPlan, lastDay: _isLastDay ? true : null));
+                            final currentPlan = PlanType.fromCode(dailyRead!.progressId!);
+                            dailyRead!.completed == 1 ? dailyRead!.completed = 0 : dailyRead!.completed = 1;
+                            _planProvider!.markChapter(dailyRead!.chapter!, read: dailyRead!.completed!, progressId: dailyRead!.progressId!, update: true);
+                            _planProvider!.checkIfCompletedDailyRead(planId: dailyRead!.progressId!, qtdChapterRequired: planTypeToChapters(planType: currentPlan, lastDay: isLastDay ? true : null));
                             setState(() {});
                           }
                         }),
@@ -147,7 +147,7 @@ class _LoadingVersesWidgetState extends State<LoadingVersesWidget> {
                         ),
                         child: (widget.readingPlan == null)
                             ? Text((isChapterRead) ? 'Desmarcar como lido' : 'Marcar como lido', style: const TextStyle(color: Colors.white))
-                            : Text((_dailyRead!.completed == 1) ? 'Desmarcar leitura diária' : 'Marcar leitura diária', style: const TextStyle(color: Colors.white)),
+                            : Text((dailyRead!.completed == 1) ? 'Desmarcar leitura diária' : 'Marcar leitura diária', style: const TextStyle(color: Colors.white)),
                       ),
                     )
                   ],

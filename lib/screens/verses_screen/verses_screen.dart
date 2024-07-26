@@ -2,7 +2,7 @@ import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/app_bar.dart';
-import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_widget.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_floating_action_button.dart';
 import 'package:flutter/material.dart';
@@ -94,7 +94,7 @@ class _VersesScreenState extends State<VersesScreen> {
                   controller: _pageController,
                   itemCount: _chapters,
                   itemBuilder: (BuildContext context, int i) {
-                    return LoadingVersesWidget(
+                    return VersesWidget(
                       bookName: widget.bookName,
                       abbrev: widget.abbrev,
                       bookIndex: widget.bookIndex,
@@ -131,10 +131,12 @@ class _VersesScreenState extends State<VersesScreen> {
         builder: (context, item, child) {
           return VersesFloatingActionButton(
             notScrolling: notScrolling,
+            bookName: widget.bookName,
             chapter: _chapter,
             chapters: _chapters,
             verses: item.allVerses![_chapter],
-            pageController: _pageController
+            pageController: _pageController,
+            readingPlan: widget.readingPlan,
           );
         },
       ),

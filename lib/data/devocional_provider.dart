@@ -37,16 +37,21 @@ class DevocionalProvider extends ChangeNotifier {
     _devocionais = [];
     _devocionais = await _service.getDevocionais(limit: limit);
     if(_devocionais?.isNotEmpty ?? false) {
+      _devocionais!.sort((a, b) => b.qtdCurtidas! > a.qtdCurtidas! ? 0 : 1);
       _devocionais!.sort((a, b) {
         final createdDateA = DateTime.parse(a.createdAt!);
         final createdDateB = DateTime.parse(b.createdAt!);
-        if(createdDateA.difference(DateTime.now()).inDays == 0) {
+
+        if(DateTime.now().difference(createdDateA).inHours <= 24) {
+          final differenceA = DateTime.now().difference(createdDateA).inHours;
+          final differenceB = DateTime.now().difference(createdDateB).inHours;
+          if(differenceB <= 24) {
+            return differenceB.compareTo(differenceA);
+          }
+
           return 0;
         }
-        if(createdDateA.day == createdDateB.day && createdDateA.month == createdDateB.month && createdDateA.year == createdDateB.year) {
-          return a.qtdCurtidas! > b.qtdCurtidas! ? 0 : 1;
-        }
-        return createdDateA.isBefore(createdDateB) ? 1 : 0;
+        return b.qtdCurtidas! > a.qtdCurtidas! ? 0 : 1;
       });
     }
     isLoading = false;

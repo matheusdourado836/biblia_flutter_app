@@ -1,6 +1,6 @@
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

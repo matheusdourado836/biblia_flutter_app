@@ -30,7 +30,7 @@ enum Status {
 enum ReportReason {
   SEXUAL_CONTENT('Conteúdo sexual'),
   VIOLENT_OR_REPULSIVE_CONTENT('Conteúdo violento ou repulsivo'),
-  HATESPEECH_OR_ABUSE('Conteúdo de incitação ao ódio ou abusivo'),
+  HATESPEECH_OR_ABUSE('Ódio gratuito'),
   BULLYING_OR_HARASSMENT('Assédio ou bullying'),
   VIOLATE_MY_RIGHTS('Viola meus direitos'),
   NOT_LISTED('Não listado');

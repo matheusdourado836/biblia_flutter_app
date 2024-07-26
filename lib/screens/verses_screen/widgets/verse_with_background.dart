@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
@@ -6,6 +5,7 @@ import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../helpers/calculate_font_size.dart';
 import '../../home_screen/widgets/random_verse_widget.dart';
@@ -59,6 +59,10 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
 
   @override
   void initState() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     for(var text in widget.content) {
       length += text["verse"].toString().length;
     }
@@ -74,8 +78,20 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
   }
 
   @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     return Scaffold(
       body: FutureBuilder<String>(
         future: futureBackground,
@@ -96,23 +112,24 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             colorFilter: ColorFilter.mode(
                                 Colors.black.withOpacity(0.5), BlendMode.darken
                             ),
-                            opacity: 0.8,
+                            opacity: .9,
                             image: CachedNetworkImageProvider(snapshot.data!),
                             fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high
                           ) : null,
                         ),
                         child: Column(
-                          mainAxisAlignment: (length < 360) ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                          mainAxisAlignment: (length < 360 || height >= 800) ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 48.0),
+                              padding: EdgeInsets.only(top: (length < 360) ? 0.0 : 72.0),
                               child: Text(
                                 'BibleWise',
                                 style: Theme.of(context).textTheme.displayLarge,
                               ),
                             ),
                             Padding(
-                              padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 56.0, top: (length < 360) ? 0 : 40),
+                              padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 56.0, top: (length < 360 || height >= 800) ? 0 : 40),
                               child: Column(
                                 children: [
                                   Text(reference, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
@@ -121,9 +138,9 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                                         widget.content[i]["verse"],
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.w600,
                                             color: Colors.white,
-                                            fontSize: calculateFontSize(length)
+                                            fontSize: calculateFontSize(length, height)
                                         )
                                     ),
                                 ],
@@ -143,51 +160,41 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                     child: Column(
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Padding(
-                              padding:
-                              const EdgeInsets.only(right: 32, bottom: 6.0),
-                              child: IconButton(
-                                onPressed: (() {
-                                  setState(() => realign = true);
-                                  versesProvider.shareImageAndText();
-                                }),
-                                icon: const Icon(Icons.share),
-                                iconSize: 32,
-                                color: Colors.white,
-                              ),
+                            IconButton(
+                              onPressed: (() {
+                                setState(() => realign = true);
+                                versesProvider.shareImageAndText();
+                              }),
+                              icon: const Icon(Icons.share),
+                              iconSize: 32,
+                              color: Colors.white,
                             ),
-                            Padding(
-                              padding:
-                              const EdgeInsets.only(left: 32, bottom: 6.0),
-                              child: IconButton(
-                                onPressed: (() {
-                                  for(var element in widget.content) {
-                                    element["isSelected"] = true;
-                                  }
-                                  versesProvider.copyVerses(widget.content);
-                                }),
-                                icon: const Icon(Icons.copy),
-                                iconSize: 32,
-                                color: Colors.white,
-                              ),
+                            IconButton(
+                              onPressed: (() {
+                                for(var element in widget.content) {
+                                  element["isSelected"] = true;
+                                }
+                                versesProvider.copyVerses(widget.content);
+                              }),
+                              icon: const Icon(Icons.copy),
+                              iconSize: 32,
+                              color: Colors.white,
                             ),
                           ],
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: Platform.isAndroid ? 16.0 : 0.0),
-                          child: ElevatedButton(
-                            onPressed: (() {
-                              Navigator.pop(context);
-                            }),
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all<Color>(Colors.transparent),
-                              side: WidgetStateProperty.all<BorderSide>(const BorderSide(color: Colors.white, width: 2)),
-                              fixedSize: WidgetStateProperty.all<Size>(Size(width * 0.7, 40)),
-                            ),
-                            child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
+                        // TODO TESTAR EM IPHONES SE VAI DAR CERTO SEM O PADDING BOTTOM 16.0
+                        ElevatedButton(
+                          onPressed: (() {
+                            Navigator.pop(context);
+                          }),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all<Color>(Colors.transparent),
+                            side: WidgetStateProperty.all<BorderSide>(const BorderSide(color: Colors.white, width: 2)),
+                            fixedSize: WidgetStateProperty.all<Size>(Size(width * 0.7, 40)),
                           ),
+                          child: Text('VOLTAR', style: Theme.of(context).textTheme.displayMedium!.copyWith(fontSize: 14)),
                         ),
                         SafeArea(
                           child: SizedBox(
@@ -197,22 +204,27 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               itemCount: 10,
                               itemBuilder: (context, index) {
                                 if(index == 0) {
-                                  return NewImageContainer(onTap: (() => setState(() {
-                                      _selectedColor = null;
-                                      futureBackground = service.getRandomImage();
-                                    }))
+                                  return NewImageContainer(
+                                    width: width,
+                                      onTap: (() => setState(() {
+                                        _selectedColor = null;
+                                        futureBackground = service.getRandomImage();
+                                      }))
                                   );
                                 }
                                 if(index == 9) {
-                                  return AddMoreContainer(onTap: (() => setState(() {
-                                    _generatedColors = [];
-                                    _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
-                                  })),
+                                  return AddMoreContainer(
+                                    width: width,
+                                    onTap: (() => setState(() {
+                                      _generatedColors = [];
+                                      _generatedColors = List<Color>.generate(10, (index) => generateRandomColor());
+                                    })),
                                   );
                                 }
                                 return ColorContainer(
                                   color: _selectedColor,
                                   listColors: _generatedColors[index],
+                                  width: width,
                                   onTap: (() => setState(() => _selectedColor = _generatedColors[index])),
                                 );
                             }),
@@ -237,7 +249,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                 ),
                 const Padding(
                   padding: EdgeInsets.only(bottom: 16.0),
-                  child: Text('Não foi possível carregar um Versículo aleatório. Por Favor tente novamente.',
+                  child: Text('Não foi possível carregar seu(s) versículo(s). Por Favor tente novamente.',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
                       textAlign: TextAlign.center),
                 ),
@@ -257,8 +269,9 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
 class ColorContainer extends StatelessWidget {
   final Color? color;
   final Color listColors;
+  final double width;
   final Function() onTap;
-  const ColorContainer({super.key, required this.color, required this.listColors, required this.onTap});
+  const ColorContainer({super.key, required this.color, required this.listColors, required this.onTap, required this.width});
 
   @override
   Widget build(BuildContext context) {
@@ -267,8 +280,8 @@ class ColorContainer extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: width * .17,
+            height: width * .17,
             color: listColors,
           ),
         ),
@@ -277,8 +290,8 @@ class ColorContainer extends StatelessWidget {
             : InkWell(
           onTap: onTap,
           child: Container(
-            width: 60,
-            height: 60,
+            width: width * .17,
+            height: width * .17,
             color: Colors.black.withOpacity(.45),
             child: const Icon(Icons.check, color: Colors.white, size: 32,),
           ),
@@ -289,14 +302,15 @@ class ColorContainer extends StatelessWidget {
 }
 
 class AddMoreContainer extends StatelessWidget {
+  final double width;
   final Function() onTap;
-  const AddMoreContainer({super.key, required this.onTap});
+  const AddMoreContainer({super.key, required this.onTap, required this.width});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 60,
-      height: 60,
+      width: width * .17,
+      height: width * .17,
       color: Colors.white,
       child: IconButton(
           onPressed: onTap, icon: const Icon(Icons.add)
@@ -306,18 +320,19 @@ class AddMoreContainer extends StatelessWidget {
 }
 
 class NewImageContainer extends StatelessWidget {
+  final double width;
   final Function() onTap;
-  const NewImageContainer({super.key, required this.onTap});
+  const NewImageContainer({super.key, required this.onTap, required this.width});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 60,
-        height: 60,
+        width: width * .17,
+        height: width * .17,
         color: Colors.white,
-        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),)),
+        child: const Center(child: Text('Nova\nImagem', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),)),
       ),
     );
   }
