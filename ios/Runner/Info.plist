@@ -258,5 +258,7 @@
 	<string>O aplicativo precisa acessar suas fotos para que você possa selecionar uma imagem.</string>
 	<key>NSCameraUsageDescription</key>
     <string>Este aplicativo precisa acessar a câmera para capturar fotos e vídeos.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app needs access to the microphone for Text-to-Speech functionality.</string>
 </dict>
 </plist>

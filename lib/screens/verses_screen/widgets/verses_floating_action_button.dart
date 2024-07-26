@@ -45,6 +45,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   PlansProvider? _planProvider;
 
   void initTts() {
+    _flutterTts.setLanguage("pt-BR");
     _flutterTts.getVoices.then((value) {
       final name = Platform.isAndroid ? "name" : "locale";
       List<Map> voices = List<Map>.from(value);
