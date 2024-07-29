@@ -13,17 +13,17 @@
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
+	<string>7.0</string>
 	<key>CFBundleName</key>
 	<string>biblia_flutter_app</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>6.3.0</string>
+	<string>7.0.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>6.3.0</string>
+	<string>7.0.0</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8180030689126961~9119639013</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -258,5 +258,7 @@
 	<string>O aplicativo precisa acessar suas fotos para que você possa selecionar uma imagem.</string>
 	<key>NSCameraUsageDescription</key>
     <string>Este aplicativo precisa acessar a câmera para capturar fotos e vídeos.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app needs access to the microphone for Text-to-Speech functionality.</string>
 </dict>
 </plist>
