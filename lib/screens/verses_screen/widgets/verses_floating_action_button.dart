@@ -70,7 +70,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   }
 
   void reset() {
-    _flutterTts.stop();
+    Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
     versesProvider.clearSelectedVerses(widget.verses);
     setState(() {_count = 0; _isSpeaking = false;});
   }
@@ -430,11 +430,11 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                           IconButton(
                               onPressed: (() {
                                 setState(() {
-                                  _count = 0;
+                                  //_count = 0;
                                   _isSpeaking = false;
                                 });
                                 versesProvider.clearSelectedVerses(widget.verses);
-                                _flutterTts.stop();
+                                Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
                               }),
                               icon: const Icon(CupertinoIcons.stop_fill, size: 32)
                           ),
@@ -446,7 +446,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
               ),
               const Divider(thickness: 1.5),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+                padding: (Platform.isAndroid) ? const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0) : const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                 child: Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   children: [

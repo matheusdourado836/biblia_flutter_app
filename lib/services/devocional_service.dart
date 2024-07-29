@@ -184,4 +184,26 @@ class DevocionalService {
       _database.collection('devocionais').doc(devocionalId).update({'qtdViews': FieldValue.increment(1)});
     }
   }
+  
+  Future<void> sendReview({required Devocional devocional, required String argument}) async {
+    await _database.collection('toReview').add({"devocionalId": devocional.id, "argument": argument});
+    return;
+  }
+
+  Future<void> deletePost(String devocionalId) async {
+    final bgImageData = await _storage.ref().child('devocionais/$devocionalId/bgImage').listAll();
+    final bgUserImageData = await _storage.ref().child('devocionais/$devocionalId/bgUserImage').listAll();
+    if(bgImageData.items.isNotEmpty) {
+      for (var item in bgImageData.items) {
+        await item.delete();
+      }
+    }
+    if(bgUserImageData.items.isNotEmpty) {
+      for (var item in bgUserImageData.items) {
+        await item.delete();
+      }
+    }
+
+    return await _database.collection('devocionais').doc(devocionalId).delete();
+  }
 }

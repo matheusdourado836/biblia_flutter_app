@@ -15,6 +15,7 @@ class Devocional {
   int? qtdCurtidas;
   int? qtdViews;
   bool? public;
+  String? rejectReason;
 
   Devocional(
       {this.id,
@@ -32,7 +33,9 @@ class Devocional {
       this.qtdComentarios,
       this.qtdCurtidas,
       this.qtdViews,
-      this.public});
+      this.public,
+      this.rejectReason
+      });
 
   Devocional.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -51,6 +54,7 @@ class Devocional {
     qtdCurtidas = json['qtdCurtidas'];
     qtdViews = json['qtdViews'];
     public = json["public"];
+    rejectReason = json["rejectReason"];
   }
 
   Map<String, dynamic> toJson() {
@@ -71,6 +75,7 @@ class Devocional {
     data['qtdCurtidas'] = qtdCurtidas;
     data['qtdViews'] = qtdViews;
     data["public"] = public;
+    data["rejectReason"] = rejectReason;
     return data;
   }
 }

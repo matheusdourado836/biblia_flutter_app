@@ -4,7 +4,11 @@ String formattedDate({required String dateString}) {
   String month = createdAt.month < 10 ? '0${createdAt.month}' : createdAt.month.toString();
   int year = createdAt.year;
 
-  return '$day/$month/$year';
+  if(DateTime.now().difference(createdAt).inHours <= 24) {
+    return 'Hoje';
+  }
+
+  return 'Em $day/$month/$year';
 }
 
 String planStringDate(DateTime date) {

@@ -7,6 +7,7 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_s
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/create_devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/reject_reason_dialog.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -106,6 +107,12 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
     WidgetsBinding.instance.addPostFrameCallback((_) {
       devocionalProvider.getDevocionais().whenComplete(() {
         if(devocionalProvider.devocionais?.isNotEmpty ?? false) {
+          setState(() {
+            _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+            _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+            _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+            _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+          });
           showTutorial();
         }
       });
@@ -166,7 +173,17 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
         backgroundColor: Theme.of(context).primaryColor,
         body: SafeArea(
           child: RefreshIndicator.adaptive(
-            onRefresh: () => _selectedPage == 0 ? devocionalProvider.getDevocionais() : devocionalProvider.getUserDevocionais(),
+            onRefresh: () => _selectedPage == 0
+                ? devocionalProvider.getDevocionais()
+                : devocionalProvider.getUserDevocionais().whenComplete(() {
+                    setState(() {
+                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                    });
+            })
+            ,
             child: Column(
               children: [
                 (_selectedPage == 0)
@@ -339,31 +356,106 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   }
 
   Widget _infoRow(Devocional devocional) {
-    if(_selectedPage == 0) {
-      return const SizedBox();
-    }
-    return Row(
-      children: [
-        const Text('Visualizações: '),
-        Text(formatInfoQuantity(devocional.qtdViews!)),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Text('Público'),
-              Transform.scale(
-                scale: .70,
-                child: Switch(value: devocional.public!, onChanged: (newValue) {
-                  devocional.public = newValue;
-                  devocionalProvider.updateUserData(devocional.id!, {"public": devocional.public});
-                  setState(() {});
-                }),
-              )
-            ],
+    if(_selectedPage == 2) {
+      if(devocional.status == 0) {
+        return Row(
+          children: [
+            const Text('Visualizações: '),
+            Text(formatInfoQuantity(devocional.qtdViews!)),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Público'),
+                      Transform.scale(
+                        scale: .70,
+                        child: Switch(value: devocional.public!, onChanged: (newValue) {
+                          devocional.public = newValue;
+                          devocionalProvider.updateUserData(devocional.id!, {"public": devocional.public});
+                          setState(() {});
+                        }),
+                      ),
+                      InkWell(
+                        onTap: () => showDialog(
+                          context: context,
+                          builder: (context) => DeletePostDialog(
+                            refresh: () => setState(() {
+                              _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                              _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                              _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+                              _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                            }),
+                            devocionalId: devocional.id!)
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.red
+                          ),
+                          child: const Icon(Icons.delete),
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        );
+      }
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ElevatedButton(
+            onPressed: () => showDialog(
+                context: context,
+                builder: (context) => RejectReasonDialog(devocional: devocional)
+            ).then((res) {
+              if(res ?? false) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido de revisão enviado')));
+              }
+            }),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+            ),
+            child: const Text('Ver motivo')
           ),
-        )
-      ],
-    );
+          ElevatedButton(
+              onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => DeletePostDialog(
+                    devocionalId: devocional.id!,
+                    refresh: () => setState(() {
+                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                    }),
+                  )
+              ),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.delete),
+                  SizedBox(width: 6),
+                  Text('Excluir'),
+                ],
+              )
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox();
   }
 }
 
@@ -512,10 +604,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                               .scaleXY(begin: 1.2, delay: 180.ms)
                               .scaleXY(begin: 1.2, duration: 180.ms)
                               .scaleXY(begin: .8, delay: 360.ms)
-                              // .moveY(delay: 650.ms, duration: 800.ms, begin: 0, end: -500)
-                              // .shake(duration: 500.ms)
                               .fadeOut(delay: 500.ms)
-                              //.scaleXY(delay: 1000.ms, end: 0)
                       )
                     ],
                   )),
@@ -552,10 +641,32 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                         children: [
                           SizedBox(
                             width: constraints.maxWidth * .5,
-                              child: Text(widget.devocional.nomeAutor!, overflow: TextOverflow.ellipsis, maxLines: 1, style: const TextStyle(color: Colors.white, fontSize: 12))
+                            child: (widget.devocional.nomeAutor! != 'BibleWise')
+                              ? Text(
+                                widget.devocional.nomeAutor!,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: const TextStyle(color: Colors.white, fontSize: 12)
+                              )
+                              : Row(
+                                children: [
+                                  Text(
+                                      widget.devocional.nomeAutor!,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: const TextStyle(
+                                        color: Colors.lightBlue,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                      )
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(Icons.verified, color: Colors.blue, size: 14,)
+                                ],
+                              )
                           ),
                           const SizedBox(height: 8),
-                          Text('Em $todayDate', style: const TextStyle(color: Colors.white, fontSize: 10))
+                          Text(todayDate, style: const TextStyle(color: Colors.white, fontSize: 10))
                         ],
                       )
                     ],
@@ -670,3 +781,49 @@ class NoBgUser extends StatelessWidget {
     );
   }
 }
+
+class DeletePostDialog extends StatefulWidget {
+  final String devocionalId;
+  final Function() refresh;
+  const DeletePostDialog({super.key, required this.refresh, required this.devocionalId});
+
+  @override
+  State<DeletePostDialog> createState() => _DeletePostDialogState();
+}
+
+class _DeletePostDialogState extends State<DeletePostDialog> {
+  bool _isLoading = false;
+  Widget _loading() => SizedBox(
+    height: 25,
+    width: 25,
+    child: CircularProgressIndicator(
+      color: Theme.of(context).colorScheme.primary,
+      strokeWidth: 2,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Exlcuir post?'),
+      actions: [
+        TextButton(
+            onPressed: () {
+              final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+              setState(() => _isLoading = true);
+              devocionalProvider.deletePost(widget.devocionalId).whenComplete(() {
+                devocionalProvider.getUserDevocionais().whenComplete(() {
+                  setState(() => _isLoading = false);
+                  widget.refresh();
+                  Navigator.pop(context);
+                });
+              });
+            },
+            child: (_isLoading) ? _loading() : const Text('Sim')
+        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Não')),
+      ],
+    );
+  }
+}
+

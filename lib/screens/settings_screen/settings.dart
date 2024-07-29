@@ -2,6 +2,8 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,7 +40,8 @@ class Options extends StatefulWidget {
 class _OptionsState extends State<Options> {
   late VersionProvider _versionProvider;
   String _selectedVersion = 'NVI (Nova Versão Internacional)';
-  double _sliderValue = 16.0;
+  ValueNotifier<double> _sliderValue = ValueNotifier(16.0);
+  //double _sliderValue = 16.0;
   double _savedSliderValue = 16.0;
 
   @override
@@ -52,7 +55,7 @@ class _OptionsState extends State<Options> {
   void getPreferences() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _sliderValue = prefs.getDouble('fontsize') ?? 16.0;
+      _sliderValue.value = prefs.getDouble('fontsize') ?? 16.0;
     });
   }
 
@@ -92,56 +95,55 @@ class _OptionsState extends State<Options> {
                               barrierDismissible: false,
                               context: context,
                               builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text(
-                                      '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: _sliderValue)),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _sliderValue.toStringAsFixed(0),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
-                                      ),
-                                      Slider(
-                                          inactiveColor: Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                          value: _sliderValue,
-                                          min: 8.0,
-                                          max: 40.0,
-                                          onChanged: (double value) {
-                                            setState(() => _sliderValue = value);
-                                            versesValue.newFontSize(_sliderValue, false);
-                                          }),
-                                    ],
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: (() {
-                                        versesValue.newFontSize(
-                                            _sliderValue, true);
-                                        setState(() {
-                                          _savedSliderValue = _sliderValue;
-                                        });
-                                        Navigator.pop(context);
-                                      }),
-                                      child: const Text('Salvar'),
-                                    ),
-                                    TextButton(
-                                      onPressed: (() {
-                                        setState(() {
-                                          _sliderValue = _savedSliderValue;
-                                        });
-                                        Navigator.pop(context);
-                                      }),
-                                      child: const Text('Cancelar'),
-                                    ),
-                                  ],
-                                );
+                                return ValueListenableBuilder(
+                                    valueListenable: _sliderValue,
+                                    builder: (context, value, _) {
+                                      return AlertDialog(
+                                        title: Text(
+                                            '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(fontSize: _sliderValue.value)),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _sliderValue.value.toStringAsFixed(0),
+                                              style: Theme.of(context).textTheme.bodyMedium,
+                                            ),
+                                            Slider(
+                                                inactiveColor: Theme.of(context).colorScheme.secondary,
+                                                value: _sliderValue.value,
+                                                min: 8.0,
+                                                max: 40.0,
+                                                onChanged: (double value) {
+                                                  _sliderValue.value = value;
+                                                  versesValue.newFontSize(_sliderValue.value, false);
+                                                }),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: (() {
+                                              versesValue.newFontSize(_sliderValue.value, true);
+                                              setState(() {
+                                                _savedSliderValue = _sliderValue.value;
+                                              });
+                                              Navigator.pop(context);
+                                            }),
+                                            child: const Text('Salvar'),
+                                          ),
+                                          TextButton(
+                                            onPressed: (() {
+                                              setState(() {
+                                                _sliderValue.value = _savedSliderValue;
+                                              });
+                                              Navigator.pop(context);
+                                            }),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                        ],
+                                      );
+                                    });
                               });
                         }),
                         child: Container(

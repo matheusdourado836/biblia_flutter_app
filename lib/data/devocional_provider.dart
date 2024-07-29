@@ -43,15 +43,16 @@ class DevocionalProvider extends ChangeNotifier {
         final createdDateB = DateTime.parse(b.createdAt!);
 
         if(DateTime.now().difference(createdDateA).inHours <= 24) {
-          final differenceA = DateTime.now().difference(createdDateA).inHours;
-          final differenceB = DateTime.now().difference(createdDateB).inHours;
-          if(differenceB <= 24) {
-            return differenceB.compareTo(differenceA);
+          final differenceA = DateTime.now().difference(createdDateA);
+          final differenceB = DateTime.now().difference(createdDateB);
+          if(differenceB.inHours <= 24) {
+            return differenceA.inMinutes.compareTo(differenceB.inMinutes);
           }
 
           return 0;
         }
-        return b.qtdCurtidas! > a.qtdCurtidas! ? 0 : 1;
+
+        return 1;
       });
     }
     isLoading = false;
@@ -147,5 +148,13 @@ class DevocionalProvider extends ChangeNotifier {
       _tutorials.add('tutorial $tutorialNumber');
       prefs.setStringList('tutorials', _tutorials);
     }
+  }
+
+  Future<void> sendReview({required Devocional devocional, required String argument}) async {
+    return await _service.sendReview(devocional: devocional, argument: argument);
+  }
+
+  Future<void> deletePost(String devocionalId) async {
+    return await _service.deletePost(devocionalId);
   }
 }

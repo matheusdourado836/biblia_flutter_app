@@ -129,7 +129,7 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                               ),
                             ),
                             Padding(
-                              padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 56.0, top: (length < 360 || height >= 800) ? 0 : 40),
+                              padding: EdgeInsets.only(left: 16.0, right: 16.0, bottom: 80.0, top: (length < 360 || height >= 800) ? 0 : 40),
                               child: Column(
                                 children: [
                                   Text(reference, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
@@ -184,7 +184,6 @@ class _VerseWithBackgroundState extends State<VerseWithBackground> {
                             ),
                           ],
                         ),
-                        // TODO TESTAR EM IPHONES SE VAI DAR CERTO SEM O PADDING BOTTOM 16.0
                         ElevatedButton(
                           onPressed: (() {
                             Navigator.pop(context);

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/devocional_saved_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
@@ -528,14 +529,7 @@ class _PostContainerState extends State<_PostContainer> {
   @override
   void initState() {
     Future.delayed(const Duration(seconds: 1), () => showTutorial());
-    String day = DateTime.now().day < 10
-        ? '0${DateTime.now().day}'
-        : DateTime.now().day.toString();
-    String month = DateTime.now().month < 10
-        ? '0${DateTime.now().month}'
-        : DateTime.now().month.toString();
-    int year = DateTime.now().year;
-    todayDate = '$day/$month/$year';
+    todayDate = formattedDate(dateString: DateTime.now().toIso8601String());
     super.initState();
   }
 
@@ -642,9 +636,14 @@ class _PostContainerState extends State<_PostContainer> {
                             width: MediaQuery.of(context).size.width * .48,
                             child: TextFormField(
                               controller: widget.nameController,
-                              validator: (value) => value?.isEmpty ?? true
-                                  ? 'o nome é obrigatório'
-                                  : null,
+                              validator: (value) {
+                                if(value?.isEmpty ?? true) {
+                                  return 'o nome é obrigatório';
+                                }
+                                if(value!.toLowerCase().contains('biblewise')) {
+                                  return 'esse nome não é permitido';
+                                }
+                              },
                               onChanged: (value) => widget.devocional.nomeAutor = value,
                               style: const TextStyle(color: Colors.white, fontSize: 12),
                               cursorColor: Colors.white,
@@ -659,7 +658,7 @@ class _PostContainerState extends State<_PostContainer> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text('Em $todayDate', style: const TextStyle(color: Colors.white, fontSize: 10))
+                          Text(todayDate, style: const TextStyle(color: Colors.white, fontSize: 10))
                         ],
                       )
                     ],
