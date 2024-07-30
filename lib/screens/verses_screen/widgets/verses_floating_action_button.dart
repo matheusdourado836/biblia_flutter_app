@@ -18,6 +18,7 @@ import '../../chapter_screen/chapter_screen.dart';
 final FlutterTts _flutterTts = FlutterTts();
 final versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
 bool _isSpeaking = false;
+bool _state = false;
 int _count = 0;
 String _selectedOption = '1x';
 double _speechRate = 0.5;
@@ -44,8 +45,9 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   bool _resetCounter = false;
   PlansProvider? _planProvider;
 
-  void initTts() {
+  void initTts() async {
     _flutterTts.setLanguage("pt-BR");
+    await _flutterTts.awaitSpeakCompletion(true);
     _flutterTts.getVoices.then((value) {
       final name = Platform.isAndroid ? "name" : "locale";
       List<Map> voices = List<Map>.from(value);
@@ -71,7 +73,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   }
 
   void reset() {
-    Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
+    _flutterTts.stop();
     versesProvider.clearSelectedVerses(widget.verses);
     setState(() {_count = 0; _isSpeaking = false;});
   }
@@ -155,26 +157,28 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     }
     initTts();
     _flutterTts.setCompletionHandler(() {
-      setState(() => _count++);
-      if(_resetCounter) {
-        setState(() {_count = 0; _resetCounter = false;});
-      }
-      if(_count == widget.verses.length) {
-        if(_chapter == _chapters) {
-          Navigator.pop(context);
+      if(!_state) {
+        setState(() => _count++);
+        if(_resetCounter) {
+          setState(() {_count = 0; _resetCounter = false;});
+        }
+        if(_count == widget.verses.length) {
+          if(_chapter == _chapters) {
+            Navigator.pop(context);
+            reset();
+            return;
+          }
           reset();
+          goToNextChapter();
+          initNextChapter();
           return;
         }
-        reset();
-        goToNextChapter();
-        initNextChapter();
-        return;
+        versesProvider.highlightSpeechBloc(widget.chapter, _count);
+        if(itemScrollController?.isAttached ?? false) {
+          itemScrollController!.scrollTo(index: _count, duration: 500.ms);
+        }
+        _flutterTts.speak(widget.verses[_count]["verse"]);
       }
-      versesProvider.highlightSpeechBloc(widget.chapter, _count);
-      if(itemScrollController?.isAttached ?? false) {
-        itemScrollController!.scrollTo(index: _count, duration: 500.ms);
-      }
-      _flutterTts.speak(widget.verses[_count]["verse"]);
     });
     super.initState();
   }
@@ -295,7 +299,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
   int _selectedVerse = _count + 1;
   Map<dynamic, dynamic> _language = {};
 
-  void updateSpeechRate(String selectedOption) {
+  Future<void> updateSpeechRate(String selectedOption) async {
     switch (selectedOption) {
       case '0.25x':
         _speechRate = 0.15;
@@ -315,17 +319,32 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
     }
 
     setState(() => _speechRate);
-    _flutterTts.pause().whenComplete(() => _flutterTts.setSpeechRate(_speechRate).whenComplete(() {
-      if(_isSpeaking) {
-        _flutterTts.speak(widget.verses[_count]["verse"]);
-      }
-    }));
+    if(Platform.isIOS) {
+      await _flutterTts.stop();
+      setState(() {
+        _state = true;
+        _isSpeaking = false;
+      });
+      _flutterTts.setSpeechRate(_speechRate);
+    }else {
+      _flutterTts.pause().whenComplete(() => _flutterTts.setSpeechRate(_speechRate).whenComplete(() {
+        if(_isSpeaking) {
+          _flutterTts.speak(widget.verses[_count]["verse"]);
+        }
+      }));
+    }
   }
 
-  void updateSpeechLanguage(String selectedLanguage) {
-    _flutterTts.pause();
+  void updateSpeechLanguage(String selectedLanguage) async {
+    Platform.isAndroid ? _flutterTts.pause() : _flutterTts.stop();
+    if(Platform.isIOS) {
+      setState(() {
+        _state = true;
+        _isSpeaking = false;
+      });
+    }
     final language = _voices.firstWhere((element) => element["voice"] == selectedLanguage);
-    widget.setVoice(language).whenComplete(() {
+    widget.setVoice(language).whenComplete(() async {
       if(_isSpeaking) {
         _flutterTts.speak(widget.verses[_count]["verse"]);
       }
@@ -334,22 +353,34 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
 
   void speakNextVerse() {
     if(_count < widget.verses.length) {
-      _flutterTts.pause();
-      setState(() => _count++);
-      scrollTo();
-      _flutterTts.speak(widget.verses[_count]["verse"]);
-      setState(() => _isSpeaking = true);
+      if(Platform.isIOS) {
+        _flutterTts.stop();
+        scrollTo();
+      }else {
+        _flutterTts.pause();
+        setState(() => _count++);
+        scrollTo();
+        _flutterTts.speak(widget.verses[_count]["verse"]);
+        setState(() => _isSpeaking = true);
+      }
     }
   }
 
   void speakPrevVerse() {
     if(_count > 0) {
-      _flutterTts.pause();
-      versesProvider.clearSelectedVerses(widget.verses);
-      setState(() => _count--);
-      scrollTo();
-      _flutterTts.speak(widget.verses[_count]["verse"]);
-      setState(() => _isSpeaking = true);
+      if(Platform.isIOS) {
+        _flutterTts.stop();
+        versesProvider.clearSelectedVerses(widget.verses);
+        setState(() => _count = _count - 2);
+        scrollTo();
+      }else {
+        _flutterTts.pause();
+        versesProvider.clearSelectedVerses(widget.verses);
+        setState(() => _count--);
+        scrollTo();
+        _flutterTts.speak(widget.verses[_count]["verse"]);
+        setState(() => _isSpeaking = true);
+      }
     }
   }
 
@@ -422,20 +453,23 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                               onPressed: (() {
                                 versesProvider.clearSelectedVerses(widget.verses);
                                 scrollTo();
-                                setState(() => _isSpeaking = !_isSpeaking);
+                                setState(() {
+                                  _isSpeaking = !_isSpeaking;
+                                  _state = false;
+                                });
                                 (!_isSpeaking) ? _flutterTts.pause() : _flutterTts.speak(widget.verses[_count]["verse"]);
                               }),
                               icon: Icon((_isSpeaking) ? CupertinoIcons.pause :  CupertinoIcons.play_fill, size: 40,)
                           ),
                           IconButton(onPressed: (() => speakNextVerse()), icon: const Icon(Icons.skip_next, size: 40)),
                           IconButton(
-                              onPressed: (() {
-                                setState(() {
-                                  //_count = 0;
-                                  _isSpeaking = false;
-                                });
+                              onPressed: (() async {
                                 versesProvider.clearSelectedVerses(widget.verses);
-                                Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
+                                _flutterTts.stop();
+                                setState(() {
+                                  _isSpeaking = false;
+                                  _state = true;
+                                });
                               }),
                               icon: const Icon(CupertinoIcons.stop_fill, size: 32)
                           ),
@@ -447,7 +481,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
               ),
               const Divider(thickness: 1.5),
               Padding(
-                padding: (Platform.isAndroid) ? const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0) : const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                padding: (Platform.isAndroid) ? const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0) : const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
                 child: Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   children: [
@@ -472,9 +506,19 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                                 _count = _selectedVerse - 1;
                               });
                               if(_isSpeaking){
-                                versesProvider.clearSelectedVerses(widget.verses);
-                                scrollTo();
-                                _flutterTts.speak(widget.verses[_count]["verse"]);
+                                if(Platform.isIOS) {
+                                  versesProvider.clearSelectedVerses(widget.verses);
+                                  scrollTo();
+                                  _flutterTts.stop();
+                                  setState(() {
+                                    _isSpeaking = false;
+                                    _state = true;
+                                  });
+                                }else {
+                                  versesProvider.clearSelectedVerses(widget.verses);
+                                  scrollTo();
+                                  _flutterTts.speak(widget.verses[_count]["verse"]);
+                                }
                               }
                             },
                             items: List.generate(widget.verses.length, (index) => DropdownMenuItem(value: index + 1, child: Center(child: Text('${index + 1}'))))
@@ -523,6 +567,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
           child: IconButton(
               alignment: Alignment.centerRight,
               onPressed: (() {
+                setState(() => _state = true);
                 widget.reset();
                 Navigator.pop(context);
               }),

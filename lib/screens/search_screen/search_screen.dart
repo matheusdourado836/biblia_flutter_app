@@ -184,7 +184,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             ).whenComplete(() {
                                               value.loadBibleData().whenComplete(() {
                                                 Navigator.pop(context);
-                                                setState(() {});
+                                                setState(() => _selectedOption = option);
                                               });
                                             }),
                                             child: Row(
@@ -212,8 +212,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                     onChanged: (newValue) {
                                       setState(() {
                                         _selectedOption = newValue!;
-                                        versionProvider
-                                            .changeVersion(newValue.toString());
+                                        versionProvider.changeVersion(newValue.toString());
                                       });
                                     },
                                     selectedItemBuilder: (BuildContext context) {

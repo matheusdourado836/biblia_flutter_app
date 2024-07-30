@@ -2,12 +2,9 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../data/theme_provider.dart';
 import '../../helpers/version_to_name.dart';
 import '../../helpers/progress_dialog.dart';
@@ -40,8 +37,7 @@ class Options extends StatefulWidget {
 class _OptionsState extends State<Options> {
   late VersionProvider _versionProvider;
   String _selectedVersion = 'NVI (Nova Versão Internacional)';
-  ValueNotifier<double> _sliderValue = ValueNotifier(16.0);
-  //double _sliderValue = 16.0;
+  final ValueNotifier<double> _sliderValue = ValueNotifier(16.0);
   double _savedSliderValue = 16.0;
 
   @override
@@ -211,7 +207,9 @@ class _OptionsState extends State<Options> {
                                   ).whenComplete(() {
                                     value.loadBibleData().whenComplete(() {
                                       Navigator.pop(context);
-                                      setState(() {});
+                                      setState(() => _selectedVersion = option);
+                                      setNewPreferredVersion(option);
+                                      _versionProvider.changeVersion(option.toString());
                                     });
                                   }),
                                   child: Row(

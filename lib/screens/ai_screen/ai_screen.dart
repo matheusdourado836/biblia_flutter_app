@@ -8,7 +8,6 @@ import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/bible_data.dart';
@@ -134,6 +133,8 @@ class _AiScreenState extends State<AiScreen> {
   @override
   Widget build(BuildContext context) {
     final history = _contents;
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final darkMode = !themeProvider.isOn;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -194,9 +195,11 @@ class _AiScreenState extends State<AiScreen> {
                               horizontal: 20,
                             ),
                             margin: const EdgeInsets.all(16),
-                            child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
+                            child: Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
                                 'Posso ajudá-lo a entender passagens bíblicas, explicar conceitos teológicos, fornecer informações sobre personagens e eventos bíblicos, e responder perguntas sobre a fé cristã.\n'
-                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃', style: TextStyle(color: Colors.black),),
+                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃',
+                              style: TextStyle(color: (darkMode) ? Colors.white : Colors.black),
+                            ),
                           )
                         ],
                       ),
