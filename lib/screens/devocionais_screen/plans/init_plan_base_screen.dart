@@ -91,7 +91,7 @@ class _DaysListState extends State<_DaysList> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
-              Text(widget.plan.label),
+              Expanded(child: Text(widget.plan.label)),
               PopupMenuButton(
                   color: Theme.of(context).colorScheme.secondary,
                   itemBuilder: (context) {
@@ -114,15 +114,6 @@ class _DaysListState extends State<_DaysList> {
                               label: Text(!value.planNotificationStatus ? 'Ativar notificações' : 'Desativar notificações', style: const TextStyle(color: Colors.white),),
                             );
                           },
-                        ),
-                      ),
-                      PopupMenuItem(
-                        padding: EdgeInsets.zero,
-                        child: TextButton.icon(
-                          onPressed: (() {
-                            _plansProvider.dropDb(planType: widget.plan.planType, progressId: widget.plan.planType.code);
-                          }),
-                          icon: const Icon(Icons.info, color: Colors.white), label: const Text('Informações', style: TextStyle(color: Colors.white)),
                         ),
                       ),
                       PopupMenuItem(

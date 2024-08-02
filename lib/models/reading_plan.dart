@@ -20,7 +20,7 @@ class ReadingPlan {
     id = json['id'];
     planId = json['plan_id'];
     durationDays = json['duration_days'];
-    startDate = formattedDate(dateString: json['start_date']);
+    startDate = formattedDate(dateString: json['start_date'], plan: true);
     currentDay = json['current_day'];
     completed = json['completed'];
   }

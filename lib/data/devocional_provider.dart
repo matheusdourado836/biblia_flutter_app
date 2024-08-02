@@ -85,6 +85,7 @@ class DevocionalProvider extends ChangeNotifier {
       isLoadingThematic = true;
       notifyListeners();
       _thematicDevocionais = await _thematicService.getDevocionais();
+      _thematicDevocionais.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
       isLoadingThematic = false;
       notifyListeners();
     }

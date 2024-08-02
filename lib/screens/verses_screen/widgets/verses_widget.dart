@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/books_dao.dart';
+import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/plan_type_to_days.dart';
 import 'package:biblia_flutter_app/models/enums.dart';
-import 'package:biblia_flutter_app/screens/chapter_screen/chapter_screen.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
@@ -49,6 +49,7 @@ class VersesWidget extends StatefulWidget {
 }
 
 class _VersesWidgetState extends State<VersesWidget> {
+  late ChaptersProvider chaptersProvider;
   List<Map<String, dynamic>> listMap = [];
   final ThemeColors themeColors = ThemeColors();
   final BibleDataController bibleDataController = BibleDataController();
@@ -59,6 +60,7 @@ class _VersesWidgetState extends State<VersesWidget> {
 
   @override
   void initState() {
+    chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
     if(widget.readingPlan != null) {
       _planProvider = Provider.of<PlansProvider>(context, listen: false);
       dailyRead = _planProvider!.dailyReads.firstWhere((element) => element.chapter == '${widget.bookName} ${widget.chapter}');
@@ -67,15 +69,9 @@ class _VersesWidgetState extends State<VersesWidget> {
     _chapter = widget.chapter;
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     itemScrollController = ItemScrollController();
-    booksDao.findByChapter(widget.bookName).then((value) => {
-      for(var element in value['chapters']) {
-        if(element[_chapter.toString()] == true) {
-          setState(() {
-            isChapterRead = true;
-          })
-        }
-      },
-    });
+    booksDao.findByChapter(widget.bookName).then((value) =>
+      setState(() => isChapterRead = value['chapters'].where((element) => element[_chapter.toString()] == true).isNotEmpty)
+    );
     super.initState();
   }
 

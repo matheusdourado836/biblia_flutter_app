@@ -5,6 +5,7 @@ import '../models/book.dart';
 import 'books_dao.dart';
 
 class ChaptersProvider extends ChangeNotifier {
+  final BooksDao booksDao = BooksDao();
   List<bool> _readChapters = [];
   int _orderStyle = 0;
 
@@ -27,7 +28,7 @@ class ChaptersProvider extends ChangeNotifier {
     for(var i = 0; i < chapters; i++) {
       _readChapters.add(false);
     }
-    await BooksDao().findByChapter(bookName).then((value) => {
+    await booksDao.findByChapter(bookName).then((value) => {
       _readChapters = [],
       for(var i = 0; i < value['chapters'].length; i++) {
         if(value['chapters'][i][(i + 1).toString()] == true) {
@@ -41,23 +42,26 @@ class ChaptersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void saveChapter(String bookName, String chapter) {
+  Future<void> saveChapter(String bookName, String chapter) async {
     final index = int.parse(chapter) - 1;
+    if(readChapters.isEmpty) {
+      await booksDao.saveChapters(bookName);
+    }
     readChapters[index] = true;
-    BooksDao().saveChapter(bookName, chapter);
+    booksDao.saveChapter(bookName, chapter);
     notifyListeners();
   }
 
   void deleteChapter(String bookName, String chapter) {
     final index = int.parse(chapter) - 1;
     readChapters[index] = false;
-    BooksDao().deleteChapter(bookName, chapter);
+    booksDao.deleteChapter(bookName, chapter);
     notifyListeners();
   }
 
   void addAllChapters(String bookName, int chapters) async {
-    await BooksDao().save(bookName, chapters, 1);
-    await BooksDao().findByChapter(bookName).then((value) => {
+    await booksDao.save(bookName, chapters, 1);
+    await booksDao.findByChapter(bookName).then((value) => {
       _readChapters = [],
       for(var i = 0; i < value['chapters'].length; i++) {
         _readChapters.add(true)
@@ -68,8 +72,8 @@ class ChaptersProvider extends ChangeNotifier {
   }
 
   void removeAllChapters(String bookName, int chapters) async {
-    await BooksDao().delete(bookName);
-    await BooksDao().findByChapter(bookName).then((value) => {
+    await booksDao.delete(bookName);
+    await booksDao.findByChapter(bookName).then((value) => {
       _readChapters = [],
       for(var i = 0; i < value['chapters'].length; i++) {
         _readChapters.add(false)

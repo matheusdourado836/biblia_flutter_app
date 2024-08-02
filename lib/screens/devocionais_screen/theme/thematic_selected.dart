@@ -65,15 +65,19 @@ class ThematicSelected extends StatelessWidget {
                   borderRadius: const BorderRadius.only(topLeft: Radius.circular(45), topRight: Radius.circular(45))
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(devocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
-                      Text(devocional.texto!.replaceAll('\\n', '\n\n'), textAlign: TextAlign.justify, style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
-                      )
+                      RichText(
+                        text: TextSpan(
+                          children: _formatText(devocional.texto!),
+                          style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -83,6 +87,37 @@ class ThematicSelected extends StatelessWidget {
         ],
       ),
     );
+  }
+  List<TextSpan> _formatText(String text) {
+    // Substituir "\\n" por "\n\n"
+    text = text.replaceAll("\\n", "\n\n");
+
+    List<TextSpan> spans = [];
+    final RegExp boldPattern = RegExp(r'\*\*(.*?)\*\*');
+    final Iterable<RegExpMatch> matches = boldPattern.allMatches(text);
+
+    int currentIndex = 0;
+    for (final match in matches) {
+      if (match.start > currentIndex) {
+        // Adicionar o texto normal antes do texto em negrito
+        spans.add(TextSpan(text: text.substring(currentIndex, match.start)));
+      }
+
+      // Adicionar o texto em negrito
+      spans.add(TextSpan(
+          text: match.group(1),
+          style: const TextStyle(fontWeight: FontWeight.bold)));
+
+      // Atualizar o índice atual
+      currentIndex = match.end;
+    }
+
+    // Adicionar o restante do texto normal
+    if (currentIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(currentIndex)));
+    }
+
+    return spans;
   }
 }
 
@@ -114,13 +149,48 @@ class LandScapeWidget extends StatelessWidget {
               children: [
                 Text(devocional.titulo!, style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
-                Text(devocional.texto!.replaceAll('\\n', '\n\n'), textAlign: TextAlign.justify, style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
-                )
+                RichText(
+                  text: TextSpan(
+                      children: _formatText(devocional.texto!),
+                      style: ThemeColors().verseColor(_themeProvider.isOn).copyWith(height: 1.8)
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+  List<TextSpan> _formatText(String text) {
+    // Substituir "\\n" por "\n\n"
+    text = text.replaceAll("\\n", "\n\n");
+
+    List<TextSpan> spans = [];
+    final RegExp boldPattern = RegExp(r'\*\*(.*?)\*\*');
+    final Iterable<RegExpMatch> matches = boldPattern.allMatches(text);
+
+    int currentIndex = 0;
+    for (final match in matches) {
+      if (match.start > currentIndex) {
+        // Adicionar o texto normal antes do texto em negrito
+        spans.add(TextSpan(text: text.substring(currentIndex, match.start)));
+      }
+
+      // Adicionar o texto em negrito
+      spans.add(TextSpan(
+          text: match.group(1),
+          style: const TextStyle(fontWeight: FontWeight.bold)));
+
+      // Atualizar o índice atual
+      currentIndex = match.end;
+    }
+
+    // Adicionar o restante do texto normal
+    if (currentIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(currentIndex)));
+    }
+
+    return spans;
   }
 }
