@@ -48,17 +48,17 @@ class _VerseAreaState extends State<VerseArea> {
               children: widget.verse,
             ),
           ),
-          (widget.annotation != null) ? IconButton(onPressed: (() {
-            final List<dynamic> list = BibleData().data[0]["text"];
-            final bookInfo = list.where((element) => element['name'] == widget.annotation!.book).toList();
-            verses = bookInfo[0]['chapters'][widget.chapter - 1];
-            Navigator.pushNamed(context, 'annotation_widget', arguments: {
-              'annotation': widget.annotation,
-              'verses': verses,
-              'isEditing': true
-            });
-          }), icon: const Icon(Icons.mode_edit_outline_outlined))
-              : Container()
+          if(widget.annotation != null)
+            IconButton(onPressed: (() {
+              final List<dynamic> list = BibleData().data[0]["text"];
+              final bookInfo = list.where((element) => element['name'] == widget.annotation!.book).toList();
+              verses = bookInfo[0]['chapters'][widget.chapter - 1];
+              Navigator.pushNamed(context, 'annotation_widget', arguments: {
+                'annotation': widget.annotation,
+                'verses': verses,
+                'isEditing': true
+              });
+            }), icon: const Icon(Icons.mode_edit_outline_outlined))
         ],
       ),
     );

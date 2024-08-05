@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/data/plans_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/models/daily_read.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -85,10 +86,11 @@ class _SelectedDayWidgetState extends State<SelectedDayWidget> {
                           child: InkWell(
                             onTap: (() {
                               final versesProvider = Provider.of<VersesProvider>(context, listen: false);
+                              final versionProvider = Provider.of<VersionProvider>(context, listen: false);
                               final book = _bibleData.data[0]["text"].where((element) => element["name"] == extractBookAndChapter(value.chaptersDivided[index][i])["bookName"]).first;
                               final bookIndex = _bibleData.data[0]["text"].indexOf(book);
                               final chapter = int.parse(extractBookAndChapter(value.chaptersDivided[index][i])["chapter"]!);
-                              versesProvider.loadVerses(bookIndex, book["name"]);
+                              versesProvider.loadVerses(bookIndex, book["name"], versionName: versionProvider.selectedOption);
                               Navigator.pushNamed(context, 'verses_screen', arguments: {
                                 "bookName": book["name"],
                                 "abbrev": book["abbrev"],

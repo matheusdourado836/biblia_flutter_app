@@ -134,7 +134,7 @@ class _VersesScreenState extends State<VersesScreen> {
             bookName: widget.bookName,
             chapter: _chapter,
             chapters: _chapters,
-            verses: item.allVerses![_chapter],
+            verses: item.allVerses?[_chapter] ?? [],
             pageController: _pageController,
             readingPlan: widget.readingPlan,
           );

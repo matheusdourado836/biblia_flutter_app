@@ -84,7 +84,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     final screenOrientation = MediaQuery.of(context).orientation;
     return Consumer<VersesProvider>(
       builder: (context, value, _) {
-        readBooks = versesProvider.listMap.where((element) => element['finishedReading'] == 1).length;
+        readBooks = versesProvider.booksReadMap.where((element) => element['finishedReading'] == 1).length;
         return (screenOrientation == Orientation.landscape)
             ? _LandscapeDrawer(
             readingProgressWidget: _readingProgressWidget(readBooks),

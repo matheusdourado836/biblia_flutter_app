@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:biblia_flutter_app/helpers/remover_acentos.dart';
+
 import 'database.dart';
 import 'package:sqflite/sqflite.dart';
 import 'bible_data.dart';
@@ -25,7 +27,7 @@ class BooksDao {
     var itemExists = await find(bookName);
     if(itemExists.isEmpty) {
       final List<dynamic> list = BibleData().data[0]["text"];
-      final bookInfo = list.where((element) => element['name'] == bookName).toList();
+      final bookInfo = list.where((element) => removerAcentos(element['name']) == bookName).toList();
       final chapters = bookInfo[0]['chapters'].length;
       final Map<String, dynamic> mapaDeCapitulos = toMap(bookName, setChapters(chapters, 0).toString(), 0);
 

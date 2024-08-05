@@ -24,6 +24,7 @@ class AnnotationWidget extends StatefulWidget {
 }
 
 class _AnnotationWidgetState extends State<AnnotationWidget> {
+  Annotation? _savedAnnotation;
   String title = '';
   String annotationId = '';
   late VersesProvider versesProvider;
@@ -65,6 +66,12 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context, _savedAnnotation);
+          },
+          icon: Icon(Icons.adaptive.arrow_back),
+        ),
         title: SizedBox(
           width: 250,
           child: Row(
@@ -126,6 +133,9 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
               onPressed: () {
                 if (_contentController.text.isNotEmpty) {
                   if (isEditing) {
+                    _savedAnnotation = widget.annotation;
+                    _savedAnnotation!.content = _contentController.text;
+                    setState(() => _savedAnnotation);
                     AnnotationsDao()
                         .updateAnnotation(annotationId, _contentController.text)
                         .whenComplete(
@@ -138,15 +148,17 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
                         );
                   } else {
                     final newId = const Uuid().v1();
-                    final savedAnnotation = Annotation(
-                        annotationId: newId,
-                        title: title,
-                        content: _contentController.text,
-                        book: widget.annotation.book,
-                        chapter: widget.annotation.chapter,
-                        verseStart: widget.annotation.verseStart,
-                        verseEnd: widget.annotation.verseEnd);
-                    AnnotationsDao().save(savedAnnotation).whenComplete(
+                    _savedAnnotation = Annotation(
+                      annotationId: newId,
+                      title: title,
+                      content: _contentController.text,
+                      book: widget.annotation.book,
+                      chapter: widget.annotation.chapter,
+                      verseStart: widget.annotation.verseStart,
+                      verseEnd: widget.annotation.verseEnd
+                    );
+                    setState(() => _savedAnnotation);
+                    AnnotationsDao().save(_savedAnnotation!).whenComplete(
                           () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               duration: Duration(milliseconds: 1000),

@@ -80,14 +80,12 @@ class _VersesAppBarState extends State<VersesAppBar> {
             if(_versesProvider.bottomSheetOpened) {
               Navigator.pop(context);
             }
-            _versesProvider
-                .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
+            _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
             _versesProvider.resetVersesFoundCounter();
             setState(() {
               textEditingController.text = '';
               listVerses = [];
             });
-            _versesProvider.refresh();
             Navigator.pop(context);
           }),
           icon: Icon(Icons.adaptive.arrow_back),
@@ -126,15 +124,16 @@ class _VersesAppBarState extends State<VersesAppBar> {
             ),
             child: InkWell(
               onTap: () {
-                _versesProvider.refresh();
-                _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
-                Navigator.pushNamedAndRemoveUntil(context, 'chapter_screen', (route) => false,
-                  arguments: {
-                    'bookName': widget.bookName,
-                    'abbrev': widget.abbrev,
-                    'bookIndex': widget.bookIndex,
-                    'chapters': widget.chapters
-                  });
+                _versesProvider.refresh().whenComplete(() {
+                  _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
+                  Navigator.pushNamedAndRemoveUntil(context, 'chapter_screen', (route) => false,
+                      arguments: {
+                        'bookName': widget.bookName,
+                        'abbrev': widget.abbrev,
+                        'bookIndex': widget.bookIndex,
+                        'chapters': widget.chapters
+                      });
+                });
               },
               child: Center(child: Text(widget.chapter.toString())),
             ),

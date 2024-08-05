@@ -260,7 +260,15 @@ class _VersesWidgetState extends State<VersesWidget> {
                                     'annotation': innerAnnotation,
                                     'verses': verses,
                                     'isEditing': true
-                                  })
+                                  }
+                              ).then((annotation) {
+                                if(annotation != null) {
+                                  _versesProvider.clearSelectedVerses(listMap);
+                                  _versesProvider.openBottomSheet(false);
+                                  setState(() => listMap[index]["annotation"] = annotation);
+                                  Navigator.pop(ctx);
+                                }
+                              })
                             }
                             else {
                               Navigator.pushNamed(
@@ -269,7 +277,15 @@ class _VersesWidgetState extends State<VersesWidget> {
                                     'annotation': innerAnnotation,
                                     'verses': verses,
                                     'isEditing': false
-                                  })
+                                  }
+                              ).then((annotation) {
+                                if(annotation != null) {
+                                  _versesProvider.clearSelectedVerses(listMap);
+                                  _versesProvider.openBottomSheet(false);
+                                  setState(() => listMap[index]["annotation"] = annotation);
+                                  Navigator.pop(ctx);
+                                }
+                              })
                             },
                           });
                         }),
@@ -303,12 +319,10 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color2, ThemeColors.colorString2);
+                            _versesProvider.updateColors(listMap, ThemeColors.color2, ThemeColors.colorString2);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -316,30 +330,26 @@ class _VersesWidgetState extends State<VersesWidget> {
                         child: RoundContainer(color: ThemeColors.color2),
                       ),
                       InkWell(
-                          onTap: (() {
-                            setState(() {
-                              _versesProvider.openBottomSheet(false);
-                              if (listMap[index]["verseColor"] !=
-                                  Colors.transparent) {
-                                listMap[index]["isEditing"] = true;
-                              }
-                              _versesProvider.updateColors(listMap,
-                                  ThemeColors.color3, ThemeColors.colorString3);
-                            });
-                            _versesProvider.refresh();
-                            Navigator.pop(ctx);
-                          }),
-                          child: RoundContainer(color: ThemeColors.color3)),
+                        onTap: (() {
+                          setState(() {
+                            _versesProvider.openBottomSheet(false);
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
+                              listMap[index]["isEditing"] = true;
+                            }
+                            _versesProvider.updateColors(listMap, ThemeColors.color3, ThemeColors.colorString3);
+                          });
+                          _versesProvider.refresh();
+                          Navigator.pop(ctx);
+                        }),
+                        child: RoundContainer(color: ThemeColors.color3)),
                       InkWell(
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color4, ThemeColors.colorString4);
+                            _versesProvider.updateColors(listMap, ThemeColors.color4, ThemeColors.colorString4);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -350,12 +360,10 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color5, ThemeColors.colorString5);
+                            _versesProvider.updateColors(listMap, ThemeColors.color5, ThemeColors.colorString5);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -366,12 +374,10 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color6, ThemeColors.colorString6);
+                            _versesProvider.updateColors(listMap, ThemeColors.color6, ThemeColors.colorString6);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -382,12 +388,10 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color7, ThemeColors.colorString7);
+                            _versesProvider.updateColors(listMap, ThemeColors.color7, ThemeColors.colorString7);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -398,12 +402,10 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color8, ThemeColors.colorString8);
+                            _versesProvider.updateColors(listMap, ThemeColors.color8, ThemeColors.colorString8);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
@@ -414,21 +416,17 @@ class _VersesWidgetState extends State<VersesWidget> {
                         onTap: (() {
                           setState(() {
                             _versesProvider.openBottomSheet(false);
-                            if (listMap[index]["verseColor"] !=
-                                Colors.transparent) {
+                            if (listMap[index]["verseColor"] != Colors.transparent) {
                               listMap[index]["isEditing"] = true;
                             }
-                            _versesProvider.updateColors(listMap,
-                                ThemeColors.color1, ThemeColors.colorString1);
+                            _versesProvider.updateColors(listMap, ThemeColors.color1, ThemeColors.colorString1);
                           });
                           _versesProvider.refresh();
                           Navigator.pop(ctx);
                         }),
                         child: RoundContainer(color: ThemeColors.color1),
                       ),
-                      const SizedBox(
-                        height: 70,
-                      ),
+                      const SizedBox(height: 70,),
                     ],
                   ),
                 ],

@@ -53,6 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void onTap() {
     _versesProvider.clear();
+    versionProvider.changeOptionBd(_selectedOption);
     _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionName: _selectedOption.toLowerCase().split(' ')[0]);
     Navigator.pushNamed(context, 'verses_screen', arguments: map);
   }
@@ -103,31 +104,25 @@ class _SearchScreenState extends State<SearchScreen> {
             child: ElevatedButton(
               onPressed: (() {
                 List<dynamic> allBooks = _bibleData.data[0]["text"];
-                final bookIndex = allBooks
-                    .indexWhere((element) => element["name"] == _selectedBook);
-                final versionIndex =
-                    versionProvider.options.indexOf(_selectedOption);
+                final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
+                final versionIndex = versionProvider.options.indexOf(_selectedOption);
                 _focusNode.unfocus();
                 if (_textEditingController.text != '') {
                   setState(() {
                     if (bookIndex != -1) {
                       _findInSelectedOption = _findInOptions[0];
                     }
-                    _searchVersesProvider
-                        .searchVerses(
+                    _searchVersesProvider.searchVerses(
                             _textEditingController.text.trim(), versionIndex,
                             findIn: _findInSelectedOption.toLowerCase(),
-                            findInBookIndex: bookIndex)
-                        .then((value) => listResult = value);
+                            findInBookIndex: bookIndex).then((value) => listResult = value);
                   });
                 }
               }),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onError,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
               ),
               child: const Text('ok'),
             ),
@@ -165,9 +160,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       height: 0,
                                       color: Colors.transparent,
                                     ),
-                                    style: Theme.of(context)
-                                        .dropdownMenuTheme
-                                        .textStyle,
+                                    style: Theme.of(context).dropdownMenuTheme.textStyle,
                                     isExpanded: true,
                                     itemHeight: 120.0,
                                     value: versionProvider.selectedOption,
@@ -244,8 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         Theme.of(context).textTheme.bodyLarge),
                               );
                             }).toList(),
-                            onChanged: (newValue) => setState(
-                                () => _findInSelectedOption = newValue!),
+                            onChanged: (newValue) => setState(() => _findInSelectedOption = newValue!),
                           )
                         ],
                       ),
@@ -263,14 +255,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             items: _findInBooks.map((option) {
                               return DropdownMenuItem(
                                 value: option,
-                                child: Text(option,
-                                    style:
-                                        Theme.of(context).textTheme.bodyLarge),
+                                child: Text(option, style: Theme.of(context).textTheme.bodyLarge),
                               );
                             }).toList(),
-                            onChanged: (newValue) {
-                              setState(() => _selectedBook = newValue!);
-                            },
+                            onChanged: (newValue) => setState(() => _selectedBook = newValue!),
                           )
                         ],
                       ),
@@ -280,9 +268,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             (listResult == null)
-                ? SliverToBoxAdapter(
-                    child: Container(),
-                  )
+                ? SliverToBoxAdapter(child: Container())
                 : (listResult != null && listResult!.isEmpty)
                     ? SliverToBoxAdapter(
                         child: Column(
@@ -291,8 +277,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Image.asset('assets/images/not_found.png'),
                             const SizedBox(height: 16),
                             const Text('Nenhum versículo encontrado',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w200),
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
                                 textAlign: TextAlign.center)
                           ],
                         ),
@@ -307,18 +292,12 @@ class _SearchScreenState extends State<SearchScreen> {
                                   child: InkWell(
                                     onTap: (() {
                                       setState(() {
-                                        map["bookName"] =
-                                            listResult![index]['book'];
-                                        map["abbrev"] =
-                                            listResult![index]['abbrev'];
-                                        map["bookIndex"] =
-                                            listResult![index]['bookIndex'];
-                                        map["chapters"] =
-                                            listResult![index]['qtdChapters'];
-                                        map["chapter"] =
-                                            listResult![index]['chapter'];
-                                        map["verseNumber"] =
-                                            listResult![index]['verseNumber'];
+                                        map["bookName"] = listResult![index]['book'];
+                                        map["abbrev"] = listResult![index]['abbrev'];
+                                        map["bookIndex"] = listResult![index]['bookIndex'];
+                                        map["chapters"] = listResult![index]['qtdChapters'];
+                                        map["chapter"] = listResult![index]['chapter'];
+                                        map["verseNumber"] = listResult![index]['verseNumber'];
                                       });
                                       onTap();
                                     }),
@@ -331,35 +310,28 @@ class _SearchScreenState extends State<SearchScreen> {
                                             SlidableAction(
                                               onPressed: (context) {
                                                 _searchVersesProvider.share(
-                                                    listResult![index]['book'],
-                                                    listResult![index]['verse'],
-                                                    listResult![index]
-                                                        ['chapter'],
-                                                    listResult![index]
-                                                        ['verseNumber']);
+                                                  listResult![index]['book'],
+                                                  listResult![index]['verse'],
+                                                  listResult![index]['chapter'],
+                                                  listResult![index]['verseNumber']
+                                                );
                                               },
                                               icon: Icons.share,
                                               label: 'Share',
-                                              backgroundColor: Theme.of(context)
-                                                  .buttonTheme
-                                                  .colorScheme!
-                                                  .background,
+                                              backgroundColor: Theme.of(context).buttonTheme.colorScheme!.background,
                                             ),
                                             SlidableAction(
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                      topRight:
-                                                          Radius.circular(12),
-                                                      bottomRight:
-                                                          Radius.circular(12)),
+                                              borderRadius: const BorderRadius.only(
+                                                topRight: Radius.circular(12),
+                                                bottomRight: Radius.circular(12)
+                                              ),
                                               onPressed: (context) {
                                                 _searchVersesProvider.copyText(
-                                                    listResult![index]['book'],
-                                                    listResult![index]['verse'],
-                                                    listResult![index]
-                                                        ['chapter'],
-                                                    listResult![index]
-                                                        ['verseNumber']);
+                                                  listResult![index]['book'],
+                                                  listResult![index]['verse'],
+                                                  listResult![index]['chapter'],
+                                                  listResult![index]['verseNumber']
+                                                );
                                               },
                                               icon: Icons.copy,
                                               label: 'Copiar',
@@ -372,39 +344,26 @@ class _SearchScreenState extends State<SearchScreen> {
                                           ],
                                         ),
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 20.0, vertical: 16.0),
+                                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                                           child: Column(
                                             children: [
                                               Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
                                                   Text(
                                                     '${listResult![index]['book']} ${listResult![index]['chapter']}:${listResult![index]['verseNumber']}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleLarge,
+                                                    style: Theme.of(context).textTheme.titleLarge,
                                                   ),
                                                 ],
                                               ),
                                               const SizedBox(height: 12),
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.all(12.0),
-                                                margin: const EdgeInsets.only(
-                                                    bottom: 4),
+                                                padding: const EdgeInsets.all(12.0),
+                                                margin: const EdgeInsets.only(bottom: 4),
                                                 decoration: BoxDecoration(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .background,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8)),
-                                                child: Text.rich(TextSpan(
-                                                    children: listResult![index]
-                                                        ["highlightedTexts"])),
+                                                  color: Theme.of(context).colorScheme.background,
+                                                  borderRadius: BorderRadius.circular(8)),
+                                                child: Text.rich(TextSpan(children: listResult![index]["highlightedTexts"])),
                                               )
                                             ],
                                           ),

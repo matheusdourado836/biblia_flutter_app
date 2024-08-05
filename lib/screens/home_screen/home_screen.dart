@@ -155,9 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool bookIsRead(String bookName) {
-    List<Map<String, dynamic>> listMap = [];
-    listMap = versesProvider.listMap;
-    for (var element in listMap) {
+    List<Map<String, dynamic>> booksReadMap = [];
+    booksReadMap = versesProvider.booksReadMap;
+    for (var element in booksReadMap) {
       if (element["bookName"] == bookName && element['finishedReading'] == 1) {
         return true;
       }
