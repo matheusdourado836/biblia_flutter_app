@@ -157,7 +157,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
                     ),
                     style: Theme.of(context).dropdownMenuTheme.textStyle,
                     isExpanded: true,
-                    itemHeight: 120.0,
+                    itemHeight: 130.0,
                     value: value.selectedOption,
                     items: value.options.map((option) {
                       value.setListItem(option.split(' ')[0]);
@@ -208,14 +208,11 @@ class _VersesAppBarState extends State<VersesAppBar> {
                       }
                       return DropdownMenuItem(
                         value: option,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0, left: 4, right: 4),
-                          child: Center(
-                              child: Text(
-                                option,
-                                style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12),
-                              )
-                          ),
+                        child: Center(
+                            child: Text(
+                              option,
+                              style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12),
+                            )
                         ),
                       );
                     }).toList(),
