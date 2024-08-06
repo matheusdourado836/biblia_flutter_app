@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/helpers/expandable_container.dart';
 import 'package:biblia_flutter_app/helpers/format_data.dart';
@@ -301,30 +303,33 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
               topRight: Radius.circular(20.0),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              buildIconButton(Icons.search, 'Explorar', 0, () {
-                if(_selectedPage != 0) {
-                  devocionalProvider.getDevocionais();
-                }
-                setState(() => _selectedPage = 0);
-              }),
-              buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
-              buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
-                if(_selectedPage != 2) {
-                  devocionalProvider.getUserDevocionais().whenComplete(() {
-                    setState(() {
-                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+          child: Padding(
+            padding: EdgeInsets.only(bottom: (Platform.isIOS) ? 12.0 : 0.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                buildIconButton(Icons.search, 'Explorar', 0, () {
+                  if(_selectedPage != 0) {
+                    devocionalProvider.getDevocionais();
+                  }
+                  setState(() => _selectedPage = 0);
+                }),
+                buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
+                buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
+                  if(_selectedPage != 2) {
+                    devocionalProvider.getUserDevocionais().whenComplete(() {
+                      setState(() {
+                        _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                        _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                        _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+                        _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                      });
                     });
-                  });
-                }
-                setState(() => _selectedPage = 2);
-              }),
-            ],
+                  }
+                  setState(() => _selectedPage = 2);
+                }),
+              ],
+            ),
           ),
         ),
         floatingActionButton: (_hasInternetConnection)
