@@ -33,16 +33,14 @@ class _CreateDevocionalState extends State<CreateDevocional> {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       initTargets();
       _coachMark = TutorialCoachMark(
-          onSkip: () {
-            devocionalProvider.markTutorial(3);
-            return true;
-          },
-          onFinish: () {
-            devocionalProvider.markTutorial(3);
-          },
-          colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
-          targets: _targets,
-          hideSkip: true
+        onSkip: () {
+          devocionalProvider.markTutorial(3);
+          return true;
+        },
+        onFinish: () => devocionalProvider.markTutorial(3),
+        colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
+        targets: _targets,
+        hideSkip: true
       )..show(context: context);
     }
   }
@@ -50,25 +48,23 @@ class _CreateDevocionalState extends State<CreateDevocional> {
   void initTargets() {
     _targets = [
       TargetFocus(
-          identify: 'bg-image-key',
-          keyTarget: quillKey,
-          shape: ShapeLightFocus.RRect,
-          contents: [
-            TargetContent(
-                align: ContentAlign.bottom,
-                builder: (context, c) {
-                  return TutorialWidget(
-                      text: 'Arraste para o lado para descobrir os diversos tipos de estilização disponíveis para personalizar seu texto',
-                      skip: '',
-                      next: 'Fechar',
-                      onNext: (() {
-                        c.skip();
-                      }),
-                      onSkip: (() => c.skip())
-                  );
-                }
-            ),
-          ]
+        identify: 'bg-image-key',
+        keyTarget: quillKey,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, c) {
+              return TutorialWidget(
+                text: 'Arraste para o lado para descobrir os diversos tipos de estilização disponíveis para personalizar seu texto',
+                skip: '',
+                next: 'Fechar',
+                onNext: () => c.skip(),
+                onSkip: () => c.skip()
+              );
+            }
+          ),
+        ]
       ),
     ];
   }
@@ -104,14 +100,14 @@ class _CreateDevocionalState extends State<CreateDevocional> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         toolbarHeight: kDefaultToolbarSize + 50,
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Form(
           key: _formKey,
           child: TextFormField(
@@ -124,19 +120,18 @@ class _CreateDevocionalState extends State<CreateDevocional> {
               return null;
             },
             decoration: const InputDecoration(
-                hintStyle: TextStyle(fontSize: 14),
-                hintText: 'Título...',
-                suffixIcon: Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                ),
-                enabledBorder: InputBorder.none),
+              hintStyle: TextStyle(fontSize: 14),
+              hintText: 'Título...',
+              suffixIcon: Icon(Icons.edit_outlined, size: 18),
+              enabledBorder: InputBorder.none
+            ),
           ),
         ),
         actions: [
           IconButton(
-              onPressed: (() => Navigator.pop(context)),
-              icon: const Icon(Icons.close))
+            onPressed: (() => Navigator.pop(context)),
+            icon: const Icon(Icons.close)
+          )
         ],
       ),
       body: Column(
@@ -145,8 +140,8 @@ class _CreateDevocionalState extends State<CreateDevocional> {
           SizedBox(
             key: quillKey,
             child: QuillToolbar.simple(
+              controller: _controller,
               configurations: QuillSimpleToolbarConfigurations(
-                controller: _controller,
                 color: Theme.of(context).primaryColor,
                 showAlignmentButtons: true,
                 multiRowsDisplay: false,
@@ -167,23 +162,21 @@ class _CreateDevocionalState extends State<CreateDevocional> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
               child: QuillEditor.basic(
+                controller: _controller,
                 focusNode: _textFocus,
                   configurations: QuillEditorConfigurations(
-                    controller: _controller,
                     isOnTapOutsideEnabled: true,
-                    onTapOutside: (p, e) {
-                      _textFocus.unfocus();
-                    },
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     placeholder: 'Escreva seu devocional aqui...',
                     customStyles: DefaultStyles(
                       placeHolder: DefaultListBlockStyle(
                         TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6),
                           fontWeight: FontWeight.w600,
                           fontSize: 24,
                           fontStyle: FontStyle.italic
                         ),
+                        const HorizontalSpacing(0, 0),
                         const VerticalSpacing(0, 0),
                         const VerticalSpacing(0, 0),
                         null,
@@ -194,16 +187,15 @@ class _CreateDevocionalState extends State<CreateDevocional> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-            child: ElevatedButton(
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    fixedSize: Size(MediaQuery.of(context).size.width * .85, 50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)
-                    )
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  fixedSize: Size(MediaQuery.sizeOf(context).width * .85, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                 ),
                 onPressed: (() {
                   _titleFocus.unfocus();
@@ -212,15 +204,15 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                   final textDivided = _controller.document.toPlainText().split('\n').where((line) => line.trim().isNotEmpty).toList();
                   final plainText = textDivided.join('\n').split('\n').take(4).join('\n');
                   final devocional = Devocional(
-                      createdAt: DateTime.now().toIso8601String(),
-                      contactEmail: null,
-                      titulo: _titleController.text,
-                      styles: styles,
-                      plainText: plainText,
-                      status: 1,
-                      qtdCurtidas: 0,
-                      qtdViews: 0,
-                      qtdComentarios: 0
+                    createdAt: DateTime.now().toIso8601String(),
+                    contactEmail: null,
+                    titulo: _titleController.text,
+                    styles: styles,
+                    plainText: plainText,
+                    status: 1,
+                    qtdCurtidas: 0,
+                    qtdViews: 0,
+                    qtdComentarios: 0
                   );
                   if(_formKey.currentState!.validate()) {
                     if(_controller.document.isEmpty()) {
@@ -240,6 +232,7 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                   }
                 }),
                 child: const Text('Próximo')
+              ),
             ),
           )
         ],

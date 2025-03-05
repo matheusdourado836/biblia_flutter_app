@@ -5,7 +5,8 @@ import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/devocional_saved_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:flutter/services.dart';
+import 'package:native_image_cropper/native_image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:dotted_border/dotted_border.dart';
@@ -66,7 +67,7 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
         automaticallyImplyLeading: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -112,7 +113,7 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
                           )
                         ],
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
@@ -217,22 +218,58 @@ class _PostContainerState extends State<_PostContainer> {
     }
   }
 
-  Future<CroppedFile?> cropImage(File file, bool profile) async {
-    final croppedImage = await ImageCropper().cropImage(sourcePath: file.path,
-        aspectRatio: CropAspectRatio(ratioX: (profile) ? 30 : 50, ratioY: (profile) ? 30 : 35),
-        uiSettings: [
-      AndroidUiSettings(
-          toolbarTitle: 'Cortar imagem',
-          toolbarColor: Theme.of(context).primaryColor,
-          toolbarWidgetColor: Theme.of(context).colorScheme.primary,
-          statusBarColor: Theme.of(context).primaryColor,
-          activeControlsWidgetColor: Theme.of(context).colorScheme.primary,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false),
-      IOSUiSettings(title: 'Cortar imagem')
-    ]);
+  Future<File?> cropImage(File file, bool profile) async {
+    final cropController = CropController();
 
-    return croppedImage;
+    try {
+      final imageBytes = await file.readAsBytes();
+      Uint8List? croppedBytes;
+
+      await showModalBottomSheet(
+          context: context,
+          useSafeArea: true,
+          builder: (context) => Column(
+            children: [
+              SizedBox(
+                width: 300,
+                height: 300,
+                child: CropPreview(
+                    controller: cropController,
+                    maskOptions: const MaskOptions(
+                      backgroundColor: Colors.black38,
+                      borderColor: Colors.grey,
+                      strokeWidth: 2,
+                      aspectRatio: 5 / 4,
+                      minSize: 25,
+                    ),
+                    bytes: imageBytes
+                ),
+              ),
+              TextButton(
+                  onPressed: () async {
+                    croppedBytes = await cropController.crop();
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text('Cortar')
+              )
+            ],
+          )
+      );
+
+      if (croppedBytes == null) {
+        return null;
+      }
+
+      final directory = await getTemporaryDirectory();
+      final croppedFilePath = '${directory.path}/cropped_image_${DateTime.now().millisecondsSinceEpoch}.png';
+      final croppedFile = File(croppedFilePath);
+      await croppedFile.writeAsBytes(croppedBytes!);
+
+      return croppedFile;
+    } catch (e) {
+      print('Erro ao cortar a imagem: $e');
+      return null;
+    }
   }
 
   Future<void> loadApiImage() async {
@@ -586,7 +623,7 @@ class _PostContainerState extends State<_PostContainer> {
                       borderRadius: const BorderRadius.all(Radius.circular(8)),
                       image: DecorationImage(
                           colorFilter: (widget.devocional.hasFrost ?? false)
-                              ? ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken)
+                              ? ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken)
                               : null,
                           fit: BoxFit.cover, image: FileImage(bgImageFile!)
                       )
@@ -643,6 +680,8 @@ class _PostContainerState extends State<_PostContainer> {
                                 if(value!.toLowerCase().contains('biblewise')) {
                                   return 'esse nome não é permitido';
                                 }
+
+                                return null;
                               },
                               onChanged: (value) => widget.devocional.nomeAutor = value,
                               style: const TextStyle(color: Colors.white, fontSize: 12),

@@ -31,10 +31,10 @@ class BibleDataController {
     return await _annotationsDao.checkByTitle(bookName, chapter, verse);
   }
 
-  void getStartAndEndIndex(List<Map<String, dynamic>> listMap, int verseNumber) {
+  void getStartAndEndIndex(List<Map<String, dynamic>> listMap) {
     _startIndex = 0;
     _endIndex = 0;
-    List<Map<String, dynamic>> versosSelecionados = listMap.where((element) => element["isSelected"] == true).toList();
+    List<Map<String, dynamic>> versosSelecionados = listMap.where((element) => element["isSelected"]).toList();
     _startIndex = versosSelecionados.first['verseNumber'];
     _endIndex = versosSelecionados.last['verseNumber'];
     _annotationTitle = '${versosSelecionados.first['bookName']} ${versosSelecionados.first['chapter']}:$_startIndex-$_endIndex';

@@ -1,12 +1,8 @@
-import 'package:biblia_flutter_app/data/books_dao.dart';
 import 'package:biblia_flutter_app/screens/chapter_screen/widgets/chapters_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/chapters_provider.dart';
 import '../../data/verses_provider.dart';
-
-late VersesProvider versesProvider;
-late ChaptersProvider chaptersProvider;
 
 class ChapterScreen extends StatefulWidget {
   final String bookName;
@@ -25,70 +21,57 @@ class ChapterScreen extends StatefulWidget {
 }
 
 class _ChapterScreenState extends State<ChapterScreen> {
-  final BooksDao booksDao = BooksDao();
-  bool isSelected = false;
+  late final VersesProvider versesProvider;
 
   @override
   void initState() {
-    versesProvider = Provider.of<VersesProvider>(context, listen: false);
-    chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
-    booksDao.find(widget.bookName).then((value) {
-      if (value.isNotEmpty) {
-        if (value[0]["finishedReading"] == 1) {
-          setState(() {
-            isSelected = true;
-          });
+    final chaptersProvider = context.read<ChaptersProvider>();
+    versesProvider = context.read<VersesProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.microtask(() {
+        if(chaptersProvider.currentBook != widget.bookName) {
+          chaptersProvider.currentBook = widget.bookName;
+          chaptersProvider.setChaptersRead(widget.bookName, widget.chapters);
         }
-      }
+      });
     });
-    booksDao.saveChapters(widget.bookName);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leading: IconButton(onPressed: (() {
-          chaptersProvider.toggleSearch(false);
-          Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
-        }), icon: Icon(Icons.adaptive.arrow_back)),
+        leading: IconButton(
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false),
+          icon: Icon(Icons.adaptive.arrow_back)
+        ),
         title: Text(widget.bookName),
         actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isSelected = !isSelected;
-                versesProvider.bookIsReadCheckBox(isSelected);
-              });
-              if (isSelected) {
-                chaptersProvider.addAllChapters(widget.bookName, widget.chapters);
-              } else {
-                chaptersProvider.removeAllChapters(widget.bookName, widget.chapters);
-              }
-              versesProvider.refresh();
-            },
-            icon: isSelected
-                ? const Icon(
-                    Icons.check_box,
-                  )
+          Consumer<ChaptersProvider>(
+            builder: (context, value, _) => IconButton(
+              onPressed: () {
+                if (value.readChapters.isNotEmpty && value.readChapters.every((c) => c)) {
+                  value.removeAllChapters(widget.bookName, widget.chapters);
+                } else {
+                  value.addAllChapters(widget.bookName, widget.chapters);
+                }
+                versesProvider.refresh();
+              },
+              icon: value.readChapters.isNotEmpty && value.readChapters.every((c) => c == true)
+                ? const Icon(Icons.check_box)
                 : const Icon(Icons.check_box_outline_blank_rounded),
+            ),
           ),
         ],
       ),
-      body: Container(
-        height: height,
-        color: Theme.of(context).primaryColor,
-        child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ChapterCard(
-              bookIndex: widget.bookIndex,
-              chapters: widget.chapters,
-              bookName: widget.bookName,
-              abbrev: widget.abbrev,
-            )),
+      backgroundColor: Theme.of(context).primaryColor,
+      body: ChapterCard(
+        bookIndex: widget.bookIndex,
+        chapters: widget.chapters,
+        bookName: widget.bookName,
+        abbrev: widget.abbrev,
       ),
     );
   }

@@ -33,7 +33,9 @@ class _SearchingVerseState extends State<SearchingVerse> {
 
   void _textEditingControllerListener(String text) {
     List<int> contador = [];
-    if(text.isEmpty) {
+    allVersesTextSpan = [];
+
+    if (text.isEmpty) {
       _versesProvider.versesFound([]);
       _versesProvider.resetVersesFoundCounter();
       setState(() {
@@ -41,40 +43,44 @@ class _SearchingVerseState extends State<SearchingVerse> {
         antListVerses = [];
         allVersesTextSpan = [];
       });
-    }else {
-      allVersesTextSpan = [];
-      final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
-      setState(() {
-        listVerses = allVerses.where((element) =>
-         element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
-        ).toList();
-        antListVerses = allVerses.where((element) =>
-            !element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
-        ).toList();
-      });
+      return;
     }
 
-    for(var verse in listVerses) {
-      contador.add(verse["verseNumber"] - 1);
+    final String searchText = text.toLowerCase().trim();
+    final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
+
+    listVerses = allVerses.where((verse) => verse["verse"].toString().toLowerCase().contains(searchText)).toList();
+    antListVerses = allVerses.where((verse) => !verse["verse"].toString().toLowerCase().contains(searchText)).toList();
+
+    for (var verse in listVerses) {
+      int verseIndex = verse["verseNumber"] - 1;
+      contador.add(verseIndex);
+
       _versesProvider.versesFound(contador);
-      _searchVersesProvider.changeColorOfMatchedWord(text.toLowerCase(), verse["verse"].toString(), textOnColoredBackground: (verse["verseColor"] != Colors.transparent) ? true : false);
-      itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[0]);
-      _versesProvider.resetVersesFoundCounter();
-      final List<TextSpan> listTextSpan = [];
-      for (var element in _searchVersesProvider.highlightedWords) {
-        listTextSpan.add(element);
-      }
+      _searchVersesProvider.changeColorOfMatchedWord(
+          searchText,
+          verse["verse"].toString(),
+          textOnColoredBackground: verse["verseColor"] != Colors.transparent
+      );
+
+      final List<TextSpan> listTextSpan = _searchVersesProvider.highlightedWords.toList();
       allVersesTextSpan.add({verse["verseNumber"]: listTextSpan});
     }
 
-    for(var antVerse in antListVerses) {
-      allVersesTextSpan.add({antVerse["verseNumber"]: [TextSpan(text: antVerse["verse"], style: TextStyle(fontSize: _versesProvider.fontSize))]});
-    }
-    if(contador.isEmpty) {
-      setState(() {
-        allVersesTextSpan = [];
+    for (var antVerse in antListVerses) {
+      allVersesTextSpan.add({
+        antVerse["verseNumber"]: [
+          TextSpan(text: antVerse["verse"], style: TextStyle(fontSize: _versesProvider.fontSize))
+        ]
       });
     }
+
+    if (contador.isNotEmpty) {
+      itemScrollController?.jumpTo(index: contador.first);
+    } else {
+      setState(() => allVersesTextSpan = []);
+    }
+
     allVersesTextSpan.sort((a, b) => a.keys.first.compareTo(b.keys.first));
   }
 

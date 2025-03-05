@@ -3,7 +3,7 @@ import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_native_timezone_updated_gradle/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
@@ -23,7 +23,7 @@ class NotificationService {
 
   Future<void> _setupTimezone() async {
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
@@ -36,39 +36,36 @@ class NotificationService {
     );
   }
 
-  _onSelectedNotification(NotificationResponse? notificationResponse) {
-    if(notificationResponse != null) {
-      if (notificationResponse.payload != null && notificationResponse.payload!.isNotEmpty) {
-        final payload = notificationResponse.payload;
-        if(payload != null && payload.split(' ')[0] == 'route') {
-          navigatorKey!.currentState!.pushNamed(payload.split(' ')[1]);
-        }
-        if(payload !=  null) {
-          String bookName = payload.split(' ')[0];
-          String abbrev = payload.split(' ')[1];
-          int bookIndex = int.parse(payload.split(' ')[2]);
-          int chapters = int.parse(payload.split(' ')[3]);
-          int chapter = int.parse(payload.split(' ')[4]);
-          int verseNumber = int.parse(payload.split(' ')[5]);
-          if(payload.split(' ')[0].contains('ª') || payload.split(' ')[0].contains('º') || payload.split(' ')[0].contains('°')) {
-            bookName = '${payload.split(' ')[0]} ${payload.split(' ')[1]}';
-            abbrev = payload.split(' ')[2];
-            bookIndex = int.parse(payload.split(' ')[3]);
-            chapters = int.parse(payload.split(' ')[4]);
-            chapter = int.parse(payload.split(' ')[5]);
-            verseNumber = int.parse(payload.split(' ')[6]);
-          }
-          GoToVerseScreen().goToVersePage(
-              bookName,
-              abbrev,
-              bookIndex,
-              chapters,
-              chapter,
-              verseNumber
-          );
-        }
-      }
+  void _onSelectedNotification(NotificationResponse? notificationResponse) {
+    if (notificationResponse?.payload?.isEmpty ?? true) return;
+
+    final payload = notificationResponse!.payload!;
+    final parts = payload.split(' ');
+
+    if (parts.isEmpty) return;
+
+    if (parts[0] == 'route') {
+      navigatorKey!.currentState!.pushNamedAndRemoveUntil(parts[1], (route) => false);
+      return;
     }
+
+    String bookName = parts[0];
+    String abbrev = parts[1];
+    int bookIndex = int.parse(parts[2]);
+    int chapters = int.parse(parts[3]);
+    int chapter = int.parse(parts[4]);
+    int verseNumber = int.parse(parts[5]);
+
+    if (bookName.contains(RegExp(r'[ªº°]'))) {
+      bookName = '${parts[0]} ${parts[1]}';
+      abbrev = parts[2];
+      bookIndex = int.parse(parts[3]);
+      chapters = int.parse(parts[4]);
+      chapter = int.parse(parts[5]);
+      verseNumber = int.parse(parts[6]);
+    }
+
+    GoToVerseScreen().goToVersePage(bookName, abbrev, bookIndex, chapters, chapter, verseNumber);
   }
 
   showNotification(CustomNotification notification, String? channelInfo) {
@@ -87,13 +84,7 @@ class NotificationService {
         notification.title,
         notification.body,
         NotificationDetails(android: androidNotificationDetails),
-        payload: notification.payload);
-  }
-
-  checkForNotification() async {
-    final details = await localNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (details != null && details.didNotificationLaunchApp) {
-      _onSelectedNotification(details.notificationResponse!);
-    }
+        payload: notification.payload
+    );
   }
 }

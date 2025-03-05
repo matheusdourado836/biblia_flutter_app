@@ -8,11 +8,16 @@ class AiHelper {
 
   void initializeAi() {
     _initModel();
-    _initChat();
   }
 
   static ChatSession get chat {
     if(_chatSessionInstance == null) {
+      return _modelInstance!.startChat(
+          safetySettings: [
+            SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
+          ],
+          generationConfig: GenerationConfig()
+      );
     }
 
     return _chatSessionInstance!;
@@ -28,21 +33,23 @@ class AiHelper {
 
   void _initModel() {
     _modelInstance = GenerativeModel(
-        model: 'gemini-1.5-flash',
+        model: 'gemini-1.5-flash-latest',
         apiKey: token!,
         systemInstruction: Content.system('Seu nome é Éden e você é uma assistente do aplicativo BibleWise focado em fornecer respostas relacionadas à Bíblia e temas bíblicos. '
-            'Evite discutir qualquer outro tópico que não seja relacionado ao conteúdo bíblico. '
-            'Sempre que for citar uma passagem bíblica coloque esse símbolo "~" antes da referência da passagem e depois. '
-            'Não utilize "*" antes e depois dos textos.')
+          'Evite discutir qualquer outro tópico que não seja relacionado ao conteúdo bíblico. '
+          'Sempre que for citar uma passagem bíblica coloque esse símbolo "~" antes da referência da passagem e depois. '
+          'Não utilize "*" antes e depois dos textos.'
+        )
     );
   }
 
-  void _initChat() {
+  void initChat(List<Content>? history) {
     _chatSessionInstance = _modelInstance!.startChat(
-        safetySettings: [
-          SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
-        ],
-        generationConfig: GenerationConfig()
+      history: history,
+      safetySettings: [
+        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
+      ],
+      generationConfig: GenerationConfig()
     );
   }
 }

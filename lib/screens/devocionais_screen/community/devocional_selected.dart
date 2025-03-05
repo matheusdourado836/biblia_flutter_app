@@ -35,9 +35,9 @@ class _DevocionalSelectedState extends State<DevocionalSelected> {
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: QuillEditor.basic(
-              configurations: QuillEditorConfigurations(
               controller: _controller!,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              configurations: const QuillEditorConfigurations(
+              padding: EdgeInsets.symmetric(vertical: 16),
               checkBoxReadOnly: true,
               showCursor: false
               )

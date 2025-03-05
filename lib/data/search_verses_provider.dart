@@ -1,55 +1,71 @@
 import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/main.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../screens/home_screen/home_screen.dart';
-
 class SearchVersesProvider extends ChangeNotifier {
-  final BibleData bibleData = BibleData();
+  static final BibleData bibleData = BibleData();
   List<TextSpan> highlightedWords = [];
 
-  Future<List<Map<String, dynamic>>> searchVerses(String query, int versionIndex, {String findIn = 'toda a biblia', int findInBookIndex = 0}) async {
+  List<Map<String, dynamic>> searchVerses(
+    String query,
+    int versionIndex, {
+      String findIn = 'toda a biblia',
+      int findInBookIndex = -1,
+      bool preciseSearch = false,
+    }) {
     List<Map<String, dynamic>> results = [];
-    int qtdBooks = 66;
-    int index = 0;
-    switch(findIn) {
+    int startIndex = 0, qtdBooks = 66;
+
+    switch (findIn) {
       case 'antigo testamento':
         qtdBooks = 39;
         break;
       case 'novo testamento':
-        index = 39;
+        startIndex = 39;
         break;
     }
-    if(findInBookIndex != -1) {
-      index = findInBookIndex;
+
+    if (findInBookIndex != -1) {
+      startIndex = findInBookIndex;
       qtdBooks = findInBookIndex + 1;
     }
 
-    for (int i = index; i < qtdBooks; i++) {
-      var book = bibleData.data[versionIndex]["text"][i]['name'];
-      var abbrev = bibleData.data[versionIndex]["text"][i]['abbrev'];
-      for (int j = 0; j < bibleData.data[versionIndex]["text"][i]['chapters'].length; j++) {
-        var chapterIndex = j + 1;
-        var chapter = bibleData.data[versionIndex]["text"][i]['chapters'][j];
-        for (int y = 0; y < chapter.length; y++) {
-          var verses = chapter[y].split(';');
-          for (int k = 0; k < verses.length; k++) {
-            var verse = verses[k].trim().toString();
-            if (verse.toLowerCase().contains(query.toLowerCase())) {
-              var verseIndex = y + 1;
+    final normalizedQuery = _normalizeText(query);
+    final queryWords = normalizedQuery.split(' ');
+
+    for (int bookIndex = startIndex; bookIndex < qtdBooks; bookIndex++) {
+      var bookData = bibleData.data[versionIndex]["text"][bookIndex];
+      var book = bookData['name'];
+      var abbrev = bookData['abbrev'];
+
+      for (int chapterIndex = 0; chapterIndex < bookData['chapters'].length; chapterIndex++) {
+        var chapter = bookData['chapters'][chapterIndex];
+
+        for (int verseIndex = 0; verseIndex < chapter.length; verseIndex++) {
+          var verses = chapter[verseIndex].split(';');
+
+          for (var verse in verses) {
+            verse = verse.trim();
+
+            bool match = preciseSearch
+              ? _matchesPreciseSearch(verse, queryWords)
+              : verse.toLowerCase().contains(query.toLowerCase());
+
+            if (match) {
               changeColorOfMatchedWord(query.toLowerCase(), verse);
               results.add({
                 'book': book,
                 'abbrev': abbrev,
-                'qtdChapters': bibleData.data[versionIndex]["text"][i]['chapters'].length,
-                'chapter': chapterIndex,
-                'bookIndex': i,
+                'qtdChapters': bookData['chapters'].length,
+                'chapter': chapterIndex + 1,
+                'bookIndex': bookIndex,
                 'verse': verse,
-                'verseNumber': verseIndex,
+                'verseNumber': verseIndex + 1,
                 'highlightedTexts': highlightedWords
               });
             }
@@ -57,11 +73,13 @@ class SearchVersesProvider extends ChangeNotifier {
         }
       }
     }
+
     notifyListeners();
     return results;
   }
 
   void changeColorOfMatchedWord(String query, String verse, {bool textOnColoredBackground = false}) {
+    final versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     highlightedWords = [];
     final index = verse.toLowerCase().indexOf(query.toLowerCase());
     final matchString = verse.substring(index, index + query.length);
@@ -69,7 +87,7 @@ class SearchVersesProvider extends ChangeNotifier {
       text: matchString,
       style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false).fontSize,
+          fontSize: versesProvider.fontSize,
           fontWeight: FontWeight.bold, 
           color: Colors.redAccent
       ),
@@ -97,31 +115,34 @@ class SearchVersesProvider extends ChangeNotifier {
     highlightedWords = verseFormated;
   }
 
-  List<String> bookToIndex() {
-    const biblia = [
-      'Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio', 'Josué',
-      'Juízes', 'Rute', '1º Samuel', '2º Samuel', '1º Reis', '2º Reis', '1º Crônicas',
-      '2º Crônicas', 'Esdras', 'Neemias', 'Ester', 'Jó', 'Salmos', 'Provérbios',
-      'Eclesiastes', 'Cânticos', 'Isaías', 'Jeremias', 'Lamentações de Jeremias',
-      'Ezequiel', 'Daniel', 'Oséias', 'Joel', 'Amós', 'Obadias', 'Jonas', 'Miquéias',
-      'Naum', 'Habacuque', 'Sofonias', 'Ageu', 'Zacarias', 'Malaquias',
-      'Mateus', 'Marcos', 'Lucas', 'João', 'Atos', 'Romanos', '1ª Coríntios',
-      '2ª Coríntios', 'Gálatas', 'Efésios', 'Filipenses', 'Colossenses',
-      '1ª Tessalonicenses', '2ª Tessalonicenses', '1ª Timóteo', '2ª Timóteo', 'Tito',
-      'Filemom', 'Hebreus', 'Tiago', '1ª Pedro', '2ª Pedro', '1ª João', '2ª João',
-      '3ª João', 'Judas', 'Apocalipse'
-    ];
+  bool _matchesPreciseSearch(String verse, List<String> queryWords) {
+    final verseWords = _normalizeText(verse).split(' ');
 
-    return biblia;
+    if (queryWords.length == 1) {
+      return verseWords.contains(queryWords.first);
+    }
+
+    for (int i = 0; i <= verseWords.length - queryWords.length; i++) {
+      if (listEquals(verseWords.sublist(i, i + queryWords.length), queryWords)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizeText(String text) {
+    return text
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^\w\s]'), '') // Remove pontuações
+      .replaceAll(RegExp(r'\s+'), ' ') // Substitui múltiplos espaços por um só
+      .trim();
   }
 
   void share(String bookName, String verse, int chapter, int verseNumber) {
     Share.share('$bookName $chapter:$verseNumber $verse');
   }
 
-  void copyText(
-      String bookName, String verse, int chapter, int verseNumber) async {
-    await Clipboard.setData(
-        ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
+  void copyText(String bookName, String verse, int chapter, int verseNumber) {
+    Clipboard.setData(ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
   }
 }

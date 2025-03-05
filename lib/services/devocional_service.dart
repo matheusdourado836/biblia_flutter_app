@@ -35,7 +35,6 @@ class DevocionalService {
 
       return devocionais;
     }catch(e) {
-      print(e);
       alertDialog(title: 'Erro', content: 'Não foi possível carregar os devocionais\n${e.toString()}');
       return [];
     }

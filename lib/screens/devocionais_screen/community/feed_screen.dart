@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
-
 import '../../../data/theme_provider.dart';
 import '../../../helpers/tutorial_widget.dart';
 
@@ -123,7 +122,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
 
   Widget buildIconButton(IconData icon, String description, int index, Function() onTap) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -293,7 +292,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
           ),
         ),
         bottomNavigationBar: Container(
-          //height: 85,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary,
             borderRadius: const BorderRadius.only(
@@ -301,30 +299,32 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
               topRight: Radius.circular(20.0),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              buildIconButton(Icons.search, 'Explorar', 0, () {
-                if(_selectedPage != 0) {
-                  devocionalProvider.getDevocionais();
-                }
-                setState(() => _selectedPage = 0);
-              }),
-              buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
-              buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
-                if(_selectedPage != 2) {
-                  devocionalProvider.getUserDevocionais().whenComplete(() {
-                    setState(() {
-                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+          child: SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                buildIconButton(Icons.search, 'Explorar', 0, () {
+                  if(_selectedPage != 0) {
+                    devocionalProvider.getDevocionais();
+                  }
+                  setState(() => _selectedPage = 0);
+                }),
+                buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
+                buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
+                  if(_selectedPage != 2) {
+                    devocionalProvider.getUserDevocionais().whenComplete(() {
+                      setState(() {
+                        _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
+                        _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
+                        _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
+                        _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
+                      });
                     });
-                  });
-                }
-                setState(() => _selectedPage = 2);
-              }),
-            ],
+                  }
+                  setState(() => _selectedPage = 2);
+                }),
+              ],
+            ),
           ),
         ),
         floatingActionButton: (_hasInternetConnection)
@@ -335,8 +335,8 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                   constraints: BoxConstraints(
                       maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
                   ),
-                  backgroundColor: Theme.of(context).colorScheme.background,
-                  barrierColor: Theme.of(context).colorScheme.background,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  barrierColor: Theme.of(context).colorScheme.surface,
                   elevation: 0,
                   useSafeArea: true,
                   showDragHandle: true,
@@ -528,7 +528,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
               borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
                   colorFilter: (widget.devocional.hasFrost ?? false)
-                      ? ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken)
+                      ? ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken)
                       : null,
                   fit: BoxFit.cover, image: image
               )
@@ -683,8 +683,8 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                               isScrollControlled: true,
                               useSafeArea: true,
                               elevation: 0,
-                              barrierColor: Theme.of(context).colorScheme.background,
-                              backgroundColor: Theme.of(context).colorScheme.background,
+                              barrierColor: Theme.of(context).colorScheme.surface,
+                              backgroundColor: Theme.of(context).colorScheme.surface,
                               builder: (context) => CommentsSection(
                                   devocionalId: widget.devocional.id!))),
                           child: Column(
@@ -751,7 +751,7 @@ class NoBgImage extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         image: DecorationImage(
-          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.45), BlendMode.darken),
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
           image: const AssetImage('assets/images/santidade.png'),
           fit: BoxFit.cover,
         ),

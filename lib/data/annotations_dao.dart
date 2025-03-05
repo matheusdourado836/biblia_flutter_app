@@ -11,7 +11,8 @@ class AnnotationsDao {
       '$_chapter INTEGER, '
       '$_verseStart INTEGER, '
       '$_verseEnd INTEGER, '
-      '$_content TEXT)';
+      '$_content TEXT, '
+      '$_style TEXT)';
 
   static const String _tablename = 'annotationsTable';
   static const String _annotationId = 'annotationId';
@@ -21,6 +22,7 @@ class AnnotationsDao {
   static const String _chapter = 'chapter';
   static const String _verseStart = 'verseStart';
   static const String _verseEnd = 'verseEnd';
+  static const String _style = 'style';
 
   Future<int> save(Annotation annotation) async {
     var itemExists = await find(annotation.annotationId);
@@ -32,18 +34,18 @@ class AnnotationsDao {
     return 0;
   }
 
-  Future<int> updateAnnotation(String annotationId, String content) async {
+  Future<int> updateAnnotation(String annotationId, String content, String style) async {
     return await _versesInstance.rawUpdate(
-        'UPDATE $_tablename SET $_content = ?  WHERE $_annotationId = ?', [content, annotationId]);
+      'UPDATE $_tablename SET $_content = ?, $_style = ? WHERE $_annotationId = ?',
+      [content, style, annotationId],
+    );
   }
 
   delete(String annotationId) async {
     return _versesInstance.delete(_tablename, where: '$_annotationId = ?', whereArgs: [annotationId]);
   }
 
-  deleteAllAnnotations() async {
-    return _versesInstance.delete(_tablename);
-  }
+  deleteAllAnnotations() async => _versesInstance.delete(_tablename);
 
   Future<List<Map<String, dynamic>>> find(String annotationId) async {
     final List<Map<String, dynamic>> result = await _versesInstance.query(
@@ -51,7 +53,6 @@ class AnnotationsDao {
       where: '$_annotationId = ?',
       whereArgs: [annotationId],
     );
-
     return result;
   }
 
@@ -61,12 +62,7 @@ class AnnotationsDao {
       where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
       whereArgs: [bookName, chapter, verse],
     );
-
-    if(result.isEmpty) {
-      return null;
-    }
-
-    return toList(result);
+    return result.isEmpty ? null : toList(result);
   }
 
   Future<Annotation?> checkByTitle(String bookName, int chapter, int verse) async {
@@ -75,28 +71,29 @@ class AnnotationsDao {
       where: '$_book = ? AND $_chapter = ? AND $_verseEnd = ?',
       whereArgs: [bookName, chapter, verse],
     );
-
-    if(result.isEmpty) {
-      return null;
-    }
-
-    return toList(result).first;
+    return result.isEmpty ? null : toList(result).first;
   }
 
   Future<List<Annotation>> findAll() async {
-    final List<Map<String, dynamic>> result =
-    await _versesInstance.query(_tablename);
-
+    final List<Map<String, dynamic>> result = await _versesInstance.query(_tablename);
     return toList(result);
   }
 
   List<Annotation> toList(List<Map<String, dynamic>> mapaDeAnotacoes) {
     final List<Annotation> annotations = [];
     for (Map<String, dynamic> linha in mapaDeAnotacoes) {
-      final Annotation annotation = Annotation(annotationId: linha[_annotationId], title: linha[_title], content: linha[_content], book: linha[_book], chapter: linha[_chapter], verseStart: linha[_verseStart], verseEnd: linha[_verseEnd]);
+      final Annotation annotation = Annotation(
+        annotationId: linha[_annotationId],
+        title: linha[_title],
+        content: linha[_content],
+        book: linha[_book],
+        chapter: linha[_chapter],
+        verseStart: linha[_verseStart],
+        verseEnd: linha[_verseEnd],
+        style: linha[_style], // Novo campo
+      );
       annotations.add(annotation);
     }
-
     return annotations;
   }
 
@@ -109,7 +106,7 @@ class AnnotationsDao {
     mapaDeVersos[_chapter] = annotation.chapter;
     mapaDeVersos[_verseStart] = annotation.verseStart;
     mapaDeVersos[_verseEnd] = annotation.verseEnd;
-
+    mapaDeVersos[_style] = annotation.style; // Novo campo
     return mapaDeVersos;
   }
 }

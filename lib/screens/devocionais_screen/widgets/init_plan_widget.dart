@@ -24,7 +24,7 @@ class InitPlanWidget extends StatelessWidget {
     decoration: BoxDecoration(
         image: DecorationImage(
             image: image,
-            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+            colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
             opacity: 0.8,
             fit: BoxFit.cover
         )

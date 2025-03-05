@@ -105,9 +105,7 @@ class VersionProvider extends ChangeNotifier {
           final storage = FirebaseStorage.instance;
           storage.setMaxDownloadRetryTime(const Duration(seconds: 10));
           final ref = storage.ref().child('bible_versions/$versionName.json');
-          final downloadUrl = await ref.getDownloadURL().catchError((err) {
-            print('OLHA O ERRO AEEEE $err');
-          });
+          final downloadUrl = await ref.getDownloadURL().catchError((err) => '');
           final Response response = await dio.download(
               downloadUrl,
               '$appDocDirPath/$versionName.json',
@@ -129,7 +127,7 @@ class VersionProvider extends ChangeNotifier {
             notifyListeners();
           }
         }else {
-          downloadError = 'Você parece não estar conectado à internet. Verifique sua conexão e tente novamente.';
+          downloadError = 'Parece que você não está conectado à internet. Verifique sua conexão e tente novamente.';
           notifyListeners();
         }
       });

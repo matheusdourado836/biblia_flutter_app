@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,15 +13,9 @@ import '../../../data/plans_provider.dart';
 import '../../../helpers/alert_dialog.dart';
 import '../../../helpers/plan_type_to_days.dart';
 import '../../../models/enums.dart';
-import '../../chapter_screen/chapter_screen.dart';
 
-final FlutterTts _flutterTts = FlutterTts();
-final versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
 bool _isSpeaking = false;
 int _count = 0;
-String _selectedOption = '1x';
-double _speechRate = 0.5;
-List<Map<dynamic, dynamic>> _voices = [];
 Map<dynamic, dynamic> _selectedLanguage = {};
 
 class VersesFloatingActionButton extends StatefulWidget {
@@ -32,16 +26,29 @@ class VersesFloatingActionButton extends StatefulWidget {
   final List<Map<String, dynamic>> verses;
   final PageController pageController;
   final bool? readingPlan;
-  const VersesFloatingActionButton({super.key, required this.notScrolling, required this.chapter, required this.chapters, required this.pageController, required this.verses, this.readingPlan, required this.bookName});
+  const VersesFloatingActionButton({
+    super.key,
+    required this.notScrolling,
+    required this.chapter,
+    required this.chapters,
+    required this.pageController,
+    required this.verses,
+    this.readingPlan,
+    required this.bookName
+  });
 
   @override
   State<VersesFloatingActionButton> createState() => _VersesFloatingActionButtonState();
 }
 
 class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton> {
+  late final versesProvider = Provider.of<VersesProvider>(context, listen: false);
+  static final FlutterTts _flutterTts = FlutterTts();
   int _chapter = 0;
   int _chapters = 0;
+  bool _isChapterRead = false;
   bool _resetCounter = false;
+  List<Map<dynamic, dynamic>> _voices = [];
   PlansProvider? _planProvider;
 
   void initTts() {
@@ -73,6 +80,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
     versesProvider.clearSelectedVerses(widget.verses);
     setState(() {_count = 0; _isSpeaking = false;});
+    Navigator.pop(context);
   }
 
   Future<void> setVoice(Map voice) async {
@@ -98,12 +106,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
 
   void goToNextChapter() {
     if (_chapter < _chapters) {
-      if(widget.readingPlan == null) {
-        if(!isChapterRead) {
-          chaptersProvider.saveChapter(widget.bookName, _chapter.toString());
-        }
-        setState(() => isChapterRead = true);
-      }else {
+      if(widget.readingPlan != null) {
         final currentPlan = PlanType.fromCode(dailyRead!.progressId!);
         dailyRead!.completed = 1;
         _planProvider!.markChapter(dailyRead!.chapter!, read: dailyRead!.completed!, progressId: dailyRead!.progressId!, update: true);
@@ -122,6 +125,10 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   }
 
   void initNextChapter() {
+    if(!_isChapterRead) {
+      final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
+      chaptersProvider.setChapterRead(widget.bookName, _chapter.toString(), widget.chapters, true);
+    }
     Navigator.pop(context);
     setState(() => _isSpeaking = true);
     Future.delayed(1000.ms).whenComplete(() {
@@ -132,8 +139,10 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
           enableDrag: false,
           barrierColor: Colors.transparent,
           builder: (context) => SpeechBottomSheet(
+            flutterTts: _flutterTts,
             verses: widget.verses,
             chapter: widget.chapter,
+            voices: _voices,
             reset: reset,
             setVoice: (voice) => setVoice(voice),
           )
@@ -149,6 +158,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   void initState() {
     _chapter = widget.chapter;
     _chapters = widget.chapters;
+    _isChapterRead = versesProvider.readChapters.isEmpty ? false : versesProvider.readChapters[_chapter - 1];
     if(widget.readingPlan != null) {
       _planProvider = Provider.of<PlansProvider>(context, listen: false);
     }
@@ -203,7 +213,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         FloatingActionButton(
           heroTag: 'btn2',
           backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-          onPressed: (() {
+          onPressed: () {
             if(widget.notScrolling && versesProvider.bottomSheetOpened == false) {
               if(_voices.isEmpty) {
                 alertDialog(title: 'Erro', content: 'Não é possível ouvir os versículos em áudio no momento.\nTente novamente mais tarde.');
@@ -216,14 +226,16 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
                   enableDrag: false,
                   barrierColor: Colors.transparent,
                   builder: (context) => SpeechBottomSheet(
+                    flutterTts: _flutterTts,
                     verses: widget.verses,
                     chapter: widget.chapter,
+                    voices: _voices,
                     reset: reset,
                     setVoice: (voice) => setVoice(voice),
                   ),
               );
             }
-          }),
+          },
           child: Icon(
             CupertinoIcons.speaker_2,
             size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
@@ -237,11 +249,9 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         FloatingActionButton(
           heroTag: 'btn3',
           backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-          onPressed: (() {
-            (widget.notScrolling && versesProvider.bottomSheetOpened == false)
-                ? goToNextChapter()
-                : null;
-          }),
+          onPressed: () {
+            if(widget.notScrolling && versesProvider.bottomSheetOpened == false) goToNextChapter();
+          },
           child: Icon(
             Icons.arrow_forward_ios_rounded,
             size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
@@ -261,11 +271,9 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         heroTag: 'btn1',
         backgroundColor:
         Theme.of(context).buttonTheme.colorScheme?.secondary,
-        onPressed: (() {
-          (widget.notScrolling && versesProvider.bottomSheetOpened == false)
-              ? goToPrevChapter()
-              : null;
-        }),
+        onPressed: () {
+          if(widget.notScrolling && versesProvider.bottomSheetOpened == false) goToPrevChapter();
+        },
         child: Icon(
           Icons.arrow_back_ios_rounded,
           size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
@@ -280,18 +288,23 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
 
 
 class SpeechBottomSheet extends StatefulWidget {
+  final FlutterTts flutterTts;
   final List<Map<String, dynamic>> verses;
   final int chapter;
+  final List<Map<dynamic, dynamic>> voices;
   final Function() reset;
   final Function(Map voice) setVoice;
-  const SpeechBottomSheet({super.key, required this.verses, required this.chapter, required this.reset, required this.setVoice});
+  const SpeechBottomSheet({super.key, required this.flutterTts, required this.verses, required this.chapter, required this.voices, required this.reset, required this.setVoice});
 
   @override
   State<SpeechBottomSheet> createState() => _SpeechBottomSheetState();
 }
 
 class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
+  late final versesProvider = Provider.of<VersesProvider>(context, listen: false);
   int _selectedVerse = _count + 1;
+  String _selectedOption = '1x';
+  double _speechRate = 0.5;
   Map<dynamic, dynamic> _language = {};
 
   void updateSpeechRate(String selectedOption) {
@@ -314,40 +327,40 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
     }
 
     setState(() => _speechRate);
-    _flutterTts.pause().whenComplete(() => _flutterTts.setSpeechRate(_speechRate).whenComplete(() {
+    widget.flutterTts.pause().whenComplete(() => widget.flutterTts.setSpeechRate(_speechRate).whenComplete(() {
       if(_isSpeaking) {
-        _flutterTts.speak(widget.verses[_count]["verse"]);
+        widget.flutterTts.speak(widget.verses[_count]["verse"]);
       }
     }));
   }
 
   void updateSpeechLanguage(String selectedLanguage) {
-    _flutterTts.pause();
-    final language = _voices.firstWhere((element) => element["voice"] == selectedLanguage);
+    widget.flutterTts.pause();
+    final language = widget.voices.firstWhere((element) => element["voice"] == selectedLanguage);
     widget.setVoice(language).whenComplete(() {
       if(_isSpeaking) {
-        _flutterTts.speak(widget.verses[_count]["verse"]);
+        widget.flutterTts.speak(widget.verses[_count]["verse"]);
       }
     });
   }
 
   void speakNextVerse() {
     if(_count < widget.verses.length) {
-      _flutterTts.pause();
+      widget.flutterTts.pause();
       setState(() => _count++);
       scrollTo();
-      _flutterTts.speak(widget.verses[_count]["verse"]);
+      widget.flutterTts.speak(widget.verses[_count]["verse"]);
       setState(() => _isSpeaking = true);
     }
   }
 
   void speakPrevVerse() {
     if(_count > 0) {
-      _flutterTts.pause();
+      widget.flutterTts.pause();
       versesProvider.clearSelectedVerses(widget.verses);
       setState(() => _count--);
       scrollTo();
-      _flutterTts.speak(widget.verses[_count]["verse"]);
+      widget.flutterTts.speak(widget.verses[_count]["verse"]);
       setState(() => _isSpeaking = true);
     }
   }
@@ -361,15 +374,15 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
 
   @override
   void initState() {
-    if(_voices.where((language) => language["voice"] == _selectedLanguage["voice"]).isEmpty) {
-      _language = _voices[0];
+    if(widget.voices.where((language) => language["voice"] == _selectedLanguage["voice"]).isEmpty) {
+      _language = widget.voices[0];
     }else {
-      _language = _voices.firstWhere((language) => language["voice"] == _selectedLanguage["voice"]);
+      _language = widget.voices.firstWhere((language) => language["voice"] == _selectedLanguage["voice"]);
     }
     if(_count < 0) {
       setState(() => _count = 0);
     }
-    _flutterTts.setSpeechRate(_speechRate);
+    widget.flutterTts.setSpeechRate(_speechRate);
     super.initState();
   }
 
@@ -422,7 +435,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                                 versesProvider.clearSelectedVerses(widget.verses);
                                 scrollTo();
                                 setState(() => _isSpeaking = !_isSpeaking);
-                                (!_isSpeaking) ? _flutterTts.pause() : _flutterTts.speak(widget.verses[_count]["verse"]);
+                                (!_isSpeaking) ? widget.flutterTts.pause() : widget.flutterTts.speak(widget.verses[_count]["verse"]);
                               }),
                               icon: Icon((_isSpeaking) ? CupertinoIcons.pause :  CupertinoIcons.play_fill, size: 40,)
                           ),
@@ -434,7 +447,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                                   _isSpeaking = false;
                                 });
                                 versesProvider.clearSelectedVerses(widget.verses);
-                                Platform.isAndroid ? _flutterTts.stop() : _flutterTts.pause();
+                                !Platform.isAndroid ? widget.flutterTts.stop() : widget.flutterTts.pause();
                               }),
                               icon: const Icon(CupertinoIcons.stop_fill, size: 32)
                           ),
@@ -473,7 +486,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                               if(_isSpeaking){
                                 versesProvider.clearSelectedVerses(widget.verses);
                                 scrollTo();
-                                _flutterTts.speak(widget.verses[_count]["verse"]);
+                                widget.flutterTts.speak(widget.verses[_count]["verse"]);
                               }
                             },
                             items: List.generate(widget.verses.length, (index) => DropdownMenuItem(value: index + 1, child: Center(child: Text('${index + 1}'))))
@@ -500,8 +513,7 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
                             });
                             updateSpeechLanguage(_selectedLanguage["voice"]);
                           },
-                          items: _voices
-                              .map((Map<dynamic, dynamic> value) {
+                          items: widget.voices.map((Map<dynamic, dynamic> value) {
                             return DropdownMenuItem<Map<dynamic, dynamic>>(
                               value: value,
                               child: Text(value["voice"], style: Theme.of(context).textTheme.titleSmall),
@@ -520,12 +532,9 @@ class _SpeechBottomSheetState extends State<SpeechBottomSheet> {
           top: -5,
           right: 10,
           child: IconButton(
-              alignment: Alignment.centerRight,
-              onPressed: (() {
-                widget.reset();
-                Navigator.pop(context);
-              }),
-              icon: const Icon(Icons.close, size: 32, color: Colors.white,)
+            alignment: Alignment.centerRight,
+            onPressed: widget.reset,
+            icon: const Icon(Icons.close, size: 28, color: Colors.white)
           ),
         )
       ],

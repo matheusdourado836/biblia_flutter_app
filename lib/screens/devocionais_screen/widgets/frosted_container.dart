@@ -30,15 +30,15 @@ class FrostedContainer extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.black.withOpacity(0.13)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.13)),
                 gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
                       //begin color
-                      Colors.white.withOpacity(0.18),
+                      Colors.white.withValues(alpha: 0.18),
                       //end color
-                      Colors.white.withOpacity(0.08),
+                      Colors.white.withValues(alpha: 0.08),
                     ]),
               ),
             ),

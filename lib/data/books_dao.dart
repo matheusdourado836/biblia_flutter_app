@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'database.dart';
 import 'package:sqflite/sqflite.dart';
-import 'bible_data.dart';
 
 class BooksDao {
   static final Database _versesInstance = DatabaseHelper.versesDatabase;
@@ -16,68 +16,51 @@ class BooksDao {
   static const String _finishedReading = 'finishedReading';
 
   save(String bookName, int chapters, int finishedReading) async {
-    Map<String, dynamic> bookMap = toMap(bookName, setChapters(chapters, 1).toString(), finishedReading);
+    final itemExists = await find(bookName);
+    final chaptersString = jsonEncode(setChapters(chapters, 1));
+    Map<String, dynamic> bookMap = toJson(bookName, chaptersString, finishedReading);
+    if(itemExists.isEmpty) {
+      return await _versesInstance.insert(_tablename, bookMap);
+    }
 
     return await _versesInstance.update(_tablename, bookMap, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
-  saveChapters(String bookName) async {
-    var itemExists = await find(bookName);
-    if(itemExists.isEmpty) {
-      final List<dynamic> list = BibleData().data[0]["text"];
-      final bookInfo = list.where((element) => element['name'] == bookName).toList();
-      final chapters = bookInfo[0]['chapters'].length;
-      final Map<String, dynamic> mapaDeCapitulos = toMap(bookName, setChapters(chapters, 0).toString(), 0);
+  Future<void> setChapterRead(String bookName, String chapter, int qtdChapters, bool read) async {
+    try {
+      final mapChapters = await findByChapter(bookName, qtdChapters);
+      final List<Map<String, dynamic>> listChapters = List<Map<String, dynamic>>.from(mapChapters['chapters']);
 
-      return await _versesInstance.insert(_tablename, mapaDeCapitulos);
-    }
-  }
+      final bool firstSave = listChapters.every((c) => c.values.first == false);
+      final int chapterIndex = int.parse(chapter) - 1;
+      listChapters[chapterIndex][chapter] = read;
 
-  saveChapter(String bookName, String chapter) async {
-    int finishedReading = 0;
-    Map<String, dynamic> mapChapters = {};
-    await findByChapter(bookName).then((value) => mapChapters = value);
-    List<dynamic> list = mapChapters['chapters'];
-    for(var element in mapChapters['chapters']) {
-      if(element[chapter] == false) {
-        element[chapter] = true;
+      final bool allRead = listChapters.every((c) => c.values.first == true);
+
+      final chaptersString = jsonEncode(listChapters);
+
+      if (firstSave) {
+        final bookMap = toJson(bookName, chaptersString, 0);
+        await _versesInstance.insert(_tablename, bookMap);
+      } else {
+        await _versesInstance.update(
+          _tablename,
+          {'chapters': chaptersString, 'finishedReading': allRead ? 1 : 0},
+          where: '$_bookName = ?',
+          whereArgs: [bookName],
+        );
       }
+    } catch (e) {
+      log('NAO FOI POSSIVEL SALVAR O CAPITULO: $e');
     }
-
-    if(list.firstWhere((element) => element.containsValue(false), orElse: () => -1) == -1) {
-      finishedReading = 1;
-    }
-
-    return await _versesInstance.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': finishedReading}, where: '$_bookName = ?', whereArgs: [bookName]);
-  }
-
-  deleteChapter(String bookName, String chapter) async {
-    Map<String, dynamic> mapChapters = {};
-    await findByChapter(bookName).then((value) => mapChapters = value);
-    for(var element in mapChapters['chapters']) {
-      if(element[chapter] == true) {
-        element[chapter] = false;
-      }
-    }
-
-    return await _versesInstance.update(_tablename, {'chapters': json.encode(mapChapters['chapters']), 'finishedReading': 0}, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 
   List<Map<String, dynamic>> setChapters(int chapters, int finishedReading) {
-    List<Map<String, dynamic>> list = [];
-    if(finishedReading == 0) {
-      for(var i = 0; i < chapters; i++) {
-        list.add({
-          '"${i + 1}"': false,
-        });
-      }
-    }else {
-      for(var i = 0; i < chapters; i++) {
-        list.add({
-          '"${i + 1}"': true,
-        });
-      }
-    }
+    List<Map<String, dynamic>> list = List.generate(
+      chapters,
+      (index) => {(index + 1).toString(): finishedReading == 1 ? true : false},
+      growable: false
+    );
 
     return list;
   }
@@ -87,8 +70,7 @@ class BooksDao {
   }
 
   Future<List<Map<String, dynamic>>> findAll() async {
-    final List<Map<String, dynamic>> result =
-        await _versesInstance.query(_tablename);
+    final List<Map<String, dynamic>> result = await _versesInstance.query(_tablename);
 
     return result;
   }
@@ -103,24 +85,31 @@ class BooksDao {
     return result;
   }
 
-  Future<Map<String, dynamic>> findByChapter(String bookName) async {
-    var result = await find(bookName);
+  Future<Map<String, dynamic>> findByChapter(String bookName, int qtdChapters) async {
+    try {
+      final result = await find(bookName);
 
-    if(result.isEmpty) {
-      await saveChapters(bookName);
-      result = await find(bookName);
+      if(result.isEmpty) {
+        final emptyList = [];
+        for(var i = 0; i < qtdChapters; i++) {
+          emptyList.add({(i + 1).toString(): false});
+        }
+        final jsonString = jsonEncode({"chapters": emptyList});
+
+        return jsonDecode(jsonString);
+      }
+      final chapters = {"chapters": jsonDecode(result[0]['chapters'])};
+
+      return chapters;
+    }catch(e) {
+      log('NAOI FOI POSSIVEL ENCONTRAR O LIVRO $e');
+      return {};
     }
-    final chapters = result[0]['chapters'].substring(1, result[0]['chapters'].length - 1);
-
-    return json.decode('{"chapters": [$chapters]}');
   }
 
-  Map<String, dynamic> toMap(String bookName, String chapters, int finishedReading) {
-    final Map<String, dynamic> mapaDeVersos = {};
-    mapaDeVersos[_bookName] = bookName;
-    mapaDeVersos[_chapters] = chapters;
-    mapaDeVersos[_finishedReading] = finishedReading;
-
-    return mapaDeVersos;
-  }
+  Map<String, dynamic> toJson(String bookName, String chapters, int finishedReading) => {
+    _bookName: bookName,
+    _chapters: chapters,
+    _finishedReading: finishedReading
+  };
 }

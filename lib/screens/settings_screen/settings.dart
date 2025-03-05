@@ -2,12 +2,9 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../data/theme_provider.dart';
 import '../../helpers/version_to_name.dart';
 import '../../helpers/progress_dialog.dart';
@@ -40,8 +37,7 @@ class Options extends StatefulWidget {
 class _OptionsState extends State<Options> {
   late VersionProvider _versionProvider;
   String _selectedVersion = 'NVI (Nova Versão Internacional)';
-  ValueNotifier<double> _sliderValue = ValueNotifier(16.0);
-  //double _sliderValue = 16.0;
+  final ValueNotifier<double> _sliderValue = ValueNotifier(16.0);
   double _savedSliderValue = 16.0;
 
   @override
@@ -54,9 +50,7 @@ class _OptionsState extends State<Options> {
 
   void getPreferences() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _sliderValue.value = prefs.getDouble('fontsize') ?? 16.0;
-    });
+    setState(() => _sliderValue.value = prefs.getDouble('fontsize') ?? 16.0);
   }
 
   void getVersion() async {
@@ -85,73 +79,71 @@ class _OptionsState extends State<Options> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tamanho da fonte:',
-                        style: TextStyle(fontSize: 18)),
+                    const Text('Tamanho da fonte:', style: TextStyle(fontSize: 18)),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: InkWell(
-                        onTap: (() {
+                        onTap: () {
                           showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (BuildContext context) {
-                                return ValueListenableBuilder(
-                                    valueListenable: _sliderValue,
-                                    builder: (context, value, _) {
-                                      return AlertDialog(
-                                        title: Text(
-                                            '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(fontSize: _sliderValue.value)),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              _sliderValue.value.toStringAsFixed(0),
-                                              style: Theme.of(context).textTheme.bodyMedium,
-                                            ),
-                                            Slider(
-                                                inactiveColor: Theme.of(context).colorScheme.secondary,
-                                                value: _sliderValue.value,
-                                                min: 8.0,
-                                                max: 40.0,
-                                                onChanged: (double value) {
-                                                  _sliderValue.value = value;
-                                                  versesValue.newFontSize(_sliderValue.value, false);
-                                                }),
-                                          ],
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ValueListenableBuilder(
+                                valueListenable: _sliderValue,
+                                builder: (context, value, _) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      '"E Simão Pedro, respondendo, disse: Tu és o Cristo, o Filho do Deus vivo"',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: _sliderValue.value)
+                                    ),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _sliderValue.value.toStringAsFixed(0),
+                                          style: Theme.of(context).textTheme.bodyMedium,
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: (() {
-                                              versesValue.newFontSize(_sliderValue.value, true);
-                                              setState(() {
-                                                _savedSliderValue = _sliderValue.value;
-                                              });
-                                              Navigator.pop(context);
-                                            }),
-                                            child: const Text('Salvar'),
-                                          ),
-                                          TextButton(
-                                            onPressed: (() {
-                                              setState(() {
-                                                _sliderValue.value = _savedSliderValue;
-                                              });
-                                              Navigator.pop(context);
-                                            }),
-                                            child: const Text('Cancelar'),
-                                          ),
-                                        ],
-                                      );
-                                    });
-                              });
-                        }),
+                                        Slider(
+                                          inactiveColor: Theme.of(context).colorScheme.secondary,
+                                          value: _sliderValue.value,
+                                          min: 8.0,
+                                          max: 40.0,
+                                          onChanged: (double value) {
+                                            _sliderValue.value = value;
+                                            versesValue.newFontSize(_sliderValue.value, false);
+                                          }
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          versesValue.newFontSize(_sliderValue.value, true);
+                                          setState(() => _savedSliderValue = _sliderValue.value);
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Salvar'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() => _sliderValue.value = _savedSliderValue);
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Cancelar'),
+                                      ),
+                                    ],
+                                  );
+                                });
+                            });
+                        },
                         child: Container(
                           height: 60,
                           width: 60,
                           decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(14.0)),
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(14.0)
+                          ),
                           child: Center(
                             child: Text(
                               versesValue.fontSize.toStringAsFixed(0),
@@ -170,10 +162,7 @@ class _OptionsState extends State<Options> {
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Ordem dos livros:',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  Text('Ordem dos livros:', style: TextStyle(fontSize: 18)),
                   Expanded(child: OrderByDropDown())
                 ],
               ),
@@ -181,10 +170,7 @@ class _OptionsState extends State<Options> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
-                    child: Text(
-                      'Versão preferida:',
-                      style: TextStyle(fontSize: 18),
-                    ),
+                    child: Text('Versão preferida:', style: TextStyle(fontSize: 18)),
                   ),
                   Expanded(
                     child: Consumer<VersionProvider>(
@@ -219,7 +205,7 @@ class _OptionsState extends State<Options> {
                                       Expanded(
                                         child: Text(
                                           option,
-                                          style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withOpacity(.5)),
+                                          style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withValues(alpha: .5)),
                                         ),
                                       ),
                                       const Icon(Icons.download, size: 16,)
@@ -233,10 +219,10 @@ class _OptionsState extends State<Options> {
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 16.0, left: 4, right: 4),
                                 child: Center(
-                                    child: Text(
-                                      option,
-                                      style: Theme.of(context).textTheme.titleSmall,
-                                    )
+                                  child: Text(
+                                    option,
+                                    style: Theme.of(context).textTheme.titleSmall,
+                                  )
                                 ),
                               ),
                             );
@@ -259,10 +245,7 @@ class _OptionsState extends State<Options> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
-                    child: Text(
-                      'Preferência de tema:',
-                      style: TextStyle(fontSize: 18),
-                    ),
+                    child: Text('Preferência de tema:', style: TextStyle(fontSize: 18)),
                   ),
                   Consumer<ThemeProvider>(
                     builder: (context, themeValue, _) {
@@ -332,18 +315,13 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
   Widget build(BuildContext context) {
     final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
     return DropdownButton<String>(
-      underline: Container(
-        height: 0,
-        color: Colors.transparent,
-      ),
+      underline: Container(height: 0, color: Colors.transparent),
       itemHeight: 100,
       style: Theme.of(context).dropdownMenuTheme.textStyle,
       isExpanded: true,
       value: _selectedOption,
       onChanged: (String? newValue) {
-        setState(() {
-          _selectedOption = newValue!;
-        });
+        setState(() => _selectedOption = newValue!);
         chaptersProvider.setOrderStyle(_selectedOption);
       },
       items: <String>[
@@ -367,9 +345,7 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
           ),
         );
       }).toList(),
-      selectedItemBuilder: (BuildContext context) {
-        return reducedValues;
-      },
+      selectedItemBuilder: (BuildContext context) => reducedValues,
     );
   }
 
@@ -396,9 +372,7 @@ class _OrderByDropDownState extends State<OrderByDropDown> {
           }
       }
 
-      setState(() {
-        _selectedOption;
-      });
+      setState(() => _selectedOption);
     }
   }
 }

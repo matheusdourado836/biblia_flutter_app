@@ -4,10 +4,10 @@ import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../data/verses_provider.dart';
 import '../../../data/version_provider.dart';
 import '../../../helpers/version_to_name.dart';
-import 'verses_widget.dart';
 
 class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String bookName;
@@ -15,14 +15,17 @@ class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int chapters;
   final int bookIndex;
   final int chapter;
+  final ItemPositionsListener itemPositionsListener;
 
-  const VersesAppBar(
-      {super.key,
-      required this.bookName,
-      required this.abbrev,
-      required this.chapters,
-      required this.bookIndex,
-      required this.chapter});
+  const VersesAppBar({
+    super.key,
+    required this.bookName,
+    required this.abbrev,
+    required this.chapters,
+    required this.bookIndex,
+    required this.chapter,
+    required this.itemPositionsListener
+  });
 
   @override
   State<VersesAppBar> createState() => _VersesAppBarState();
@@ -32,11 +35,9 @@ class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _VersesAppBarState extends State<VersesAppBar> {
-  final GlobalKey containerKey = GlobalKey();
   final start = ValueNotifier(false);
   bool isSearching = false;
   late VersesProvider _versesProvider;
-  double position = 0;
 
   @override
   void initState() {
@@ -142,9 +143,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
           Flexible(
             child: Container(
               height: 30,
-              constraints: const BoxConstraints(
-                maxWidth: 250
-              ),
+              constraints: const BoxConstraints(maxWidth: 250),
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(5.0)),
                 border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
@@ -163,47 +162,18 @@ class _VersesAppBarState extends State<VersesAppBar> {
                     items: value.options.map((option) {
                       value.setListItem(option.split(' ')[0]);
                       if(value.getDownloadedVersion(versionToName(option))) {
-                        final versionName = option.toLowerCase().split(' ')[0];
-                        final versionNameRaw = option.split(' ')[0];
                         return DropdownMenuItem(
                           value: option,
-                          child: InkWell(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: versionNameRaw,))
-                                  .then((res) {
-                                    if(res ?? false) {
-                                      if (_versesProvider.bottomSheetOpened) {
-                                        Navigator.pop(context);
-                                        _versesProvider.openBottomSheet(false);
-                                      }
-                                      _versesProvider.resetVersesFoundCounter();
-                                      setState(() {
-                                        listVerses = [];
-                                        initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
-                                      });
-                                      value.changeVersion(option);
-                                      value.loadBibleData().whenComplete(() {
-                                        _versesProvider.clear();
-                                        _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionName: versionName);
-                                        Navigator.pop(context);
-                                      });
-                                    }
-                                });
-                            },
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    option,
-                                    style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withOpacity(.5)),
-                                  ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  option,
+                                  style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withValues(alpha: .5)),
                                 ),
-                                const Icon(Icons.download, size: 16,)
-                              ],
-                            ),
+                              ),
+                              const Icon(Icons.download, size: 16,)
+                            ],
                           ),
                         );
                       }
@@ -222,18 +192,51 @@ class _VersesAppBarState extends State<VersesAppBar> {
                     }).toList(),
                     onChanged: (newValue) {
                       final versionName = newValue!.toLowerCase().split(' ')[0];
-                      if (_versesProvider.bottomSheetOpened) {
-                        Navigator.pop(context);
-                        _versesProvider.openBottomSheet(false);
+                      final versionNameRaw = newValue.split(' ')[0];
+
+                      void handleVersionChange() {
+                        if (_versesProvider.bottomSheetOpened) {
+                          Navigator.pop(context);
+                          _versesProvider.openBottomSheet(false);
+                        }
+                        _versesProvider.resetVersesFoundCounter();
+                        setState(() {
+                          listVerses = [];
+                          initialVerse = widget.itemPositionsListener.itemPositions.value.first.index + 1;
+                        });
+                        value.changeVersion(newValue);
                       }
-                      _versesProvider.resetVersesFoundCounter();
-                      setState(() {
-                        listVerses = [];
-                        initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
-                      });
-                      _versesProvider.clear();
-                      value.changeVersion(newValue.toString());
-                      _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionName: versionName);
+
+                      void loadVerses() {
+                        _versesProvider.clear();
+                        _versesProvider.loadVerses(
+                          widget.bookIndex,
+                          widget.bookName,
+                          versionName: versionName,
+                        );
+                      }
+
+                      if (value.getDownloadedVersion(versionToName(newValue))) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => ProgressDialog(
+                            versionName: versionToName(newValue),
+                            versionNameRaw: versionNameRaw,
+                          ),
+                        ).then((res) {
+                          if (res ?? false) {
+                            handleVersionChange();
+                            value.loadBibleData().whenComplete(() {
+                              loadVerses();
+                            });
+                          }
+                        });
+                      } else {
+                        handleVersionChange();
+                        _versesProvider.clear();
+                        loadVerses();
+                      }
                     },
                     selectedItemBuilder: (BuildContext context) {
                       return value.versionsList;
@@ -244,28 +247,26 @@ class _VersesAppBarState extends State<VersesAppBar> {
             ),
           ),
         ],
-      ).animate(target: start.value ? 1 : 0)
-          .fadeOut(duration: 1300.ms),
+      ).animate(target: start.value ? 1 : 0).fadeOut(duration: 1300.ms),
       actions: [
-        (isSearching) ? SearchingVerse(function: toggleSearch, chapter: widget.chapter)
+        if(isSearching)
+          SearchingVerse(function: toggleSearch, chapter: widget.chapter)
             .animate(target: start.value ? 1 : 0)
-            .fadeIn(duration: 1300.ms) : Container(),
+            .fadeIn(duration: 1300.ms),
         ValueListenableBuilder(
-            valueListenable: start,
-            builder: (context, started, _) => IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: toggleSearch,
-                )
-                    .animate(
-                      target: started ? 1 : 0,
-                    )
-                    .rotate(duration: 1300.ms)
-                    .moveX(
-                      begin: 0,
-                      end: dx,
-                      curve: Curves.easeInOut,
-                      duration: 1300.ms,
-                    )
+          valueListenable: start,
+          builder: (context, started, _) => IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: toggleSearch,
+          )
+          .animate(target: started ? 1 : 0)
+          .rotate(duration: 1300.ms)
+          .moveX(
+            begin: 0,
+            end: dx,
+            curve: Curves.easeInOut,
+            duration: 1300.ms,
+          )
         ),
       ],
     );

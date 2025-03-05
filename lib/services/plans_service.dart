@@ -8,23 +8,17 @@ class PlansService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   Future<List<Plan>?> getPlans() async {
-    List<Plan> plans = [];
-    QuerySnapshot<Map<String, dynamic>>? docs;
-    docs = await _database.collection('plans').get().then((res) {
+    List<Plan>? plans;
+    await _database.collection('plans').get().then((res) {
       if(res.docs.isNotEmpty) {
+        plans ??= [];
         for(var doc in res.docs) {
           if(doc.exists) {
-            plans.add(Plan.fromJson(doc.data()));
+            plans!.add(Plan.fromJson(doc.data()));
           }
         }
       }
-
-      return res;
     });
-
-    if(docs == null) {
-      return null;
-    }
 
     return plans;
   }

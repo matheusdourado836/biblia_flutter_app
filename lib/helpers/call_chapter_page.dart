@@ -6,13 +6,8 @@ class ChapterPageHelpers {
 
   Map<String, List<Book>> formatedBookMap(List<Book> listBooks) {
     Map<String, List<Book>> map = {};
-    for (var value in listBooks) {
-      if (value.testament == 'VT') {
-        _listBooksVT.add(value);
-      } else if (value.testament == 'NT') {
-        _listBooksNT.add(value);
-      }
-    }
+    _listBooksVT.addAll(listBooks.where((book) => book.testament == 'VT').toList(growable: false));
+    _listBooksNT.addAll(listBooks.where((book) => book.testament == 'NT').toList(growable: false));
 
     map["livrosVT"] = _listBooksVT;
     map["livrosNT"] = _listBooksNT;

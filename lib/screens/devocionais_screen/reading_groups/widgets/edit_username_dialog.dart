@@ -1,18 +1,42 @@
 import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class EditProfileDialog extends StatefulWidget {
-  const EditProfileDialog({super.key});
+class EditUsernameDialog extends StatefulWidget {
+  const EditUsernameDialog({super.key});
 
   @override
-  State<EditProfileDialog> createState() => _EditProfileDialogState();
+  State<EditUsernameDialog> createState() => _EditUsernameDialogState();
 }
 
-class _EditProfileDialogState extends State<EditProfileDialog> {
-  final GlobalKey _key = GlobalKey<FormState>();
+class _EditUsernameDialogState extends State<EditUsernameDialog> {
+  final GlobalKey<FormState> _key = GlobalKey<FormState>();
   late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
   final TextEditingController _nameController = TextEditingController();
+  bool _loading = false;
+  String _errorMsg = '';
+
+  Future<void> updateUsername() async {
+    setState(() {
+      _loading = true;
+      _errorMsg = '';
+    });
+    final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
+    final usernameAvailable = await groupsProvider.checkIfUsernameIsAvailable(username: _nameController.text);
+    if(usernameAvailable) {
+      await groupsProvider.updateUsername(newUsername: _nameController.text);
+      setState(() => _loading = false);
+      showCustomSnackBar(child: const Text('Nome de usuário atualizado com sucesso!')
+      );
+      Navigator.pop(context);
+    }else {
+      setState(() {
+       _loading = false;
+       _errorMsg = 'Este nome de usuário não está disponível';
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -29,10 +53,11 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: _nameController,
+                maxLength: 35,
                 validator: (value) {
                   if(value?.isEmpty ?? true) {
                     return 'O nome não pode estar vazio';
@@ -41,31 +66,28 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   return null;
                 },
                 decoration: const InputDecoration(
-                    labelText: 'Nome de usuário',
+                    labelText: 'Novo nome de usuário',
                     hintText: 'Digite seu novo nome de usuário'
                 ),
               ),
-              const Spacer(),
-              ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.surface,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      fixedSize: const Size(500, 40)
-                  ),
-                  child: const Text('Salvar')
-              ),
-              const SizedBox(height: 12)
+              if(_errorMsg.isNotEmpty)
+                Text(_errorMsg, style: const TextStyle(color: Colors.red))
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () {},
-          child: const Text('Salvar')
-        ),
+        if(_loading)
+          const CircularProgressIndicator()
+        else
+          TextButton(
+            onPressed: () {
+              if(_key.currentState!.validate()) {
+                updateUsername();
+              }
+            },
+            child: const Text('Salvar')
+          ),
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
       ],
     );

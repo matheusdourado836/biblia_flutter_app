@@ -7,24 +7,22 @@ class ThemeProvider extends ChangeNotifier {
 
   bool get isOn => _isOn;
 
-  void getThemeMode() async {
+  Future<void> getThemeMode() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool lightTheme = prefs.getBool('themeMode') ?? true;
+    _isOn = lightTheme;
 
-    prefs.getBool('themeMode') == null ? _isOn = true : _isOn = prefs.getBool('themeMode')!;
-    if(prefs.getBool('themeMode') == null) {
-      themeMode = ThemeMode.light;
-      return;
-    }
-    themeMode = prefs.getBool('themeMode')! ? ThemeMode.light : ThemeMode.dark;
+    themeMode = lightTheme ? ThemeMode.light : ThemeMode.dark;
 
     notifyListeners();
+    return;
   }
 
   void toggleTheme() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _isOn = !_isOn;
     await prefs.setBool('themeMode', isOn);
-    getThemeMode();
+    themeMode = _isOn ? ThemeMode.light : ThemeMode.dark;
 
     notifyListeners();
   }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../data/chapters_provider.dart';
 import '../../../data/verses_provider.dart';
 import '../../../helpers/call_chapter_page.dart';
 import '../../../models/book.dart';
+import '../home_screen.dart';
 
 class BookCardStyleOrder extends StatefulWidget {
   final List<Book>? database;
@@ -14,7 +16,7 @@ class BookCardStyleOrder extends StatefulWidget {
 }
 
 class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
-  late Map<String, List<Book>> booksMap;
+  late final Map<String, List<Book>> booksMap;
   @override
   void initState() {
     booksMap = ChapterPageHelpers().formatedBookMap(widget.database!);
@@ -26,6 +28,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
     return Consumer<VersesProvider>(
       builder: (context, value, child) {
         return ListView(
+          controller: scrollController,
           physics: const BouncingScrollPhysics(),
           children: [
             Column(
@@ -56,56 +59,56 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: qtdItens,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
-            crossAxisSpacing: 10.0,
-            mainAxisSpacing: 10.0,
-            childAspectRatio: 1/1
-          ),
-          itemBuilder: (context, i) {
-            String abbrevRaw = booksMap["livrosVT"]![i + startIndex].abbrev;
-            String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
-            return Stack(
-              children: <Widget>[
-                Card(
-                  elevation: 1.0,
-                  child: InkWell(
-                    onTap: (() {
-                      clear();
-                      Navigator.pushNamed(context, 'chapter_screen', arguments: {
-                        'bookName': booksMap["livrosVT"]![i + startIndex].name,
-                        'abbrev': abbrev,
-                        'bookIndex': i + startIndex,
-                        'chapters': booksMap["livrosVT"]![i + startIndex].chapters,
-                      }).then((value) => setState(() {}));
-                    }),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          abbrev,
-                          style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
-                        ),
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: qtdItens,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
+          crossAxisSpacing: 10.0,
+          mainAxisSpacing: 10.0,
+          childAspectRatio: 1/1
+        ),
+        itemBuilder: (context, i) {
+          String abbrevRaw = booksMap["livrosVT"]![i + startIndex].abbrev;
+          String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
+          return Stack(
+            children: <Widget>[
+              Card(
+                elevation: 1.0,
+                child: InkWell(
+                  onTap: (() {
+                    if(scrollController?.hasClients ?? false) {
+                      context.read<ChaptersProvider>().updatePosition(scrollController?.offset ?? 0);
+                    }
+                    clear();
+                    Navigator.pushNamed(context, 'chapter_screen', arguments: {
+                      'bookName': booksMap["livrosVT"]![i + startIndex].name,
+                      'abbrev': abbrev,
+                      'bookIndex': i + startIndex,
+                      'chapters': booksMap["livrosVT"]![i + startIndex].chapters,
+                    }).then((value) => setState(() {}));
+                  }),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        abbrev,
+                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                       ),
                     ),
                   ),
                 ),
+              ),
+              if(widget.bookIsRead(booksMap["livrosVT"]![i + startIndex].name))
                 SizedBox(
-                    child: (widget.bookIsRead(booksMap["livrosVT"]![i + startIndex].name))
-                        ? Icon(
-                      Icons.check_circle,
-                      color: Theme.of(context)
-                          .buttonTheme
-                          .colorScheme
-                          ?.secondary,
-                    )
-                        : null),
-              ],
-            );
-          }),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: Theme.of(context).buttonTheme.colorScheme?.secondary,
+                  )
+                ),
+            ],
+          );
+        }),
     );
   }
 
@@ -133,6 +136,7 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                 elevation: 1.0,
                 child: InkWell(
                   onTap: (() {
+                    context.read<ChaptersProvider>().updatePosition(scrollController!.offset);
                     Navigator.pushNamed(context, 'chapter_screen', arguments: {
                       'bookName': booksMap["livrosNT"]![i + startIndex].name,
                       'abbrev': abbrev,
@@ -152,14 +156,13 @@ class _BookCardStyleOrderState extends State<BookCardStyleOrder> {
                   ),
                 ),
               ),
-              SizedBox(
-                  child: (widget.bookIsRead(booksMap["livrosNT"]![i + startIndex].name))
-                      ? Icon(
+              if(widget.bookIsRead(booksMap["livrosNT"]![i + startIndex].name))
+                SizedBox(
+                  child: Icon(
                     Icons.check_circle,
-                    color:
-                    Theme.of(context).buttonTheme.colorScheme?.secondary,
+                    color: Theme.of(context).buttonTheme.colorScheme?.secondary,
                   )
-                      : null),
+                ),
             ],
           );
         },

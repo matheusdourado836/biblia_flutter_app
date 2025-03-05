@@ -31,7 +31,7 @@ class ThematicSelected extends StatelessWidget {
                 height: MediaQuery.of(context).size.height * .53,
                 fit: BoxFit.cover,
                 colorBlendMode: BlendMode.darken,
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -61,7 +61,7 @@ class ThematicSelected extends StatelessWidget {
               height: MediaQuery.of(context).size.height * .52,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: const BorderRadius.only(topLeft: Radius.circular(45), topRight: Radius.circular(45))
               ),
               child: Padding(
@@ -97,7 +97,7 @@ class LandScapeWidget extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
           IconButton(
             onPressed: () => Navigator.pop(context),

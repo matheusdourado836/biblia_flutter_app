@@ -1,14 +1,15 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:biblia_flutter_app/data/ai_helper.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/screens/ai_screen/ad_dialog.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/bible_data.dart';
@@ -24,17 +25,18 @@ class AiScreen extends StatefulWidget {
 }
 
 class _AiScreenState extends State<AiScreen> {
+  InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
   late final ChatSession _chat;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFieldFocus = FocusNode(debugLabel: 'TextField');
-  final List<Content> _contents = [];
+  List<Content> _history = [];
   int _qtdQuestions = 0;
   bool _loading = false;
 
-  void loadAd() {
-    RewardedAd.load(
+  Future<void> loadAd() async {
+    await RewardedAd.load(
       adUnitId: AdMobService.rewardedAdId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
@@ -59,28 +61,72 @@ class _AiScreenState extends State<AiScreen> {
             );
             _rewardedAd = ad;
           },
-          onAdFailedToLoad: (LoadAdError error) {
-
-          }
+          onAdFailedToLoad: (LoadAdError error) {}
       )
     );
+  }
+
+  void _createInterstitialAd() {
+    InterstitialAd.load(
+        adUnitId: AdMobService.aiInterstitialAdId!,
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (ad) {
+            _interstitialAd = ad;
+            _showInterstitialAd();
+          },
+          onAdFailedToLoad: (error) => _interstitialAd = null,
+        )
+    );
+  }
+
+  void _showInterstitialAd() {
+    if(_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) => ad.dispose(),
+        onAdFailedToShowFullScreenContent: (ad, error) => ad.dispose()
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
+    }
+  }
+
+  bool showAd() {
+    Random random = Random();
+
+    int randomInt = random.nextInt(3);
+
+    bool showAd = randomInt == 1;
+
+    return showAd;
   }
 
   @override
   void initState() {
     super.initState();
+    FirebaseAnalytics.instance.logEvent(
+      name: "teste_evento",
+      parameters: {"status": "funcionando"},
+    );
+    FirebaseAnalytics.instance.logScreenView(screenName: "ai_screen");
+    if(showAd()) {
+      _createInterstitialAd();
+    }
     loadAd();
-    _chat = AiHelper.chat;
     getAvailableQuestions();
     _loadChatHistory();
   }
 
   void _scrollDown() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 750),
-        curve: Curves.easeOutCirc,
-      ),
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent * 2,
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeInOut,
+        );
+      }
+    },
     );
   }
 
@@ -95,17 +141,23 @@ class _AiScreenState extends State<AiScreen> {
         final parts = (item['parts'] as List<dynamic>)
             .map((part) => TextPart(part['text']))
             .toList();
-        _contents.add(Content(role, parts));
+        _history.add(Content(role, parts));
       }
     }
-    setState(() {_chat;});
+    AiHelper().initChat(_history);
+    _chat = AiHelper.chat;
+    setState(() {
+      _chat;
+      _history = _chat.history.toList();
+    });
     _scrollDown();
   }
 
   Future<void> _saveChatHistory() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setInt('available_questions', _qtdQuestions);
-    final List<Map<String, dynamic>> historyToSave = _contents.map((msg) => {
+    _history = _chat.history.toList();
+    final List<Map<String, dynamic>> historyToSave = _history.map((msg) => {
       'role': msg.role,
       'parts': msg.parts.map((part) => {'text': (part as TextPart).text}).toList(),
     }).toList();
@@ -114,9 +166,7 @@ class _AiScreenState extends State<AiScreen> {
 
   Future<void> _deleteHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _contents.clear();
-    });
+    setState(() => _history.clear());
     await prefs.remove('chat_history').whenComplete(() => Navigator.pop(context));
   }
 
@@ -133,7 +183,6 @@ class _AiScreenState extends State<AiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final history = _contents;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -179,7 +228,7 @@ class _AiScreenState extends State<AiScreen> {
                   ),
                 ),
                 Expanded(
-                    child: history.isEmpty
+                    child: _history.isEmpty
                         ? SingleChildScrollView(
                       child: Column(
                         children: [
@@ -196,7 +245,7 @@ class _AiScreenState extends State<AiScreen> {
                             margin: const EdgeInsets.all(16),
                             child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
                                 'Posso ajudá-lo a entender passagens bíblicas, explicar conceitos teológicos, fornecer informações sobre personagens e eventos bíblicos, e responder perguntas sobre a fé cristã.\n'
-                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃', style: TextStyle(color: Colors.black),),
+                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃'),
                           )
                         ],
                       ),
@@ -205,10 +254,11 @@ class _AiScreenState extends State<AiScreen> {
                       child: ListView.builder(
                         controller: _scrollController,
                         shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
                         padding: const EdgeInsets.all(12.0),
-                        itemCount: history.length,
+                        itemCount: _history.length,
                         itemBuilder: (context, idx) {
-                          final content = history[idx];
+                          final content = _history[idx];
                           final text = content.parts
                               .whereType<TextPart>()
                               .map<String>((e) => e.text)
@@ -325,8 +375,6 @@ class _AiScreenState extends State<AiScreen> {
             setState(() {
               _qtdQuestions--;
               _loading = false;
-              _contents.add(Content('user', [TextPart(message)]));
-              _contents.add(Content('model', [TextPart(text)]));
               _scrollDown();
             });
             _saveChatHistory();
@@ -570,7 +618,7 @@ class VerseDialog extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   child: Text.rich(TextSpan(
                       text: '${int.parse(verse.contains('-') ? verse.split('-')[0] : verse) + i}  ',
-                      style: themeColors.verseNumberColor(themeProvider.isOn),
+                      style: themeColors.coloredVerse(themeProvider.isOn),
                       children: <TextSpan>[
                         TextSpan(text: verses[i], style: themeColors.verseColor(themeProvider.isOn))
                       ]

@@ -1,0 +1,1 @@
+/Users/matheusdourado/StudioProjects/biblia_flutter_app/build/app/intermediates/cxx/RelWithDebInfo/5q1x4i40/obj/armeabi-v7a

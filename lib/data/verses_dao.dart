@@ -41,8 +41,7 @@ class VersesDao {
   }
 
   Future<List<VerseModel>> findAll() async {
-    final List<Map<String, dynamic>> result =
-    await _versesInstance.query(_tablename);
+    final List<Map<String, dynamic>> result = await _versesInstance.query(_tablename);
 
     return toList(result);
   }
@@ -57,18 +56,13 @@ class VersesDao {
     return toList(result);
   }
 
-  updateColor(String verse, String newColor) async {
-    return await _versesInstance.rawUpdate(
-        'UPDATE $_tablename SET $_verseColor = ? WHERE $_verse = ?', [newColor, verse]);
-  }
+  updateColor(String verse, String newColor) async => await _versesInstance.rawUpdate(
+    'UPDATE $_tablename SET $_verseColor = ? WHERE $_verse = ?', [newColor, verse]
+  );
 
-  delete(String verse) async {
-    return _versesInstance.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
-  }
+  delete(String verse) async => _versesInstance.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
 
-  deleteAllVerses() async {
-    return _versesInstance.delete(_tablename);
-  }
+  deleteAllVerses() async => _versesInstance.delete(_tablename);
 
   String intToVersion(int verisionInt) {
     switch(verisionInt) {

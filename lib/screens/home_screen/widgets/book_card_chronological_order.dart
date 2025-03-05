@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../../../data/chapters_provider.dart';
 import '../../../data/verses_provider.dart';
 import '../../../helpers/call_chapter_page.dart';
 import '../../../models/book.dart';
+import '../home_screen.dart';
 
 class BookCardChronologicalOrder extends StatefulWidget {
   final List<Book>? database;
@@ -15,8 +16,8 @@ class BookCardChronologicalOrder extends StatefulWidget {
 }
 
 class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder> {
-  late Map<String, List<Book>> booksMap;
-  Map<String, List<Book>> orderedList = {};
+  late final Map<String, List<Book>> booksMap;
+  final Map<String, List<Book>> orderedList = {};
   @override
   void initState() {
     booksMap = ChapterPageHelpers().formatedBookMap(widget.database!);
@@ -33,12 +34,10 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
 
   @override
   Widget build(BuildContext context) {
-    setState(() {
-      widget.database;
-    });
     return Consumer<VersesProvider>(
       builder: (context, value, child) {
         return ListView(
+          controller: scrollController,
           physics: const BouncingScrollPhysics(),
           children: [
             Column(
@@ -74,56 +73,54 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
     final screenOrientation = MediaQuery.of(context).orientation;
     final screenSize = MediaQuery.of(context).size.width;
     return GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: 39,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
-          crossAxisSpacing: 10.0,
-          mainAxisSpacing: 10.0,
-          childAspectRatio: 1/1
-        ),
-        itemBuilder: (context, i) {
-          String abbrevRaw = orderedList["livrosVT"]![i].abbrev;
-          String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
-          return Stack(
-            children: <Widget>[
-              Card(
-                elevation: 1.0,
-                child: InkWell(
-                  onTap: (() {
-                    clear();
-                    Navigator.pushNamed(context, 'chapter_screen', arguments: {
-                      'bookName': orderedList["livrosVT"]![i].name,
-                      'abbrev': abbrev,
-                      'bookIndex': booksMap["livrosVT"]!.indexOf(orderedList["livrosVT"]![i]),
-                      'chapters': orderedList["livrosVT"]![i].chapters,
-                    }).then((value) => setState(() {}));
-                  }),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        abbrev,
-                        style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
-                      ),
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: 39,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: (screenSize > 500 && screenOrientation == Orientation.portrait) ? 100 : 90.0,
+        crossAxisSpacing: 10.0,
+        mainAxisSpacing: 10.0,
+        childAspectRatio: 1/1
+      ),
+      itemBuilder: (context, i) {
+        String abbrevRaw = orderedList["livrosVT"]![i].abbrev;
+        String abbrev = (abbrevRaw.length > 2 && abbrevRaw.length < 4) ? '${abbrevRaw.split('')[0]}${abbrevRaw.split('')[1].toUpperCase()}${abbrevRaw.substring(2)}' : '${abbrevRaw.split('')[0].toUpperCase()}${abbrevRaw.substring(1)}';
+        return Stack(
+          children: <Widget>[
+            Card(
+              elevation: 1.0,
+              child: InkWell(
+                onTap: (() {
+                  context.read<ChaptersProvider>().updatePosition(scrollController!.offset);
+                  clear();
+                  Navigator.pushNamed(context, 'chapter_screen', arguments: {
+                    'bookName': orderedList["livrosVT"]![i].name,
+                    'abbrev': abbrev,
+                    'bookIndex': booksMap["livrosVT"]!.indexOf(orderedList["livrosVT"]![i]),
+                    'chapters': orderedList["livrosVT"]![i].chapters,
+                  }).then((value) => setState(() {}));
+                }),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      abbrev,
+                      style: Theme.of(context).textTheme.titleMedium!.copyWith(fontSize: 18),
                     ),
                   ),
                 ),
               ),
+            ),
+            if(widget.bookIsRead(orderedList["livrosVT"]![i].name))
               SizedBox(
-                  child: (widget.bookIsRead(orderedList["livrosVT"]![i].name))
-                      ? Icon(
-                    Icons.check_circle,
-                    color: Theme.of(context)
-                        .buttonTheme
-                        .colorScheme
-                        ?.secondary,
-                  )
-                      : null),
-            ],
-          );
-        });
+                child: Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).buttonTheme.colorScheme?.secondary,
+                )
+              ),
+          ],
+        );
+      });
   }
 
   Widget _newTestamentCards(Function clear) {
@@ -148,6 +145,7 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
               elevation: 1.0,
               child: InkWell(
                 onTap: (() {
+                  context.read<ChaptersProvider>().updatePosition(scrollController!.offset);
                   Navigator.pushNamed(context, 'chapter_screen', arguments: {
                     'bookName': booksMap["livrosNT"]![i].name,
                     'abbrev': abbrev,
@@ -167,14 +165,13 @@ class _BookCardChronologicalOrderState extends State<BookCardChronologicalOrder>
                 ),
               ),
             ),
-            SizedBox(
-                child: (widget.bookIsRead(booksMap["livrosNT"]![i].name))
-                    ? Icon(
+            if(widget.bookIsRead(booksMap["livrosNT"]![i].name))
+              SizedBox(
+                child: Icon(
                   Icons.check_circle,
-                  color:
-                  Theme.of(context).buttonTheme.colorScheme?.secondary,
+                  color: Theme.of(context).buttonTheme.colorScheme?.secondary,
                 )
-                    : null),
+              ),
           ],
         );
       },

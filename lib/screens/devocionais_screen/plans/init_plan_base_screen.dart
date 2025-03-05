@@ -258,7 +258,7 @@ class _DaysByMonthListState extends State<DaysByMonthList> {
               bool isNextYearHeaderNeeded = false;
       
               // Check if the next year header is needed
-              if(month == 'janeiro' && index > 0) {
+              if((month == 'janeiro' || month == 'janeiro*') && index > 0) {
                 isNextYearHeaderNeeded = months[index - 1] == 'dezembro';
               }
       

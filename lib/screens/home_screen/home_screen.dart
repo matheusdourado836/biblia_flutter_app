@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/main.dart';
+//import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card_chronological_order.dart';
 import 'package:biblia_flutter_app/screens/home_screen/widgets/book_card_style_order.dart';
@@ -16,10 +16,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-
 import '../../data/devocional_provider.dart';
 
-late VersesProvider versesProvider;
+ScrollController? scrollController;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,10 +28,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  BannerAd? _bannerAd;
+  late final VersesProvider versesProvider = Provider.of<VersesProvider>(context, listen: false);
   final BibleDataController bibleDataController = BibleDataController();
-  late AdSize width;
-  bool changeLayout = true;
+  BannerAd? _bannerAd;
+  bool changeLayout = false;
 
   @override
   void initState() {
@@ -43,11 +42,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     devocionalProvider.getCompletedTutorials();
     chapterProvider.innerList = bibleDataController.books;
-    versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     versesProvider.getFontSize();
     versesProvider.refresh();
     versesProvider.getImage();
-    _createBannerAd();
+    double savedPosition = chapterProvider.position;
+
+    scrollController = ScrollController(initialScrollOffset: savedPosition);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _createBannerAd());
     super.initState();
   }
 
@@ -58,35 +59,40 @@ class _HomeScreenState extends State<HomeScreen> {
     prefs.setString('userId', userId);
   }
 
-  void _createBannerAd() {
-    width = AdSize.getInlineAdaptiveBannerAdSize(screenWidth , 60);
+  Future<void> _createBannerAd() async {
+    final screenWidth = MediaQuery.sizeOf(context).width.round();
+    final width = AdSize.getInlineAdaptiveBannerAdSize(screenWidth , 60);
     _bannerAd = BannerAd(
       size: width,
       adUnitId: AdMobService.bannerAdUnitId!,
       listener: AdMobService.bannerAdListener,
       request: const AdRequest()
-    )..load();
+    );
+    await _bannerAd!.load();
+    setState(() => _bannerAd);
   }
 
   void getLayout() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     bool? userLayout = prefs.getBool("cardLayout");
     if(userLayout == null) {
-      prefs.setBool("cardLayout", false);
+      prefs.setBool("cardLayout", true);
       return;
     }
 
     setState(() => changeLayout = userLayout);
   }
 
-  void setLayout(bool layoutType) async {
+  void setLayout() async {
+    setState(() => changeLayout = !changeLayout);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool("cardLayout", layoutType);
+    prefs.setBool("cardLayout", changeLayout);
   }
 
   @override
   void dispose() {
     _bannerAd!.dispose();
+    _bannerAd = null;
     super.dispose();
   }
 
@@ -98,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: HomeAppBar(books: bibleDataController.books),
       drawer: const HomeDrawer(),
       backgroundColor: Theme.of(context).primaryColor,
-      body: Container(
+      body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Consumer<ChaptersProvider>(
           builder: (context, value, _) {
@@ -109,8 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
             if(changeLayout) {
               if (value.orderStyle == 0) {
                 return BookCard(
-                    bookIsRead: bookIsRead,
-                    database: bibleDataController.books);
+                  bookIsRead: bookIsRead,
+                  database: bibleDataController.books
+                );
               }else if(value.orderStyle == 1) {
                 return BookCardChronologicalOrder(
                     bookIsRead: bookIsRead,
@@ -132,10 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-        onPressed: () {
-          setState(() => changeLayout = !changeLayout);
-          setLayout(changeLayout);
-        },
+        onPressed: () => setLayout(),
         tooltip: 'Mudar Layout',
         child: Icon(
           Icons.list,
@@ -145,24 +149,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar:
         (_bannerAd != null)
-            ? Container(
-                height: 60,
-                padding: (Platform.isIOS) ? const EdgeInsets.only(left: 14, right: 14, bottom: 14) : EdgeInsets.zero,
-                child: AdWidget(ad: _bannerAd!),
-              )
-            : null,
+          ? Container(
+              height: 60,
+              padding: (Platform.isIOS) ? const EdgeInsets.only(left: 14, right: 14, bottom: 14) : EdgeInsets.zero,
+              child: AdWidget(ad: _bannerAd!),
+            )
+          : null,
     );
   }
 
   bool bookIsRead(String bookName) {
-    List<Map<String, dynamic>> listMap = [];
-    listMap = versesProvider.listMap;
-    for (var element in listMap) {
-      if (element["bookName"] == bookName && element['finishedReading'] == 1) {
-        return true;
-      }
-    }
-
-    return false;
+    return versesProvider.listMap.any(
+      (element) => element["bookName"] == bookName && element['finishedReading'] == 1,
+    );
   }
 }

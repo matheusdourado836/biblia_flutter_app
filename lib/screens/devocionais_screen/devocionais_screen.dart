@@ -6,7 +6,7 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_
 import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide CarouselController;
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -71,6 +71,16 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
             }
           })
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
+        onPressed: () => Navigator.pushNamed(context, 'reading_groups_screen'),
+        tooltip: 'Leitura em grupo',
+        child: Icon(
+          Icons.group,
+          size: 26,
+          color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
+        ),
       ),
     );
   }
@@ -255,7 +265,7 @@ class _JornadaEspiritualState extends State<JornadaEspiritual> {
                                         fit: BoxFit.cover,
                                         image: image,
                                         colorFilter: ColorFilter.mode(
-                                            Colors.black.withOpacity(0.25), BlendMode.darken
+                                            Colors.black.withValues(alpha: 0.25), BlendMode.darken
                                         ),
                                       )
                                   ),
@@ -401,7 +411,8 @@ class _ComunidadeState extends State<Comunidade> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondary,
                       foregroundColor: Colors.white,
-                    ), child: const Text('Explorar'),
+                    ),
+                    child: const Text('Explorar'),
                   ),
                 ),
               )
@@ -482,7 +493,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
               image: AssetImage(plan.imgPath),
               fit: BoxFit.cover,
               colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.3), BlendMode.darken
+                  Colors.black.withValues(alpha: 0.3), BlendMode.darken
               ),
             ),
             borderRadius: BorderRadius.circular(4)
@@ -502,7 +513,7 @@ class _PlanosDeLeituraState extends State<PlanosDeLeitura> {
                 image: image,
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.3), BlendMode.darken
+                    Colors.black.withValues(alpha: 0.3), BlendMode.darken
                 ),
               ),
               borderRadius: BorderRadius.circular(4)

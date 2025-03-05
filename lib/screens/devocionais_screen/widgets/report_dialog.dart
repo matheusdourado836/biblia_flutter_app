@@ -92,7 +92,7 @@ class _ReportReasonsListState extends State<ReportReasonsList> {
             children: [
               Container(
                 color: (_selectedReason == index)
-                    ? Theme.of(context).colorScheme.primary.withOpacity(.6)
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: .6)
                     : Colors.transparent,
                 child: RadioListTile<int>(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -159,7 +159,7 @@ class _ReportReasonsListState extends State<ReportReasonsList> {
         } else {
           return Container(
             color: (_selectedReason == index)
-                ? Theme.of(context).colorScheme.primary.withOpacity(.6)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: .6)
                 : Colors.transparent,
             child: RadioListTile<int>(
               contentPadding:

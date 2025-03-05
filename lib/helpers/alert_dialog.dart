@@ -10,7 +10,7 @@ alertDialog({String content = 'Não foi possível completar o login', String tit
           title: Container(
             height: 90,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.error.withOpacity(0.80),
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.8),
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(27), topRight: Radius.circular(27))
             ),
             child: Center(
@@ -28,7 +28,7 @@ alertDialog({String content = 'Não foi possível completar o login', String tit
                 style: ElevatedButton.styleFrom(
                   textStyle: const TextStyle(color: Colors.white),
                   minimumSize: const Size(80, 36),
-                  backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.80)),
+                  backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.8)),
                 onPressed: () => Navigator.pop(context),
                 child: const Text(
                   'OK',

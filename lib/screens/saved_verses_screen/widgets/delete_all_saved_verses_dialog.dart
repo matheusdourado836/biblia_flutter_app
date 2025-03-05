@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-class DeleteSavedVersesDialog extends StatelessWidget {
+class DeleteAllSavedVersesDialog extends StatelessWidget {
   final Function() onDelete;
-  const DeleteSavedVersesDialog({super.key, required this.onDelete});
+  const DeleteAllSavedVersesDialog({super.key, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
