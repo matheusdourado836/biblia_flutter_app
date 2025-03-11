@@ -67,11 +67,14 @@ class _ChapterScreenState extends State<ChapterScreen> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: ChapterCard(
-        bookIndex: widget.bookIndex,
-        chapters: widget.chapters,
-        bookName: widget.bookName,
-        abbrev: widget.abbrev,
+      body: Consumer<ChaptersProvider>(
+        builder: (context, value, _) => ChapterCard(
+          bookIndex: widget.bookIndex,
+          chapters: widget.chapters,
+          bookName: widget.bookName,
+          abbrev: widget.abbrev,
+          readChapters: value.readChapters,
+        ),
       ),
     );
   }

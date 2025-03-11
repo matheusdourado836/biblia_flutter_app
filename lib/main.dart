@@ -3,20 +3,45 @@ import 'package:biblia_flutter_app/core/routes.dart';
 import 'package:biblia_flutter_app/data/theme_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
+import 'package:biblia_flutter_app/services/firebase_messaging_service.dart';
 import 'package:biblia_flutter_app/themes/dark_theme.dart';
 import 'package:biblia_flutter_app/themes/light_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mentions/flutter_mentions.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/services_initializer.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'firebase_options.dart';
+import 'helpers/go_to_verse_screen.dart';
+
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
 ThemeMode? _themeMode;
 
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage? message) async {
+  if (message != null && !message.data.containsKey("route")) {
+    GoToVerseScreen().goToVersePage(
+        message.data["bookName"],
+        message.data["abbrev"],
+        int.parse(message.data["bookIndex"]),
+        int.parse(message.data["chapters"]),
+        int.parse(message.data["chapter"]),
+        int.parse(message.data["verseNumber"]));
+  }else if(message != null && message.data.containsKey("route")) {
+    navigatorKey!.currentState!.pushNamed(message.data["route"]);
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService();
+  await firebaseMessagingService.initialize();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await ServicesInitializer.initialize();
   _themeMode = await ServicesInitializer.getThemeMode();
   await SentryFlutter.init(
@@ -54,6 +79,7 @@ class MyApp extends StatelessWidget {
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
         ],
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [

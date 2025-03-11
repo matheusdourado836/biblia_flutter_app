@@ -61,10 +61,10 @@ class _VersesWidgetState extends State<VersesWidget> {
   bool _isChapterRead = false;
 
   Future<void> setChapterRead() async {
-    setState(() => _isChapterRead = !_isChapterRead);
     final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
-    await chaptersProvider.setChapterRead(widget.bookName, widget.chapter.toString(), widget.chapters, _isChapterRead);
-    _versesProvider.readChapters[widget.chapter - 1] = _isChapterRead;
+    await chaptersProvider.setChapterRead(widget.bookName, widget.chapter.toString(), widget.chapters, !_isChapterRead);
+    _versesProvider.readChapters[widget.chapter - 1] = !_isChapterRead;
+    setState(() {});
   }
 
   @override

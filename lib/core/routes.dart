@@ -30,7 +30,7 @@ import '../screens/verses_screen/verses_screen.dart';
 import '../screens/verses_screen/widgets/verse_with_background.dart';
 
 class AppRoutes {
-  static const Duration duration = Duration(milliseconds: 500);
+  static const Duration duration = Duration(milliseconds: 200);
   static const String home = "home";
   static const String annotations = "annotations_screen";
   static const String ai = "ai_screen";
@@ -67,7 +67,6 @@ class AppRoutes {
         return PageTransition(
           child: const HomeScreen(),
           type: PageTransitionType.bottomToTop,
-          duration: const Duration(milliseconds: 500),
         );
 
       case 'chapter_screen':
@@ -79,8 +78,8 @@ class AppRoutes {
             bookIndex: routeArgs?['bookIndex'],
             chapters: routeArgs?['chapters'],
           ),
-          duration: const Duration(milliseconds: 500),
           type: PageTransitionType.rightToLeftWithFade,
+          duration: duration
         );
 
       case 'verses_screen':
@@ -96,7 +95,7 @@ class AppRoutes {
             readingPlan: map?["reading_plan"],
           ),
           type: PageTransitionType.rightToLeftWithFade,
-          duration: const Duration(milliseconds: 500),
+          duration: duration
         );
 
       case 'verse_with_background':
@@ -125,9 +124,7 @@ class AppRoutes {
         Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
         return PageTransition(
           type: PageTransitionType.rightToLeftWithFade,
-          child: DevocionalSelected(
-            devocional: map?["devocional"],
-          ),
+          child: DevocionalSelected(devocional: map?["devocional"]),
         );
       case 'selected_day':
         Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;

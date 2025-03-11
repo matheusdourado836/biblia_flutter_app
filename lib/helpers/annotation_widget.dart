@@ -160,9 +160,9 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
       ),
       body: Column(
         children: [
-          QuillToolbar.simple(
+          QuillSimpleToolbar(
             controller: _controller,
-            configurations: QuillSimpleToolbarConfigurations(
+            config: QuillSimpleToolbarConfig(
               color: Theme.of(context).primaryColor,
               showAlignmentButtons: true,
               multiRowsDisplay: false,
@@ -172,9 +172,6 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
               showClipboardCut: false,
               showSubscript: false,
               showSuperscript: false,
-              sharedConfigurations: const QuillSharedConfigurations(
-                locale: Locale('pt', 'BR'),
-              ),
             ),
           ),
           const SizedBox(height: 32),
@@ -182,8 +179,8 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
             child: QuillEditor.basic(
               controller: _controller,
               focusNode: _textFocus,
-              configurations: QuillEditorConfigurations(
-                isOnTapOutsideEnabled: true,
+              config: QuillEditorConfig(
+                onTapOutsideEnabled: true,
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
                 placeholder: 'Escreva sua anotação aqui...',
                 customStyles: DefaultStyles(

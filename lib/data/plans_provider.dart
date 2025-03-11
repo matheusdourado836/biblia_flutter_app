@@ -10,16 +10,13 @@ import 'package:biblia_flutter_app/services/plans_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../services/firebase_messaging_service.dart';
-import '../services/notification_service.dart';
 
 class PlansProvider extends ChangeNotifier {
   static final DailyReadingDao _dailyReadingDao = DailyReadingDao.instance;
   static final ReadingProgressDao _readingProgressDao = ReadingProgressDao();
   static final PlansService _plansService = PlansService();
-  static final NotificationService notificationService = NotificationService();
-  FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService(notificationService);
+  FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService();
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
 
   bool _loading = false;

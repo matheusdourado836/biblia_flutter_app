@@ -139,9 +139,9 @@ class _CreateDevocionalState extends State<CreateDevocional> {
         children: [
           SizedBox(
             key: quillKey,
-            child: QuillToolbar.simple(
+            child: QuillSimpleToolbar(
               controller: _controller,
-              configurations: QuillSimpleToolbarConfigurations(
+              config: QuillSimpleToolbarConfig(
                 color: Theme.of(context).primaryColor,
                 showAlignmentButtons: true,
                 multiRowsDisplay: false,
@@ -151,9 +151,6 @@ class _CreateDevocionalState extends State<CreateDevocional> {
                 showClipboardCut: false,
                 showSubscript: false,
                 showSuperscript: false,
-                sharedConfigurations: const QuillSharedConfigurations(
-                  locale: Locale('pt', 'BR'),
-                ),
               ),
             ),
           ),
@@ -164,8 +161,8 @@ class _CreateDevocionalState extends State<CreateDevocional> {
               child: QuillEditor.basic(
                 controller: _controller,
                 focusNode: _textFocus,
-                  configurations: QuillEditorConfigurations(
-                    isOnTapOutsideEnabled: true,
+                  config: QuillEditorConfig(
+                    onTapOutsideEnabled: true,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     placeholder: 'Escreva seu devocional aqui...',
                     customStyles: DefaultStyles(

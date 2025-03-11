@@ -7,9 +7,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'notification_service.dart';
 
 class FirebaseMessagingService {
-  final NotificationService _notificationService;
+  FirebaseMessagingService();
 
-  FirebaseMessagingService(this._notificationService);
+  static final NotificationService _notificationService = NotificationService();
 
   Future<void> initialize() async {
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
@@ -21,7 +21,6 @@ class FirebaseMessagingService {
     _tokenRefresh();
     _onMessage();
     _onMessageOpenedApp();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
   Future<void> _tokenRefresh() async {
@@ -87,20 +86,6 @@ class FirebaseMessagingService {
             navigatorKey!.currentState!.pushNamed(message!.data["route"], arguments: {"notification": true})
           }
         });
-  }
-
-  Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage? message) async {
-    if (message != null && !message.data.containsKey("route")) {
-      GoToVerseScreen().goToVersePage(
-          message.data["bookName"],
-          message.data["abbrev"],
-          int.parse(message.data["bookIndex"]),
-          int.parse(message.data["chapters"]),
-          int.parse(message.data["chapter"]),
-          int.parse(message.data["verseNumber"]));
-    }else if(message != null && message.data.containsKey("route")) {
-      navigatorKey!.currentState!.pushNamed(message.data["route"]);
-    }
   }
 
   _foregroundNotification(RemoteMessage message) {
