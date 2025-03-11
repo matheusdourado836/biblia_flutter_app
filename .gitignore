@@ -53,3 +53,5 @@ app.*.map.json
 .fvm/
 
 local.properties
+
+ios/Runner/GoogleService-Info.plist
