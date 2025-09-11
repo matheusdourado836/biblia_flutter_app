@@ -1,13 +1,13 @@
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/expandable_container.dart';
 import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/community/tab_item.dart';
+import 'package:biblia_flutter_app/models/user.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_section.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/create_devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_skeleton.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/reject_reason_dialog.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -18,7 +18,6 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../data/theme_provider.dart';
 import '../../../helpers/tutorial_widget.dart';
 
-bool _isPortrait = true;
 double _horizontalPadding = 0;
 
 class FeedScreen extends StatefulWidget {
@@ -29,17 +28,14 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
-  late final TabController _tabController = TabController(length: 3, vsync: this);
+  late final userProvider = Provider.of<UserProvider>(context, listen: false);
+  late final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
   final GlobalKey postKey = GlobalKey();
-  late final DevocionalProvider devocionalProvider;
   int _selectedPage = 0;
-  List<Devocional> _approvedDevocionais = [];
-  List<Devocional> _pendingDevocionais = [];
-  List<Devocional> _rejectedDevocionais = [];
-  List<List<Devocional>> _userDevocionais = [];
   TutorialCoachMark? _coachMark;
   List<TargetFocus> _targets = [];
   bool _hasInternetConnection = false;
+  bool _isPortrait = true;
 
   void showTutorial() {
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
@@ -58,9 +54,7 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
             devocionalProvider.markTutorial(5);
             return true;
           },
-          onFinish: () {
-            devocionalProvider.markTutorial(5);
-          },
+          onFinish: () => devocionalProvider.markTutorial(5),
           colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).canvasColor,
           targets: _targets,
           hideSkip: true
@@ -83,8 +77,8 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                       text: 'Clique no devocional para ler o texto completo ou clique 2 vezes para curtir',
                       skip: '',
                       next: 'Fechar',
-                      onNext: (() => c.next()),
-                      onSkip: (() => c.skip())
+                      onNext: () => c.next(),
+                      onSkip: () => c.skip()
                   );
                 }
             ),
@@ -102,21 +96,13 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
   @override
   void initState() {
     checkInternetConnection();
-    devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       devocionalProvider.getDevocionais().whenComplete(() {
         if(devocionalProvider.devocionais?.isNotEmpty ?? false) {
-          setState(() {
-            _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-            _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-            _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-            _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
-          });
           showTutorial();
         }
       });
     });
-    _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
     super.initState();
   }
 
@@ -167,54 +153,26 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: (_selectedPage == 0) ? const Text('Posts da comunidade') : const Text('Seus posts'),
+          title: const Text('Posts da comunidade'),
+          actions: [
+            IconButton(
+              onPressed: () {
+                if(userProvider.currentUser == null) {
+                  Navigator.pushNamed(context, 'login_screen');
+                }else {
+                  Navigator.pushNamed(context, 'user_config_screen');
+                }
+              },
+              icon: const Icon(CupertinoIcons.person_crop_circle)
+            )
+          ],
         ),
         backgroundColor: Theme.of(context).primaryColor,
         body: SafeArea(
           child: RefreshIndicator.adaptive(
-            onRefresh: () => _selectedPage == 0
-                ? devocionalProvider.getDevocionais()
-                : devocionalProvider.getUserDevocionais().whenComplete(() {
-                    setState(() {
-                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
-                    });
-            })
-            ,
+            onRefresh: () => devocionalProvider.getDevocionais(),
             child: Column(
               children: [
-                (_selectedPage == 0)
-                  ? const SizedBox()
-                  : ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    height: 40,
-                    margin: const EdgeInsets.fromLTRB(12, 20, 12, 8),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Theme.of(context).colorScheme.primary
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicatorWeight: 3,
-                      dividerColor: Colors.transparent,
-                      unselectedLabelColor: Theme.of(context).colorScheme.tertiary,
-                      labelColor: Colors.white,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                      indicatorColor: Theme.of(context).colorScheme.secondary,
-                      onTap: (index) {
-                        setState(() {});
-                      },
-                      tabs: [
-                        TabItem(title: 'Aprovados', count: _approvedDevocionais.length),
-                        TabItem(title: 'Pendentes', count: _pendingDevocionais.length),
-                        TabItem(title: 'Rejeitados', count: _rejectedDevocionais.length),
-                      ]
-                    ),
-                  ),
-                ),
                 Consumer<DevocionalProvider>(
                   builder: (context, value, _) {
                     if (value.isLoading) {
@@ -251,33 +209,31 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                               height: MediaQuery.of(context).size.height * .45,
                             ),
                             Text(
-                                _selectedPage == 2
-                                ? 'Você não fez nenhum post ainda...\nQue tal criar um agora?'
-                                : 'Nenhum post em nossa comunidade ainda...\nQue tal criar um agora?',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
-                                textAlign: TextAlign.center
+                              'Nenhum post em nossa comunidade ainda...\nQue tal criar um agora?',
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
+                              textAlign: TextAlign.center
                             ),
                           ],
                         ),
                       );
                     }
 
+                    final devocionaisLength = value.devocionais!.length;
+
                     return Expanded(
                       child: ListView.builder(
-                        itemCount: (_selectedPage == 0) ? value.devocionais!.length : _userDevocionais[_tabController.index].length,
-                        shrinkWrap: true,
+                        itemCount: devocionaisLength,
                         itemBuilder: (context, index) {
-                          final devocional = (_selectedPage == 0) ? value.devocionais![index] : _userDevocionais[_tabController.index][index];
+                          final devocional = value.devocionais![index];
                           return Padding(
                             padding: const EdgeInsets.all(12.0),
                             child: Column(
                               children: [
-                                _infoRow(devocional),
                                 PostContainer(
                                   key: index == 0 ? postKey : null,
                                   devocional: devocional
                                 ),
-                                if(index + 1 == value.devocionais!.length)
+                                if(index + 1 == devocionaisLength)
                                   const SizedBox(height: 100)
                               ],
                             ),
@@ -310,19 +266,10 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
                   setState(() => _selectedPage = 0);
                 }),
                 buildIconButton(Icons.home, 'Início', 1, () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false)),
-                buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
-                  if(_selectedPage != 2) {
-                    devocionalProvider.getUserDevocionais().whenComplete(() {
-                      setState(() {
-                        _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                        _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                        _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                        _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
-                      });
-                    });
-                  }
-                  setState(() => _selectedPage = 2);
-                }),
+                if(userProvider.currentUser != null)
+                  buildIconButton(CupertinoIcons.profile_circled, 'Meus posts', 2, () {
+                    Navigator.pushNamed(context, 'owner_profile_screen');
+                  }),
               ],
             ),
           ),
@@ -330,19 +277,26 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
         floatingActionButton: (_hasInternetConnection)
           ? FloatingActionButton(
               backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
-              onPressed: (() => showModalBottomSheet(
-                  context: context,
-                  constraints: BoxConstraints(
-                      maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
-                  ),
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  barrierColor: Theme.of(context).colorScheme.surface,
-                  elevation: 0,
-                  useSafeArea: true,
-                  showDragHandle: true,
-                  isScrollControlled: true,
-                  builder: (context) => const CreateDevocional()
-              )),
+              onPressed: () {
+                final authProvider = Provider.of<UserProvider>(context, listen: false);
+                if(authProvider.currentUser == null) {
+                  Navigator.pushNamed(context, 'login_screen');
+                  return;
+                }
+                showModalBottomSheet(
+                    context: context,
+                    constraints: BoxConstraints(
+                        maxWidth: (_isPortrait) ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width * .75
+                    ),
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    barrierColor: Theme.of(context).colorScheme.surface,
+                    elevation: 0,
+                    useSafeArea: true,
+                    showDragHandle: true,
+                    isScrollControlled: true,
+                    builder: (context) => const CreateDevocional()
+                );
+              },
               tooltip: 'Adicionar um devocional',
               child: Icon(
                 Icons.add,
@@ -353,109 +307,6 @@ class _FeedScreenState extends State<FeedScreen> with TickerProviderStateMixin{
         : null,
       ),
     );
-  }
-
-  Widget _infoRow(Devocional devocional) {
-    if(_selectedPage == 2) {
-      if(devocional.status == 0) {
-        return Row(
-          children: [
-            const Text('Visualizações: '),
-            Text(formatInfoQuantity(devocional.qtdViews!)),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      const Text('Público'),
-                      Transform.scale(
-                        scale: .70,
-                        child: Switch(value: devocional.public!, onChanged: (newValue) {
-                          devocional.public = newValue;
-                          devocionalProvider.updateUserData(devocional.id!, {"public": devocional.public});
-                          setState(() {});
-                        }),
-                      ),
-                      InkWell(
-                        onTap: () => showDialog(
-                          context: context,
-                          builder: (context) => DeletePostDialog(
-                            refresh: () => setState(() {
-                              _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                              _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                              _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                              _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
-                            }),
-                            devocionalId: devocional.id!)
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.red
-                          ),
-                          child: const Icon(Icons.delete),
-                        ),
-                      )
-                    ],
-                  )
-                ],
-              ),
-            )
-          ],
-        );
-      }
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ElevatedButton(
-            onPressed: () => showDialog(
-                context: context,
-                builder: (context) => RejectReasonDialog(devocional: devocional)
-            ).then((res) {
-              if(res ?? false) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido de revisão enviado')));
-              }
-            }),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-            ),
-            child: const Text('Ver motivo')
-          ),
-          ElevatedButton(
-              onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => DeletePostDialog(
-                    devocionalId: devocional.id!,
-                    refresh: () => setState(() {
-                      _approvedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 0).toList() ?? [];
-                      _pendingDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 1).toList() ?? [];
-                      _rejectedDevocionais = devocionalProvider.devocionais?.where((devocional) => devocional.status == 2).toList() ?? [];
-                      _userDevocionais = [_approvedDevocionais, _pendingDevocionais, _rejectedDevocionais];
-                    }),
-                  )
-              ),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.delete),
-                  SizedBox(width: 6),
-                  Text('Excluir'),
-                ],
-              )
-          ),
-        ],
-      );
-    }
-
-    return const SizedBox();
   }
 }
 
@@ -496,7 +347,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
     (_liked)
         ? widget.devocional.qtdCurtidas = widget.devocional.qtdCurtidas! + 1
         : widget.devocional.qtdCurtidas = widget.devocional.qtdCurtidas! - 1;
-    devocionalProvider.updateUserData(widget.devocional.id!, {"qtdCurtidas": widget.devocional.qtdCurtidas});
+    devocionalProvider.updateDevocionalData(widget.devocional.id!, {"qtdCurtidas": widget.devocional.qtdCurtidas});
     devocionalProvider.likePost(postId: widget.devocional.id!, like: _liked);
   }
 
@@ -568,14 +419,14 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               InkWell(
-                  onTap: (() {
+                  onTap: () {
                     devocionalProvider.countView(widget.devocional.id!, widget.devocional.ownerId!);
                     Navigator.pushNamed(
                         context, 'devocional_selected',
                         arguments: {"devocional": widget.devocional}
                     );
-                  }),
-                  onDoubleTap: (() {
+                  },
+                  onDoubleTap: () {
                     setState(() => _liked = true);
                     devocionalProvider
                         .checkIfPostIsLiked(postId: widget.devocional.id!)
@@ -586,7 +437,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                       }
                     });
                     controller.forward(from: 0);
-                  }),
+                  },
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -620,56 +471,65 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      (widget.devocional.bgImagemUser != null && widget.devocional.bgImagemUser!.isNotEmpty)
-                          ? Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            image: DecorationImage(
-                                fit: BoxFit.cover,
-                                image: CachedNetworkImageProvider(widget.devocional.bgImagemUser!,)
-                            )
-                        ),
-                      )
-                          : const NoBgUser(),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: constraints.maxWidth * .5,
-                            child: (widget.devocional.nomeAutor! != 'BibleWise')
-                              ? Text(
-                                widget.devocional.nomeAutor!,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                                style: const TextStyle(color: Colors.white, fontSize: 12)
-                              )
-                              : Row(
-                                children: [
-                                  Text(
-                                      widget.devocional.nomeAutor!,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: const TextStyle(
-                                        color: Colors.lightBlue,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                      )
-                                  ),
-                                  const SizedBox(width: 2),
-                                  const Icon(Icons.verified, color: Colors.blue, size: 14,)
-                                ],
-                              )
-                          ),
-                          const SizedBox(height: 8),
-                          Text(todayDate, style: const TextStyle(color: Colors.white, fontSize: 10))
-                        ],
-                      )
-                    ],
+                  InkWell(
+                    onTap: () {
+                      final userProvider = Provider.of<UserProvider>(context, listen: false);
+                      if(widget.devocional.ownerId == userProvider.currentUser?.id) {
+                        Navigator.pushNamed(context, 'owner_profile_screen', arguments: {"devocionalId": widget.devocional.ownerId});
+                      }else {
+                        Navigator.pushNamed(context, 'profile_screen', arguments: {"devocionalId": widget.devocional.ownerId});
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        if (widget.devocional.bgImagemUser?.isNotEmpty ?? false)
+                          Container(
+                            height: 50,
+                            width: 50,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(50),
+                                image: DecorationImage(
+                                    fit: BoxFit.cover,
+                                    image: CachedNetworkImageProvider(widget.devocional.bgImagemUser!,)
+                                )
+                            ),
+                          ) else const NoBgUser(),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: constraints.maxWidth * .5,
+                              child: (widget.devocional.nomeAutor! != 'BibleWise')
+                                ? Text(
+                                  widget.devocional.nomeAutor!,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12)
+                                )
+                                : Row(
+                                  children: [
+                                    Text(
+                                        widget.devocional.nomeAutor!,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: const TextStyle(
+                                          color: Colors.lightBlue,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                        )
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Icon(Icons.verified, color: Colors.blue, size: 14,)
+                                  ],
+                                )
+                            ),
+                            const SizedBox(height: 8),
+                            Text(todayDate, style: const TextStyle(color: Colors.white, fontSize: 10))
+                          ],
+                        )
+                      ],
+                    ),
                   ),
                   SizedBox(
                     height: 48,
@@ -677,7 +537,7 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         InkWell(
-                          onTap: (() => showModalBottomSheet(
+                          onTap: () => showModalBottomSheet(
                               context: context,
                               showDragHandle: true,
                               isScrollControlled: true,
@@ -686,7 +546,10 @@ class _PostContainerState extends State<PostContainer> with SingleTickerProvider
                               barrierColor: Theme.of(context).colorScheme.surface,
                               backgroundColor: Theme.of(context).colorScheme.surface,
                               builder: (context) => CommentsSection(
-                                  devocionalId: widget.devocional.id!))),
+                                devocionalId: widget.devocional.id!,
+                                ownerName: widget.devocional.nomeAutor!,
+                              )
+                          ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -784,8 +647,9 @@ class NoBgUser extends StatelessWidget {
 
 class DeletePostDialog extends StatefulWidget {
   final String devocionalId;
+  final MyUser currentUser;
   final Function() refresh;
-  const DeletePostDialog({super.key, required this.refresh, required this.devocionalId});
+  const DeletePostDialog({super.key, required this.refresh, required this.currentUser, required this.devocionalId});
 
   @override
   State<DeletePostDialog> createState() => _DeletePostDialogState();

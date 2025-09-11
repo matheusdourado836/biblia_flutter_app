@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/devocional_saved_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:native_image_cropper/native_image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,6 +21,7 @@ import '../../../data/theme_provider.dart';
 import '../../../helpers/expandable_container.dart';
 import '../../../helpers/tutorial_widget.dart';
 import 'package:path_provider/path_provider.dart';
+import '../community/feed_screen.dart';
 
 class SaveDevocionalWidget extends StatefulWidget {
   final Devocional devocional;
@@ -30,7 +33,7 @@ class SaveDevocionalWidget extends StatefulWidget {
 
 class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with WidgetsBindingObserver {
   final GlobalKey<FormState> _key = GlobalKey();
-  final TextEditingController _nameController = TextEditingController();
+  late final UserProvider _authProvider = Provider.of<UserProvider>(context, listen: false);
   double boxHeight = 0;
   bool _public = true;
   bool _addFrost = false;
@@ -39,6 +42,9 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
   @override
   void initState() {
     widget.devocional.public = _public;
+    widget.devocional.ownerId = _authProvider.currentUser!.id!;
+    widget.devocional.nomeAutor = _authProvider.currentUser!.nomeUsuario!;
+    widget.devocional.bgImagemUser = _authProvider.currentUser!.profilePhotoUrl;
     WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
@@ -53,7 +59,6 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
 
   @override
   void dispose() {
-    _nameController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -83,7 +88,7 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _PostContainer(devocional: widget.devocional, nameController: _nameController),
+                      _PostContainer(devocional: widget.devocional),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -162,8 +167,7 @@ class _SaveDevocionalWidgetState extends State<SaveDevocionalWidget> with Widget
 
 class _PostContainer extends StatefulWidget {
   final Devocional devocional;
-  final TextEditingController nameController;
-  const _PostContainer({required this.devocional, required this.nameController});
+  const _PostContainer({required this.devocional});
 
   @override
   State<_PostContainer> createState() => _PostContainerState();
@@ -176,13 +180,12 @@ class _PostContainerState extends State<_PostContainer> {
   File? imageFile;
   File? bgImageFile;
   File? apiImage;
-  Widget? avatar;
   String todayDate = '';
   bool _loadingImage = false;
   List<TargetFocus> _targets = [];
   TutorialCoachMark? _coachMark;
 
-  pick(ImageSource source, bool profile) async {
+  pick(ImageSource source) async {
     var storageStatus = await Permission.storage.status;
     var cameraStatus = await Permission.camera.status;
     if (source == ImageSource.camera && cameraStatus.isDenied) {
@@ -194,31 +197,19 @@ class _PostContainerState extends State<_PostContainer> {
     final pickedFile = await imagePicker.pickImage(source: source);
 
     if (pickedFile != null) {
-      final croppedImage = await cropImage(File(pickedFile.path), profile);
+      final croppedImage = await cropImage(File(pickedFile.path));
       if (!mounted) return;
       if(croppedImage != null) {
         setState(() {
           imageFile = File(croppedImage.path);
-          if (profile) {
-            widget.devocional.bgImagemUser = imageFile!.path;
-            avatar = Container(
-              height: 50,
-              width: 50,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(50),
-                  image: DecorationImage(fit: BoxFit.cover, image: FileImage(imageFile!))
-              ),
-            );
-          } else {
-            bgImageFile = File(croppedImage.path);
-            widget.devocional.bgImagem = bgImageFile!.path;
-          }
+          bgImageFile = File(croppedImage.path);
+          widget.devocional.bgImagem = bgImageFile!.path;
         });
       }
     }
   }
 
-  Future<File?> cropImage(File file, bool profile) async {
+  Future<File?> cropImage(File file) async {
     final cropController = CropController();
 
     try {
@@ -278,7 +269,7 @@ class _PostContainerState extends State<_PostContainer> {
     await versesProvider.getOnlyImage().then((res) async {
       if(res != null) {
         apiImage = res;
-        final croppedImage = await cropImage(File(res.path), false);
+        final croppedImage = await cropImage(File(res.path));
         if(croppedImage != null) {
           bgImageFile = File(croppedImage.path);
           widget.devocional.bgImagem = bgImageFile!.path;
@@ -299,32 +290,16 @@ class _PostContainerState extends State<_PostContainer> {
     }
   }
 
-  Future<void> editImage(bool profile) async {
-    if(profile) {
-      final editedImage = await cropImage(imageFile!, profile);
-      if(editedImage != null) {
-        setState(() => imageFile = File(editedImage.path));
-        widget.devocional.bgImagemUser = imageFile!.path;
-        avatar = Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50),
-              image: DecorationImage(fit: BoxFit.cover, image: FileImage(imageFile!))
-          ),
-        );
-      }
-    }else {
-      final editedImage = await cropImage(bgImageFile!, profile);
-      if(editedImage != null) {
-        setState(() => bgImageFile = File(editedImage.path));
-        widget.devocional.bgImagem = bgImageFile!.path;
-      }
+  Future<void> editImage() async {
+    final editedImage = await cropImage(bgImageFile!);
+    if(editedImage != null) {
+      setState(() => bgImageFile = File(editedImage.path));
+      widget.devocional.bgImagem = bgImageFile!.path;
     }
     return;
   }
 
-  void _showOpcoesBottomSheet(bool profile) {
+  void _showOpcoesBottomSheet() {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -363,7 +338,7 @@ class _PostContainerState extends State<_PostContainer> {
                 title: const Text('Galeria'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  pick(ImageSource.gallery, profile);
+                  pick(ImageSource.gallery);
                 },
               ),
               const SizedBox(height: 12),
@@ -382,11 +357,11 @@ class _PostContainerState extends State<_PostContainer> {
                 title: const Text('Tirar foto'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  pick(ImageSource.camera, profile);
+                  pick(ImageSource.camera);
                 },
               ),
               const SizedBox(height: 12),
-              profile ? const SizedBox() : Padding(
+              Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -427,7 +402,7 @@ class _PostContainerState extends State<_PostContainer> {
                   ),
                   title: const Text('Editar'),
                   onTap: () {
-                    editImage(profile).whenComplete(() => Navigator.pop(context));
+                    editImage().whenComplete(() => Navigator.pop(context));
                   },
                 ),
               )
@@ -447,14 +422,10 @@ class _PostContainerState extends State<_PostContainer> {
                 title: const Text('Remover'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  if(profile) {
-                    setState(() => imageFile = null);
-                  }else {
-                    deleteApiImage().whenComplete(() => setState(() {
-                      apiImage = null;
-                      bgImageFile = null;
-                    }));
-                  }
+                  deleteApiImage().whenComplete(() => setState(() {
+                    apiImage = null;
+                    bgImageFile = null;
+                  }));
                 },
               ),
             ],
@@ -587,7 +558,7 @@ class _PostContainerState extends State<_PostContainer> {
               (_loadingImage)
                   ? const SizedBox(height: 250, width: 30, child: Center(child: LoadingWidget(bgColor: Colors.white, txtColor: Colors.white,)),)
                   : InkWell(
-                onTap: (() => _showOpcoesBottomSheet(false)),
+                onTap: (() => _showOpcoesBottomSheet()),
                 child: (bgImageFile == null)
                     ? SizedBox(
                   height: constraints.maxWidth > 400 ? 400 : 250,
@@ -648,54 +619,23 @@ class _PostContainerState extends State<_PostContainer> {
                 children: [
                   Row(
                     children: [
-                      InkWell(
-                        onTap: (() => _showOpcoesBottomSheet(true)),
-                        child: (imageFile != null && avatar != null)
-                            ? avatar!
-                            : Container(
-                          key: profileKey,
-                          height: 50,
-                          width: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            color: Colors.grey
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.edit, size: 22),
-                          ),
+                      if (widget.devocional.bgImagemUser?.isNotEmpty ?? false)
+                        Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50),
+                          image: DecorationImage(
+                            fit: BoxFit.cover,
+                            image: CachedNetworkImageProvider(widget.devocional.bgImagemUser!,)
+                          )
                         ),
-                      ),
+                        ) else const NoBgUser(),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * .48,
-                            child: TextFormField(
-                              controller: widget.nameController,
-                              validator: (value) {
-                                if(value?.isEmpty ?? true) {
-                                  return 'o nome é obrigatório';
-                                }
-                                if(value!.toLowerCase().contains('biblewise')) {
-                                  return 'esse nome não é permitido';
-                                }
-
-                                return null;
-                              },
-                              onChanged: (value) => widget.devocional.nomeAutor = value,
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                              cursorColor: Colors.white,
-                              decoration: const InputDecoration(
-                                hintText: 'Digite seu nome...',
-                                hintStyle: TextStyle(color: Colors.white, fontSize: 12),
-                                suffixIcon: Icon(Icons.edit_outlined, size: 14),
-                                suffixIconColor: Colors.white,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none
-                              ),
-                            ),
-                          ),
+                          Text(widget.devocional.nomeAutor!, style: const TextStyle(color: Colors.white, fontSize: 16)),
                           const SizedBox(height: 8),
                           Text(todayDate, style: const TextStyle(color: Colors.white, fontSize: 10))
                         ],
@@ -708,7 +648,7 @@ class _PostContainerState extends State<_PostContainer> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         InkWell(
-                          onTap: (() {}),
+                          onTap: () {},
                           child: iconInfo(
                             text: '0',
                             icon: const Icon(

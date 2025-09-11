@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/group.dart';
 import '../models/message.dart';
 import '../models/user.dart';
 
-class ReadingGroupService {
+class UserService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _database = FirebaseFirestore.instance;
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
@@ -25,23 +27,32 @@ class ReadingGroupService {
       await _database.collection("users").doc(_auth.currentUser?.uid ?? "").get().then((DocumentSnapshot doc) async {
         if(doc.exists) {
           final dbUser = doc.data() as Map<String, dynamic>;
-          String? fcmToken;
-          if(Platform.isIOS) {
-            fcmToken = await _messaging.getAPNSToken();
-          }else {
-            fcmToken = await _messaging.getToken();
-          }
           user = MyUser.fromJson(dbUser);
-          if(user!.fcmToken == null || user!.fcmToken != fcmToken) {
-            user!.fcmToken = fcmToken;
-            updateUserData({"fcmToken": fcmToken}, user!.id!);
-          }
+          final fcmToken = Platform.isIOS ? await _messaging.getAPNSToken() : await _messaging.getToken();
+          await updateUserData({"fcmToken": fcmToken}, user!.id!);
         }
       });
 
       return user;
     }catch(e, stack) {
       print('Nao foi possivel recuperar o usuario $e /// $stack');
+      return null;
+    }
+  }
+
+  Future<MyUser?> getUserById({required String id}) async {
+    try {
+      MyUser? user;
+      await _database.collection("users").doc(id).get().then((DocumentSnapshot doc) async {
+        if(doc.exists) {
+          final dbUser = doc.data() as Map<String, dynamic>;
+          user = MyUser.fromJson(dbUser);
+        }
+      });
+
+      return user;
+    }catch(e) {
+      print('Nao foi possivel recuperar o usuario pelo ID $e');
       return null;
     }
   }
@@ -104,8 +115,13 @@ class ReadingGroupService {
         await _database.collection('users').doc(_auth.currentUser!.uid).set(user.toJson());
         await _database.collection('users').doc(_auth.currentUser!.uid).update({
           "id": _auth.currentUser!.uid,
-          "fcmToken": fcmToken
+          "fcmToken": fcmToken,
+          "createdAt": FieldValue.serverTimestamp(),
         });
+        user.id = _auth.currentUser!.uid;
+        if(user.profilePhotoUrl?.isNotEmpty ?? false) {
+          await updateUserProfilePicture(user);
+        }
         return true;
       }
 
@@ -141,6 +157,29 @@ class ReadingGroupService {
   Future<void> updateUsername({required String newUsername}) async {
     await updateUserData({"username": newUsername}, _auth.currentUser!.uid);
     return await _auth.currentUser!.updateDisplayName(newUsername);
+  }
+
+  Future<bool> updateUserProfilePicture(MyUser user) async {
+    try {
+      final file = File(user.profilePhotoUrl!);
+      final fileName = file.path.split('/').last;
+      final timeStamp = DateTime.now().microsecondsSinceEpoch;
+      final uploadRef = _storage.ref().child('users/${user.id!}/$timeStamp-$fileName');
+      final files = await _storage.ref().child('users/${user.id!}').listAll();
+      if(files.items.isNotEmpty) {
+        await files.items.first.delete();
+      }
+      await uploadRef.putFile(file);
+
+      String photoURL = await uploadRef.getDownloadURL();
+      user.profilePhotoUrl = photoURL;
+      await _auth.currentUser!.updatePhotoURL(photoURL);
+      await updateUserData({'profilePhotoUrl': photoURL}, user.id!);
+      return true;
+    }on FirebaseException catch(e) {
+      print('Não foi possível atualizar a imagem ${e.message}');
+      return false;
+    }
   }
 
   Future<Object?> reauthenticateUser(String email, String password) async {
@@ -180,13 +219,56 @@ class ReadingGroupService {
     return querySnapshot.docs.isEmpty;
   }
 
+  Future<void> updateDailyReading({
+      required String groupId,
+      required String dayId,
+      required String chapterId,
+      required String userId,
+      required bool isRead,
+   }) async {
+    final docRef = _database.collection('groups').doc(groupId);
+    try {
+      if (isRead) {
+        // Marca como lido → adiciona o userId à lista do capítulo
+        await docRef.update({
+          'dailyReading.dias.$dayId.capitulos.$chapterId': FieldValue.arrayUnion([userId])
+        });
+      } else {
+        // Desmarca → remove o userId da lista do capítulo
+        await docRef.update({
+          'dailyReading.dias.$dayId.capitulos.$chapterId': FieldValue.arrayRemove([userId])
+        });
+      }
+    } catch (e) {
+      print("Erro ao atualizar leitura: $e");
+    }
+  }
+
+  Future<void> markAllChaptersRead({
+    required String groupId,
+    required String dayId,
+    required int chapterIds,
+    required String userId
+  }) async {
+    final docRef = _database.collection('groups').doc(groupId);
+    final batch = _database.batch();
+
+    for (int i = 0; i < chapterIds; i++) {
+      batch.update(docRef, {
+        'dailyReading.dias.$dayId.capitulos.${i + 1}': FieldValue.arrayUnion([userId])
+      });
+    }
+    await batch.commit();
+  }
+
   Future<bool> createGroup({required Group group}) async {
     try{
-      if(group.bgUrl?.isNotEmpty ?? false) {
-        uploadGroupPicture(group);
-      }
       final ref = await _database.collection('groups').add(group.toJson());
       await _database.collection('groups').doc(ref.id).update({"id": ref.id});
+      group.id = ref.id;
+      if(group.bgUrl?.isNotEmpty ?? false) {
+        await uploadGroupPicture(group);
+      }
 
       return true;
     }catch(e) {
@@ -243,7 +325,10 @@ class ReadingGroupService {
     return code;
   }
 
-  Future<void> deleteGroup({required String groupId}) async {
+  Future<void> deleteGroup({required String groupId, String? groupBgUrl}) async {
+    if(groupBgUrl != null) {
+      await _storage.refFromURL(groupBgUrl).delete();
+    }
     return await _database.collection('groups').doc(groupId).delete();
   }
 
@@ -262,19 +347,15 @@ class ReadingGroupService {
     required String comment,
     required List<String> fcmTokens
   }) async {
-    final HttpsCallable callable = _functions.httpsCallable('sendGroupMessageNotification');
+    final HttpsCallable callable = _functions.httpsCallableFromUri(Uri.parse('https://sendgroupmessagenotification-693460458631.us-central1.run.app'));
     try {
-      final result = await callable.call({
+      await callable.call({
         'groupName': groupName,
         'username': username,
         'comment': comment,
         'fcmTokens': fcmTokens,
       });
-      if (result.data['success']) {
-        print('Notificação enviada com sucesso');
-      } else {
-        print('Erro ao enviar notificação: ${result.data['error']}');
-      }
+      return;
     } catch (e) {
       print('Erro: $e');
     }
@@ -310,7 +391,27 @@ class ReadingGroupService {
     return;
   }
 
-  Future<Group?> getGroupByCode({required int code, required MyUser user}) async {
+  Future<Group?> getGroupById({required String groupId}) async {
+    try {
+      Group? group;
+      await _database.collection('groups').where('id', isEqualTo: groupId).get().then((res) async {
+        if(res.docs.isNotEmpty) {
+          final docs = res.docs;
+          final data = docs.first.data();
+          if(data.isNotEmpty) {
+            group = Group.fromJson(data);
+          }
+        }
+      });
+
+      return group;
+    }catch(e) {
+      print('Nao foi possivel recuperar o grupo pelo ID $e');
+      return null;
+    }
+  }
+
+  Future<Group?> getGroupByCode({required int code}) async {
     try{
       Group? group;
       await _database.collection('groups').where('code', isEqualTo: code).get().then((res) async {
@@ -364,7 +465,7 @@ class ReadingGroupService {
     }
   }
 
-  Future<void> sendInviteNotification({
+  Future<bool> sendInviteNotification({
     required String userId,
     required String username,
     required String groupName
@@ -378,11 +479,14 @@ class ReadingGroupService {
       });
       if (result.data['success']) {
         print('Notificação enviada com sucesso');
+        return true;
       } else {
         print('Erro ao enviar notificação: ${result.data['error']}');
+        return false;
       }
     } catch (e) {
       print('Erro: $e');
+      return false;
     }
   }
 
@@ -392,5 +496,41 @@ class ReadingGroupService {
 
   Future<void> updateGroupData(Map<String, dynamic> info, String id) async {
     return await _database.collection('groups').doc(id).update(info);
+  }
+
+  Future<void> saveAiChatHistory({required List<Content> chatMessages, required MyUser user}) async {
+    for(final message in chatMessages) {
+      final messageJson = message.toJson();
+      messageJson["timestamp"] = DateTime.now().millisecondsSinceEpoch;
+      await _database.collection('users').doc(_auth.currentUser!.uid).collection('chat').add(messageJson);
+    }
+
+    return;
+  }
+
+  Future<List<AiChatMessage>> loadAiChatHistory() async {
+    final List<AiChatMessage> chatMessages = [];
+    final chat = await _database.collection('users').doc(_auth.currentUser!.uid).collection('chat').orderBy('timestamp', descending: false).get();
+    if(chat.docs.isNotEmpty) {
+      final docs = chat.docs;
+      for(final doc in docs) {
+        final data = doc.data();
+        chatMessages.add(AiChatMessage.fromMap(data));
+      }
+    }
+
+    return chatMessages;
+  }
+
+  Future<void> deleteAiChatHistory() async {
+    final history = await _database.collection('users').doc(_auth.currentUser!.uid).collection('chat').get();
+    if(history.docs.isNotEmpty) {
+      final docs = history.docs;
+      for(final doc in docs) {
+        await doc.reference.delete();
+      }
+    }
+
+    return;
   }
 }

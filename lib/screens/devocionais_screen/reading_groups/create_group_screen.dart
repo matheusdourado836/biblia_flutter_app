@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/group.dart';
 import 'package:biblia_flutter_app/models/user.dart';
@@ -11,7 +11,6 @@ import 'package:native_image_cropper/native_image_cropper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../../../data/bible_data.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
@@ -21,8 +20,7 @@ class CreateGroupScreen extends StatefulWidget {
 }
 
 class _CreateGroupScreenState extends State<CreateGroupScreen> {
-  final BibleData _bibleData = BibleData();
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+  late final UserProvider _usersProvider = Provider.of<UserProvider>(context, listen: false);
   final GlobalKey<FormState> _key = GlobalKey();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
@@ -69,7 +67,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     _books.add('Todos');
     _books.add('Adicionar antigo testamento');
     _books.add('Adicionar novo testamento');
-    for (var book in _bibleData.data[0]["text"]) {
+    for (var book in _usersProvider.bibleData[0]["text"]) {
       _books.add(book["name"]);
     }
     super.initState();
@@ -87,7 +85,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ProfileContainer(
-                user: _groupsProvider.currentUser!,
+                user: _usersProvider.currentUser!,
                 group: group,
               ),
               const SizedBox(height: 24),
@@ -135,10 +133,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           }
           if(_key.currentState?.validate() ?? false) {
             setState(() => _saving = true);
-            group.ownerId = _groupsProvider.currentUser!.id!;
+            group.ownerId = _usersProvider.currentUser!.id!;
             group.nome = _titleController.text;
             group.descricao = _descController.text;
-            group.participantes = [_groupsProvider.currentUser!.id!];
+            group.participantes = [_usersProvider.currentUser!.id!];
             group.maxPeople = int.tryParse(_numberPeopleController.text) ?? 10;
             group.plan = _selectedOption;
             group.createdAt = DateTime.now();
@@ -182,10 +180,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             group.books?.remove('Todos');
             group.books?.remove('Adicionar antigo testamento');
             group.books?.remove('Adicionar novo testamento');
-            _groupsProvider.createGroup(group: group).then((res) {
+            _usersProvider.createGroup(group: group).then((res) {
               setState(() => _saving = false);
               if(res) {
-                _groupsProvider.getUserGroups(notify: true);
+                _usersProvider.getUserGroups(notify: true);
                 showCustomSnackBar(child: const Text('Grupo criado com sucesso'));
                 Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
               }
@@ -446,7 +444,6 @@ class _ProfileContainerState extends State<ProfileContainer> {
 
       return croppedFile;
     } catch (e) {
-      print('Erro ao cortar a imagem: $e');
       return null;
     }
   }

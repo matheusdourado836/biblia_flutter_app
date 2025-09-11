@@ -1,11 +1,13 @@
 import 'package:biblia_flutter_app/services/devocional_service.dart';
 import 'package:biblia_flutter_app/services/thematic_service.dart';
+import 'package:biblia_flutter_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import '../models/devocional.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DevocionalProvider extends ChangeNotifier {
   static final DevocionalService _service = DevocionalService();
+  static final UserService _userService = UserService();
   static final ThematicService _thematicService = ThematicService();
   List<Devocional>? _devocionais = [];
 
@@ -36,6 +38,10 @@ class DevocionalProvider extends ChangeNotifier {
     notifyListeners();
     _devocionais = [];
     _devocionais = await _service.getDevocionais(limit: limit);
+    for(var devocional in _devocionais ?? []) {
+      final user = await _userService.getUserById(id: devocional.ownerId!);
+      devocional.bgImagemUser = user?.profilePhotoUrl;
+    }
     if(_devocionais?.isNotEmpty ?? false) {
       _devocionais!.sort((a, b) => b.qtdCurtidas! > a.qtdCurtidas! ? 0 : 1);
       _devocionais!.sort((a, b) {
@@ -80,6 +86,8 @@ class DevocionalProvider extends ChangeNotifier {
     return;
   }
 
+  Future<List<Devocional>> getDevocionaisById({required String id}) async => await _service.getDevocionaisById(id: id);
+
   Future<void> getThematicDevocionais() async {
     if(_thematicDevocionais.isEmpty) {
       isLoadingThematic = true;
@@ -102,6 +110,12 @@ class DevocionalProvider extends ChangeNotifier {
     isLoading = true;
     _comments = [];
     _comments = await _service.getComments(devocionalId: devocionalId);
+    for(var comment in _comments) {
+      if(comment.autorId == null) continue;
+      final user = await _userService.getUserById(id: comment.autorId!);
+      comment.authorPhotoUrl = user?.profilePhotoUrl;
+    }
+    _comments.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     isLoading = false;
     notifyListeners();
   }
@@ -120,8 +134,8 @@ class DevocionalProvider extends ChangeNotifier {
     return await _service.postDevocional(devocional: devocional);
   }
 
-  Future<void> updateUserData(String devocionalId, Map<String, dynamic> info) async {
-    return await _service.updateUserData(devocionalId, info);
+  Future<void> updateDevocionalData(String devocionalId, Map<String, dynamic> info) async {
+    return await _service.updateDevocionalData(devocionalId, info);
   }
 
   Future<void> likePost({required String postId, required bool like}) async {

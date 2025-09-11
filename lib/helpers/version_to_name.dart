@@ -30,6 +30,8 @@ String nameToVersion(String name) {
       return 'apee';
     case 'es_rvr':
       return 'rvr';
+    case 'aa':
+      return 'ra';
     default:
       return name;
   }

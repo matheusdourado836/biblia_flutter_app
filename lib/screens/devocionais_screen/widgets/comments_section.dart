@@ -4,12 +4,16 @@ import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_skeleton.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/report_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../data/user_provider.dart';
+
 class CommentsSection extends StatefulWidget {
   final String devocionalId;
-  const CommentsSection({super.key, required this.devocionalId});
+  final String ownerName;
+  const CommentsSection({super.key, required this.devocionalId, required this.ownerName});
 
   @override
   State<CommentsSection> createState() => _CommentsSectionState();
@@ -17,6 +21,7 @@ class CommentsSection extends StatefulWidget {
 
 class _CommentsSectionState extends State<CommentsSection> {
   late DevocionalProvider _devocionalProvider;
+  late final userProvider = Provider.of<UserProvider>(context, listen: false);
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _commentController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -30,6 +35,147 @@ class _CommentsSectionState extends State<CommentsSection> {
           strokeWidth: 2,
         ),
   );
+
+  Widget _commentFormSection() {
+    if(userProvider.currentUser != null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: _commentController,
+              validator: (value) => value?.isEmpty ?? true
+                  ? 'o comentário é obrigatório'
+                  : null,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              cursorColor: Colors.white,
+              decoration: InputDecoration(
+                hintText: 'Adicione um comentário para ${widget.ownerName}',
+                hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12, color: Colors.white70),
+                fillColor: Colors.white,
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          InkWell(
+            onTap: () {
+              if (_formKey.currentState!.validate()) {
+                setState(() => _isLoading = true);
+                final comment = Comentario(
+                  name: userProvider.currentUser!.nomeUsuario!,
+                  authorPhotoUrl: userProvider.currentUser!.profilePhotoUrl,
+                  comment: _commentController.text,
+                  createdAt: DateTime.now().toIso8601String(),
+                );
+                _devocionalProvider.postComment(devocionalId: widget.devocionalId, comentario: comment).whenComplete(() {
+                  _nameController.clear();
+                  _commentController.clear();
+                  setState(() => _isLoading = false);
+                  FocusScope.of(context).unfocus();
+                });
+              }
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(50)
+              ),
+              padding: const EdgeInsets.all(12),
+              alignment: Alignment.center,
+              child: (_isLoading)
+                  ? _loading()
+                  : const Icon(
+                Icons.send,
+                size: 20,
+                //color: Colors.black,
+              ),
+            ),
+          )
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 150,
+          child: TextFormField(
+            controller: _nameController,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+            cursorColor: Colors.white,
+            validator: (value) => value?.isEmpty ?? true
+                ? 'o nome é obrigatório'
+                : null,
+            decoration: InputDecoration(
+              hintText: 'Seu nome...',
+              hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _commentController,
+                validator: (value) => value?.isEmpty ?? true
+                    ? 'o comentário é obrigatório'
+                    : null,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  hintText: 'Adicionar um comentário...',
+                  hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
+                  fillColor: Colors.white,
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            InkWell(
+              onTap: () {
+                if (_formKey.currentState!.validate()) {
+                  setState(() => _isLoading = true);
+                  final comment = Comentario(
+                    name: _nameController.text,
+                    comment: _commentController.text,
+                    createdAt: DateTime.now().toIso8601String(),
+                  );
+                  _devocionalProvider.postComment(devocionalId: widget.devocionalId, comentario: comment).whenComplete(() {
+                    _nameController.clear();
+                    _commentController.clear();
+                    setState(() => _isLoading = false);
+                    FocusScope.of(context).unfocus();
+                  });
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(50)
+                ),
+                padding: const EdgeInsets.all(12),
+                alignment: Alignment.center,
+                child: (_isLoading)
+                    ? _loading()
+                    : const Icon(
+                  Icons.send,
+                  size: 20,
+                  //color: Colors.black,
+                ),
+              ),
+            )
+          ],
+        ),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -95,14 +241,21 @@ class _CommentsSectionState extends State<CommentsSection> {
                     final comentario = value.comments[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 20),
+                        horizontal: 16.0, vertical: 20
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const NoBgUser(),
+                              if(comentario.authorPhotoUrl?.isNotEmpty ?? false)
+                                CircleAvatar(
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    comentario.authorPhotoUrl ?? '',
+                                  ),
+                                )
+                              else const NoBgUser(),
                               const SizedBox(width: 8),
                               Expanded(child: UserRow(comment: comentario, devocionalId: widget.devocionalId,))
                             ],
@@ -117,8 +270,8 @@ class _CommentsSectionState extends State<CommentsSection> {
           ),
           Container(
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-                color: Theme.of(context).cardTheme.color
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+              color: Theme.of(context).cardTheme.color
             ),
             padding: const EdgeInsets.all(12),
             child: SafeArea(
@@ -126,89 +279,14 @@ class _CommentsSectionState extends State<CommentsSection> {
                 key: _formKey,
                 child: Row(
                   children: [
-                    const NoBgUser(),
+                    if(userProvider.currentUser != null)
+                      CircleAvatar(
+                        backgroundImage: CachedNetworkImageProvider(userProvider.currentUser!.profilePhotoUrl ?? ''),
+                      )
+                    else
+                      const NoBgUser(),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 150,
-                            child: TextFormField(
-                              controller: _nameController,
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                              cursorColor: Colors.white,
-                              validator: (value) => value?.isEmpty ?? true
-                                  ? 'o nome é obrigatório'
-                                  : null,
-                              decoration: InputDecoration(
-                                hintText: 'Seu nome...',
-                                hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
-                                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
-                                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _commentController,
-                                  validator: (value) => value?.isEmpty ?? true
-                                      ? 'o comentário é obrigatório'
-                                      : null,
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                  cursorColor: Colors.white,
-                                  decoration: InputDecoration(
-                                    hintText: 'Adicionar um comentário...',
-                                    hintStyle: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 12),
-                                    fillColor: Colors.white,
-                                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
-                                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.surface)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              InkWell(
-                                onTap: (() {
-                                  if (_formKey.currentState!.validate() && _commentController.text.isNotEmpty) {
-                                    setState(() => _isLoading = true);
-                                    final comment = Comentario(
-                                      name: _nameController.text,
-                                      comment: _commentController.text,
-                                      createdAt: DateTime.now().toIso8601String(),
-                                    );
-                                    _devocionalProvider.postComment(devocionalId: widget.devocionalId, comentario: comment).whenComplete(() {
-                                      _nameController.clear();
-                                      _commentController.clear();
-                                      setState(() => _isLoading = false);
-                                      FocusScope.of(context).unfocus();
-                                    });
-                                  }
-                                }),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary,
-                                      borderRadius: BorderRadius.circular(50)
-                                  ),
-                                  padding: const EdgeInsets.all(12),
-                                  alignment: Alignment.center,
-                                  child: (_isLoading)
-                                      ? _loading()
-                                      : const Icon(
-                                    Icons.send,
-                                    size: 20,
-                                    //color: Colors.black,
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: _commentFormSection()),
                   ],
                 ),
               ),

@@ -9,6 +9,7 @@ import 'package:biblia_flutter_app/screens/verses_screen/widgets/round_container
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/verse_area.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
+import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -33,6 +34,7 @@ class VersesWidget extends StatefulWidget {
   final bool? readingPlan;
   final Map<int, dynamic> listVerses;
   final ItemPositionsListener itemPositionsListener;
+  final EventBus eventBus;
 
   const VersesWidget({
     super.key,
@@ -44,7 +46,8 @@ class VersesWidget extends StatefulWidget {
     required this.verseColors,
     required this.listVerses,
     this.readingPlan,
-    required this.itemPositionsListener
+    required this.itemPositionsListener,
+    required this.eventBus
   });
 
   @override
@@ -125,6 +128,7 @@ class _VersesWidgetState extends State<VersesWidget> {
                     verse: versesDefault,
                     verseColor: verseColor,
                     annotation: verseItem["annotation"],
+                    eventBus: widget.eventBus
                   )
                 : VerseAreaDark(
                     chapter: _chapter,
@@ -132,6 +136,7 @@ class _VersesWidgetState extends State<VersesWidget> {
                     verse: versesDefault,
                     verseColor: verseColor,
                     annotation: verseItem["annotation"],
+                    eventBus: widget.eventBus,
                   ),
             );
 
@@ -282,23 +287,26 @@ class _VersesWidgetState extends State<VersesWidget> {
                         bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
                           .then((value) {
                             final annotation = value?[0] ?? innerAnnotation;
-                            Navigator.pushNamed(
+                            Navigator.popAndPushNamed(
                               context, 'annotation_widget',
                               arguments: {
                                 'annotation': annotation,
                                 'verses': verses,
-                                'isEditing': value != null
+                                'isEditing': value != null,
+                                'eventBus': widget.eventBus
                               });
+                            _versesProvider.openBottomSheet(false);
+                            _versesProvider.clearSelectedVerses(listMap);
                           });
                       },
                       icon: const Icon(Icons.edit_rounded),
                     ),
                     IconButton(
-                      onPressed: (listMap[index]["verseColor"] != Colors.transparent) ? (() {
+                      onPressed: (listMap[index]["verseColor"] != Colors.transparent) ? () {
                         _versesProvider.openBottomSheet(false);
                         _versesProvider.deleteVerses(listMap);
                         Navigator.pop(ctx);
-                      }) : null,
+                      } : null,
                       icon: const Icon(Icons.delete),
                     ),
                     IconButton(

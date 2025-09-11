@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primaryColor: Colors.black,
-  cardTheme: const CardTheme(
+  cardTheme: const CardThemeData(
     color: Color.fromRGBO(51, 41, 64, 1)
   ),
   colorScheme: ColorScheme(
@@ -17,7 +17,7 @@ ThemeData darkTheme = ThemeData(
     onError: Colors.white,
     //surface: const Color.fromRGBO(59, 79, 254, 1),
     surface: const Color(0xff1c1b1f),
-    onSurface: Colors.white.withOpacity(.85)
+    onSurface: Colors.white.withValues(alpha: .85)
   ),
   dropdownMenuTheme: const DropdownMenuThemeData(
     textStyle: TextStyle(

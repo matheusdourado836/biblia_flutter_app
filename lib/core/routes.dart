@@ -1,3 +1,6 @@
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/profile/owner_profile_screen.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/profile/profile_screen.dart';
+import 'package:biblia_flutter_app/screens/multi_version_screen/multi_version_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import '../helpers/annotation_widget.dart';
@@ -12,7 +15,6 @@ import '../screens/devocionais_screen/reading_groups/chat_screen.dart';
 import '../screens/devocionais_screen/reading_groups/create_group_screen.dart';
 import '../screens/devocionais_screen/reading_groups/day_selected_screen.dart';
 import '../screens/devocionais_screen/reading_groups/group_admin_config_screen.dart';
-import '../screens/devocionais_screen/reading_groups/group_selected_admin_screen.dart';
 import '../screens/devocionais_screen/reading_groups/group_selected_screen.dart';
 import '../screens/devocionais_screen/reading_groups/initial_screen.dart';
 import '../screens/devocionais_screen/reading_groups/login_screen.dart';
@@ -25,6 +27,7 @@ import '../screens/home_screen/home_screen.dart';
 import '../screens/home_screen/widgets/random_verse_widget.dart';
 import '../screens/saved_verses_screen/saved_verses.dart';
 import '../screens/search_screen/search_screen.dart';
+import '../screens/settings_screen/download_manage_screen.dart';
 import '../screens/settings_screen/settings.dart';
 import '../screens/verses_screen/verses_screen.dart';
 import '../screens/verses_screen/widgets/verse_with_background.dart';
@@ -55,7 +58,6 @@ class AppRoutes {
     devocionais: (context) => const DevocionaisScreen(),
     readingGroups: (context) => const InitialScreen(),
     userHome: (context) => const UserHomeScreen(),
-    login: (context) => const LoginScreen(),
     createGroup: (context) => const CreateGroupScreen(),
     feed: (context) => const FeedScreen(),
     settings: (context) => const SettingsScreen(),
@@ -98,6 +100,18 @@ class AppRoutes {
           duration: duration
         );
 
+      case 'multi_version_screen':
+        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+        return PageTransition(
+            child: MultiVersionScreen(
+              book: map?["book"],
+              verision1: map?["version1"],
+              verision2: map?["version2"]
+            ),
+            type: PageTransitionType.rightToLeftWithFade,
+            duration: duration
+        );
+
       case 'verse_with_background':
         Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(builder: (context) {
@@ -117,6 +131,7 @@ class AppRoutes {
             annotation: map?["annotation"],
             verses: map?["verses"],
             isEditing: map?["isEditing"],
+            eventBus: map?["eventBus"],
           );
         });
 
@@ -125,6 +140,17 @@ class AppRoutes {
         return PageTransition(
           type: PageTransitionType.rightToLeftWithFade,
           child: DevocionalSelected(devocional: map?["devocional"]),
+        );
+      case 'profile_screen':
+        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+        return PageTransition(
+          type: PageTransitionType.rightToLeftWithFade,
+          child: ProfileScreen(userId: map?["devocionalId"]),
+        );
+      case 'owner_profile_screen':
+        return PageTransition(
+          type: PageTransitionType.rightToLeftWithFade,
+          child: const OwnerProfileScreen(),
         );
       case 'selected_day':
         Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
@@ -167,19 +193,12 @@ class AppRoutes {
             participantes: map?["participantes"],
           ),
         );
-      case 'group_selected_admin_screen':
-        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
-        return PageTransition(
-          type: PageTransitionType.rightToLeftWithFade,
-          duration: duration,
-          child: GroupSelectedAdminScreen(group: map?["group"]),
-        );
       case 'group_selected_screen':
-        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+        String groupId = settings.arguments as String;
         return PageTransition(
           type: PageTransitionType.rightToLeftWithFade,
           duration: duration,
-          child: GroupSelectedScreen(group: map?["group"]),
+          child: GroupSelectedScreen(groupId: groupId),
         );
       case 'solicitations_screen':
         Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
@@ -198,6 +217,20 @@ class AppRoutes {
             chapters: map?["chapters"],
             group: map?["group"],
           ),
+        );
+      case 'download_manage_screen':
+        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+        return PageTransition(
+          type: PageTransitionType.rightToLeftWithFade,
+          duration: duration,
+          child: DownloadManageScreen(eventBus: map?["eventBus"]),
+        );
+      case 'login_screen':
+        Map<String, dynamic>? map = settings.arguments as Map<String, dynamic>?;
+        return PageTransition(
+          type: PageTransitionType.rightToLeftWithFade,
+          duration: duration,
+          child: LoginScreen(eventBus: map?["eventBus"]),
         );
       default:
         return _errorRoute();

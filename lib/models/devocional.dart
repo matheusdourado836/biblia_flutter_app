@@ -47,7 +47,6 @@ class Devocional {
     plainText = json['plainText'];
     nomeAutor = json['nomeAutor'];
     bgImagem = json['bgImagem'];
-    bgImagemUser = json['bgImagemUser'];
     hasFrost = json['hasFrost'];
     status = json['status'];
     qtdComentarios = json['qtdComentarios'];
@@ -68,7 +67,6 @@ class Devocional {
     data['plainText'] = plainText;
     data['bgImagem'] = bgImagem;
     data['nomeAutor'] = nomeAutor;
-    data['bgImagemUser'] = bgImagemUser;
     data['hasFrost'] = hasFrost;
     data['status'] = status;
     data['qtdComentarios'] = qtdComentarios;
@@ -83,16 +81,19 @@ class Devocional {
 class Comentario {
   String? id;
   String? autorId;
+  String? authorPhotoUrl;
   String? name;
   String? comment;
   String? createdAt;
 
-  Comentario(
-      {this.id,
-        required this.name,
-      required this.comment,
-      required this.createdAt,
-      this.autorId,});
+  Comentario({
+    this.id,
+    this.autorId,
+    this.authorPhotoUrl,
+    required this.name,
+    required this.comment,
+    required this.createdAt,
+  });
 
   factory Comentario.fromJson(Map<String, dynamic> json) => Comentario(
       id: json["id"],

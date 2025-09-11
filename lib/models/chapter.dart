@@ -1,19 +1,63 @@
+import 'package:biblia_flutter_app/models/annotation.dart';
+import 'package:flutter/material.dart';
+
 class Chapter {
-  int verseNumber;
-  String verse;
+  int? chapterNumber;
+  final List<Verse> verses;
 
-  Chapter({required this.verseNumber, required this.verse});
+  Chapter({this.chapterNumber, required this.verses});
 
-  Chapter.fromMap(Map<String, dynamic> map)
-        :verseNumber = map["number"],
-        verse = map["text"];
-
-  Map<String, dynamic> toMap() {
-    return {"number": verseNumber, "text": verse};
+  factory Chapter.fromJson(List<dynamic> json) {
+    return Chapter(
+      verses: json.map((verse) => Verse.fromJson(verse)).toList(),
+    );
   }
 
-  @override
-  String toString() {
-    return "verseNumber: $verseNumber\nverse: $verse";
+  Map<String, dynamic> toJson() {
+    return {
+      'verses': verses,
+    };
   }
+}
+
+class Verse {
+  String? text;
+  String? verseDefault;
+  Color? verseColor;
+  String? bookName;
+  String? version;
+  int? chapter;
+  int? verseNumber;
+  bool? isSelected;
+  bool? isEditing;
+  Annotation? annotation;
+
+  Verse({
+    this.text,
+    this.verseDefault,
+    this.verseColor,
+    this.bookName,
+    this.version,
+    this.chapter,
+    this.verseNumber,
+    this.isSelected,
+    this.isEditing,
+    this.annotation,
+  });
+
+  factory Verse.fromJson(Map<String, dynamic> json) {
+    return Verse(
+      text: json['verse'],
+      verseDefault: json['verseDefault'],
+      verseColor: json['verseColor'],
+      bookName: json['bookName'],
+      version: json['version'],
+      chapter: json['chapter'],
+      verseNumber: json['verseNumber'],
+      isSelected: json['isSelected'],
+      isEditing: json['isEditing'],
+      annotation: json['annotation'],
+    );
+  }
+
 }

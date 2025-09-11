@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../data/reading_groups_provider.dart';
+import '../../../../data/user_provider.dart';
 
 class ChangePassModal extends StatefulWidget {
   const ChangePassModal({super.key});
@@ -14,7 +14,7 @@ class ChangePassModal extends StatefulWidget {
 
 class _ChangePassModalState extends State<ChangePassModal> {
   final GlobalKey<FormState> _key = GlobalKey();
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
+  late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen:  false);
   final TextEditingController _oldPassController = TextEditingController();
   final TextEditingController _newPassController = TextEditingController();
   bool _loading = false;

@@ -2,14 +2,14 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/wid
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/reading_groups_provider.dart';
+import '../../../data/user_provider.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+    final groupsProvider = Provider.of<UserProvider>(context, listen: false);
     final username = groupsProvider.currentUser!.nomeUsuario!;
     return Scaffold(
       appBar: AppBar(
@@ -21,7 +21,7 @@ class UserHomeScreen extends StatelessWidget {
       ),
       body: RefreshIndicator.adaptive(
         onRefresh: () => groupsProvider.getUserGroups(notify: true),
-        child: Consumer<ReadingGroupsProvider>(
+        child: Consumer<UserProvider>(
           builder: (context, value, _) {
             if(value.loading) {
               return const Center(
@@ -45,19 +45,11 @@ class UserHomeScreen extends StatelessWidget {
                   final group = value.currentUser!.gruposParticipantes![index];
                   return ListTile(
                     onTap: () {
-                      if(group.ownerId == value.currentUser!.id) {
-                        Navigator.pushNamed(
-                            context,
-                            'group_selected_admin_screen',
-                            arguments: {"group": group}
-                        );
-                      }else {
-                        Navigator.pushNamed(
-                            context,
-                            'group_selected_screen',
-                            arguments: {"group": group}
-                        );
-                      }
+                      Navigator.pushNamed(
+                          context,
+                          'group_selected_screen',
+                          arguments: group.id!
+                      );
                     },
                     leading: InkWell(
                       onTap: () => showDialog(

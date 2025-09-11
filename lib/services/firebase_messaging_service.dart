@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/main.dart';
@@ -93,28 +95,31 @@ class FirebaseMessagingService {
     AndroidNotification? android = message.notification?.android;
 
     if (notification != null && android != null && !message.data.containsKey("route")) {
-      String bookName = message.data["bookName"];
-      String abbrev = message.data["abbrev"];
-      String bookIndex = message.data["bookIndex"];
-      String chapters = message.data["chapters"];
-      String chapter = message.data["chapter"];
-      String verseNumber = message.data["verseNumber"];
+      final jsonPayload = jsonEncode({
+        "type": "verse",
+        ...message.data,
+      });
+
       _notificationService.showNotification(
         CustomNotification(
           id: android.hashCode,
           title: notification.title!,
           body: notification.body!,
-          payload: '$bookName $abbrev $bookIndex $chapters $chapter $verseNumber',
+          payload: jsonPayload,
         ),
         null
       );
     }else if(notification != null && android != null && message.data.containsKey("route")) {
+      final jsonPayload = jsonEncode({
+        "type": "route",
+        ...message.data,
+      });
       _notificationService.showNotification(
         CustomNotification(
           id: android.hashCode,
           title: notification.title!,
           body: notification.body!,
-          payload: 'route ${message.data["route"]}',
+          payload: jsonPayload,
         ),
         message.data["route"]
       );

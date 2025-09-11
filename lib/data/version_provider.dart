@@ -9,17 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class VersionProvider extends ChangeNotifier {
   final BibleData _data = BibleData();
-  final List<Widget> _versionsList = [];
   final List<String> _options = [
     'NVI (Nova Versão Internacional)',
     'ACF (Almeida Corrigida Fiel)',
     'NTLH (Nova Tradução na Linguagem de Hoje)',
     'RA (Revista e Atualizada)',
     'KJV (King James Version)',
+    'Multi versão',
+    'NVT (Nova versão transformadora)',
     'BBE (Bible in Basic English)',
     'RVR (Espanhol)',
     'APEE (Francês)',
-    'GREGO'
+    'GREGO',
   ];
 
   String _selectedOption = 'NVI (Nova Versão Internacional)';
@@ -27,8 +28,6 @@ class VersionProvider extends ChangeNotifier {
   String get selectedOption => _selectedOption;
 
   List<String> get options => _options;
-
-  List<Widget> get versionsList => _versionsList;
 
   double _downloadProgress = 0.0;
 
@@ -53,20 +52,6 @@ class VersionProvider extends ChangeNotifier {
     _selectedOption = prefs.getString('version') ?? _selectedOption;
   }
 
-  List<Widget> setListItem(String versionOption) {
-    _versionsList.add(
-      Center(
-        child: Text(versionOption.toUpperCase().replaceAll(' ', '\n'),),),
-    );
-
-    return _versionsList;
-  }
-
-  void changeOptionBd(String newOptionBd) {
-    _selectedOption = newOptionBd.trim();
-    notifyListeners();
-  }
-
   void changeVersion(String newVersion) {
     _selectedOption = newVersion;
     notifyListeners();
@@ -75,6 +60,8 @@ class VersionProvider extends ChangeNotifier {
   bool getDownloadedVersion(String version) {
     return !_data.downloadedVersions.contains(version);
   }
+
+  List<Map<String, dynamic>> getVersions() => _data.data;
 
   Future<String> getVersionsDirectoryPath() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -118,7 +105,6 @@ class VersionProvider extends ChangeNotifier {
 
           if (response.statusCode == 200) {
             _downloadCompleted = true;
-            await loadBibleData();
             _downloadProgress = 0;
             downloadError = '';
             notifyListeners();
@@ -135,5 +121,10 @@ class VersionProvider extends ChangeNotifier {
       downloadError = 'Erro ao baixar versão: ${e.toString()}';
       notifyListeners();
     }
+  }
+
+  Future<void> deleteVersions({required List<String> versions}) async {
+    await _data.deleteVersions(versions: versions);
+    notifyListeners();
   }
 }

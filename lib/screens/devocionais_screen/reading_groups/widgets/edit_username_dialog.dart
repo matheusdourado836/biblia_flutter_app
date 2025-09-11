@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +12,7 @@ class EditUsernameDialog extends StatefulWidget {
 
 class _EditUsernameDialogState extends State<EditUsernameDialog> {
   final GlobalKey<FormState> _key = GlobalKey<FormState>();
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
+  late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen:  false);
   final TextEditingController _nameController = TextEditingController();
   bool _loading = false;
   String _errorMsg = '';
@@ -22,7 +22,7 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
       _loading = true;
       _errorMsg = '';
     });
-    final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
+    final groupsProvider = Provider.of<UserProvider>(context, listen:  false);
     final usernameAvailable = await groupsProvider.checkIfUsernameIsAvailable(username: _nameController.text);
     if(usernameAvailable) {
       await groupsProvider.updateUsername(newUsername: _nameController.text);

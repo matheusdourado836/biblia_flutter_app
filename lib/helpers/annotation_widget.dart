@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
+import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
@@ -12,12 +13,16 @@ class AnnotationWidget extends StatefulWidget {
   final Annotation annotation;
   final List<dynamic> verses;
   final bool isEditing;
+  final EventBus? eventBus;
 
   const AnnotationWidget(
-      {super.key,
-      required this.annotation,
-      required this.isEditing,
-      required this.verses});
+  {
+    super.key,
+    required this.annotation,
+    required this.isEditing,
+    required this.verses,
+    required this.eventBus
+  });
 
   @override
   State<AnnotationWidget> createState() => _AnnotationWidgetState();
@@ -60,6 +65,7 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
       });
     }
     showCustomSnackBar(child: const Text('Anotação salva com sucesso!'));
+    widget.eventBus?.fire('Refresh');
     versesProvider.refresh();
   }
 
@@ -99,49 +105,49 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
             children: [
               Text(title),
               IconButton(
-                onPressed: (() {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        titlePadding: const EdgeInsets.all(0),
-                        title: Container(
-                          height: 90,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: const BorderRadiusDirectional.only(
-                              topStart: Radius.circular(26),
-                              topEnd: Radius.circular(26)
-                            )
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${widget.annotation.book} capítulo ${widget.annotation.chapter}',
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)
-                            )
-                          )
-                        ),
-                        content: SelectionArea(
-                          child: ListView.builder(
-                            itemCount: widget.verses.length,
-                            shrinkWrap: true,
-                            itemBuilder: (context, index) {
-                              return Text.rich(TextSpan(
-                                text: '${(index + 1).toString()}  ',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                children: <TextSpan>[
-                                  TextSpan(
-                                    text: widget.verses[index],
-                                    style: const TextStyle(fontWeight: FontWeight.normal)
-                                  )
-                                ])
-                              );
-                            }
+                  onPressed: (() {
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            titlePadding: const EdgeInsets.all(0),
+                            title: Container(
+                                height: 90,
+                                decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: const BorderRadiusDirectional.only(
+                                        topStart: Radius.circular(26),
+                                        topEnd: Radius.circular(26)
+                                    )
+                                ),
+                                child: Center(
+                                    child: Text(
+                                        '${widget.annotation.book} capítulo ${widget.annotation.chapter}',
+                                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)
+                                    )
+                                )
                             ),
-                        ),
-                      );
-                    });
-                }),
+                            content: SelectionArea(
+                              child: ListView.builder(
+                                  itemCount: widget.verses.length,
+                                  shrinkWrap: true,
+                                  itemBuilder: (context, index) {
+                                    return Text.rich(TextSpan(
+                                        text: '${(index + 1).toString()}  ',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        children: <TextSpan>[
+                                          TextSpan(
+                                              text: widget.verses[index],
+                                              style: const TextStyle(fontWeight: FontWeight.normal)
+                                          )
+                                        ])
+                                    );
+                                  }
+                              ),
+                            ),
+                          );
+                        });
+                  }),
                   icon: const Icon(Icons.menu_book_outlined)
               )
             ],
@@ -149,12 +155,12 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              if (!_controller.document.isEmpty()) {
-                saveAnnotation();
-              }
-            },
-            icon: const Icon(Icons.check)
+              onPressed: () {
+                if (!_controller.document.isEmpty()) {
+                  saveAnnotation();
+                }
+              },
+              icon: const Icon(Icons.check)
           ),
         ],
       ),
@@ -177,28 +183,28 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
           const SizedBox(height: 32),
           Expanded(
             child: QuillEditor.basic(
-              controller: _controller,
-              focusNode: _textFocus,
-              config: QuillEditorConfig(
-                onTapOutsideEnabled: true,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-                placeholder: 'Escreva sua anotação aqui...',
-                customStyles: DefaultStyles(
-                  placeHolder: DefaultListBlockStyle(
-                    TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 24,
-                      fontStyle: FontStyle.italic
-                    ),
-                    const HorizontalSpacing(0, 0),
-                    const VerticalSpacing(0, 0),
-                    const VerticalSpacing(0, 0),
-                    null,
-                    null
-                  )
+                controller: _controller,
+                focusNode: _textFocus,
+                config: QuillEditorConfig(
+                    onTapOutsideEnabled: true,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                    placeholder: 'Escreva sua anotação aqui...',
+                    customStyles: DefaultStyles(
+                        placeHolder: DefaultListBlockStyle(
+                            TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 24,
+                                fontStyle: FontStyle.italic
+                            ),
+                            const HorizontalSpacing(0, 0),
+                            const VerticalSpacing(0, 0),
+                            const VerticalSpacing(0, 0),
+                            null,
+                            null
+                        )
+                    )
                 )
-              )
             ),
           ),
         ],

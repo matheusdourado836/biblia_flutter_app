@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/models/group.dart';
 import 'package:biblia_flutter_app/models/user.dart';
 import 'package:flutter/material.dart';
@@ -6,10 +6,11 @@ import 'package:provider/provider.dart';
 
 class GroupProgressDialog extends StatefulWidget {
   final Group group;
+  final int day;
   final Map<String, List<String>> capitulos;
   final List<String> chaptersLabel;
   final List<MyUser> participantes;
-  const GroupProgressDialog({super.key, required this.capitulos, required this.participantes, required this.chaptersLabel, required this.group});
+  const GroupProgressDialog({super.key, required this.day, required this.capitulos, required this.participantes, required this.chaptersLabel, required this.group});
 
   @override
   State<GroupProgressDialog> createState() => _GroupProgressDialogState();
@@ -22,15 +23,21 @@ class _GroupProgressDialogState extends State<GroupProgressDialog> {
     return DataCell(Checkbox(
         value: value,
         onChanged: (newValue) {
-          final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
-          if(groupsProvider.currentUser!.id == widget.group.ownerId) {
+          final usersProvider = Provider.of<UserProvider>(context, listen: false);
+          if(usersProvider.currentUser!.id == widget.group.ownerId) {
             final index = widget.chaptersLabel.indexOf(chapter) + 1;
             if(value) {
               widget.capitulos[index.toString()]!.remove(user.id);
             }else {
               widget.capitulos[index.toString()]!.add(user.id!);
             }
-            groupsProvider.updateDailyReading(widget.group.dailyReading!, widget.group.id!);
+            usersProvider.updateDailyReading(
+              groupId: widget.group.id!,
+              dayId: widget.day.toString(),
+              chapterId: index.toString(),
+              userId: user.id!,
+              isRead: !value
+            );
             setState(() {
               sortedChapters = widget.capitulos.entries.toList()
                 ..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));

@@ -9,8 +9,7 @@ import 'package:native_image_cropper/native_image_cropper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import '../../../../data/bible_data.dart';
-import '../../../../data/reading_groups_provider.dart';
+import '../../../../data/user_provider.dart';
 import '../../../../models/user.dart';
 import '../create_group_screen.dart';
 import 'package:collection/collection.dart';
@@ -26,8 +25,7 @@ class EditGroupModal extends StatefulWidget {
 }
 
 class _EditGroupModalState extends State<EditGroupModal> {
-  final BibleData _bibleData = BibleData();
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+  late final UserProvider _usersProvider = Provider.of<UserProvider>(context, listen: false);
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _numberPeopleController = TextEditingController();
@@ -87,9 +85,9 @@ class _EditGroupModalState extends State<EditGroupModal> {
 
   Future<void> updateGroupData() async {
     try {
-      await _groupsProvider.updateGroupData(group.toJson()..remove('solicitacoes'), group.id!);
+      await _usersProvider.updateGroupData(group.toJson()..remove('solicitacoes'), group.id!);
       setState(() => _saving = false);
-      _groupsProvider.getUserGroups(notify: true);
+      _usersProvider.getUserGroups(notify: true);
       Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
     }catch(e) {
       showCustomSnackBar(
@@ -111,7 +109,7 @@ class _EditGroupModalState extends State<EditGroupModal> {
     _books.add('Todos');
     _books.add('Adicionar antigo testamento');
     _books.add('Adicionar novo testamento');
-    for (var book in _bibleData.data[0]["text"]) {
+    for (var book in _usersProvider.bibleData[0]["text"]) {
       if(!(group.books?.contains(book) ?? false)) {
         _books.add(book["name"]);
       }
@@ -135,7 +133,7 @@ class _EditGroupModalState extends State<EditGroupModal> {
             ),
           ),
           ProfileContainer(
-            user: _groupsProvider.currentUser!,
+            user: _usersProvider.currentUser!,
             group: group,
           ),
           const SizedBox(height: 24),
@@ -195,7 +193,7 @@ class _EditGroupModalState extends State<EditGroupModal> {
                 group.maxPeople = int.parse(_numberPeopleController.text);
                 if(_updatedBgUrl?.isNotEmpty ?? false) {
                   group.bgUrl = _updatedBgUrl;
-                  final res = await _groupsProvider.uploadGroupPicture(group);
+                  final res = await _usersProvider.uploadGroupPicture(group);
                   if(res) {
                     _updatedBgUrl = null;
                   }

@@ -6,7 +6,6 @@ import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/bible_data.dart';
 
 class RandomVerseScreen extends StatefulWidget {
   const RandomVerseScreen({super.key});
@@ -47,13 +46,12 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
             return const LoadingWidget();
           }
           else if(snapshot.data!["bookName"] != null) {
-            final BibleData bibleData = BibleData();
             abbrev = snapshot.data!["abbrev"];
             bookName = snapshot.data!["bookName"];
             chapter = snapshot.data!["chapter"];
             verseNumber = snapshot.data!["verseNumber"];
             verse = snapshot.data!["verse"];
-            final List<dynamic> bookReference = bibleData.data[0]["text"];
+            final List<dynamic> bookReference = versesProvider.bibleData[0]["text"];
             final book = bookReference.where((element) => element["abbrev"] == abbrev).first;
             bookIndex = bookReference.indexOf(book);
             chapters = book["chapters"].length;

@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +11,7 @@ class JoinGroupDialog extends StatefulWidget {
 }
 
 class _JoinGroupDialogState extends State<JoinGroupDialog> {
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen:  false);
+  late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen:  false);
   final TextEditingController _controller = TextEditingController();
   final ValueNotifier<bool> _error = ValueNotifier(false);
   String _errorMessage = '';
@@ -60,9 +60,18 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
                   _errorMessage = 'Você já faz parte deste grupo.';
                   return;
                 }
-                await _groupsProvider.sendInvite(group: res);
-                Navigator.pop(context);
-                showCustomSnackBar(child: const Text('Sua solicitação foi enviada com sucesso!'));
+                final inviteRes = await _groupsProvider.sendInvite(group: res);
+                if(inviteRes) {
+                  _groupsProvider.sendInviteNotification(
+                      userId: res.ownerId!,
+                      groupName: res.nome!
+                  );
+                  Navigator.pop(context);
+                  showCustomSnackBar(child: const Text('Sua solicitação foi enviada com sucesso!'));
+                }else {
+                  _error.value = true;
+                  _errorMessage = 'Houve um erro ao enviar sua solicitação.';
+                }
               }else {
                 _error.value = true;
                 _errorMessage = 'grupo não encontrado';

@@ -9,6 +9,7 @@ extension BrFormat on DateTime {
     return '${day < 10 ? '0$day' : day}/${month < 10 ? '0$month' : month}/$year ${includeTime ? '${hour > 9 ? hour : '0$hour'}h ${minute > 9 ? minute : '0$minute'}m' : ''}'.trim();
   }
 
+  String formattedShort() => '${hour > 9 ? hour : '0$hour'}:${minute > 9 ? minute : '0$minute'}';
 
   String toIso8601DateOnly() {
     return toIso8601String().split('T').first;

@@ -43,10 +43,6 @@ class _ChapterScreenState extends State<ChapterScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leading: IconButton(
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false),
-          icon: Icon(Icons.adaptive.arrow_back)
-        ),
         title: Text(widget.bookName),
         actions: [
           Consumer<ChaptersProvider>(

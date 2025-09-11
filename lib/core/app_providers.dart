@@ -7,7 +7,7 @@ import '../data/search_verses_provider.dart';
 import '../data/version_provider.dart';
 import '../data/devocional_provider.dart';
 import '../data/plans_provider.dart';
-import '../data/reading_groups_provider.dart';
+import '../data/user_provider.dart';
 import '../services/notification_service.dart';
 
 final List<SingleChildWidget> appProviders = [
@@ -19,5 +19,5 @@ final List<SingleChildWidget> appProviders = [
   ChangeNotifierProvider(create: (context) => VersionProvider()),
   ChangeNotifierProvider(create: (context) => DevocionalProvider()),
   ChangeNotifierProvider(create: (context) => PlansProvider()),
-  ChangeNotifierProvider(create: (context) => ReadingGroupsProvider()),
+  ChangeNotifierProvider(create: (context) => UserProvider()),
 ];

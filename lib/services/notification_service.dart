@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
@@ -39,52 +40,47 @@ class NotificationService {
   void _onSelectedNotification(NotificationResponse? notificationResponse) {
     if (notificationResponse?.payload?.isEmpty ?? true) return;
 
-    final payload = notificationResponse!.payload!;
-    final parts = payload.split(' ');
+    try {
+      final Map<String, dynamic> data = jsonDecode(notificationResponse!.payload!);
 
-    if (parts.isEmpty) return;
-
-    if (parts[0] == 'route') {
-      navigatorKey!.currentState!.pushNamedAndRemoveUntil(parts[1], (route) => false);
-      return;
+      if (data['type'] == 'route') {
+        navigatorKey!.currentState!.pushNamedAndRemoveUntil(
+          data['route'], (route) => false,
+          arguments: {"notification": true},
+        );
+      } else if (data['type'] == 'verse') {
+        GoToVerseScreen().goToVersePage(
+          data['bookName'],
+          data['abbrev'],
+          int.parse(data['bookIndex'].toString()),
+          int.parse(data['chapters'].toString()),
+          int.parse(data['chapter'].toString()),
+          int.parse(data['verseNumber'].toString()),
+        );
+      }
+    } catch (e) {
+      debugPrint('Erro ao tratar payload: $e');
     }
-
-    String bookName = parts[0];
-    String abbrev = parts[1];
-    int bookIndex = int.parse(parts[2]);
-    int chapters = int.parse(parts[3]);
-    int chapter = int.parse(parts[4]);
-    int verseNumber = int.parse(parts[5]);
-
-    if (bookName.contains(RegExp(r'[ªº°]'))) {
-      bookName = '${parts[0]} ${parts[1]}';
-      abbrev = parts[2];
-      bookIndex = int.parse(parts[3]);
-      chapters = int.parse(parts[4]);
-      chapter = int.parse(parts[5]);
-      verseNumber = int.parse(parts[6]);
-    }
-
-    GoToVerseScreen().goToVersePage(bookName, abbrev, bookIndex, chapters, chapter, verseNumber);
   }
 
-  showNotification(CustomNotification notification, String? channelInfo) {
+  void showNotification(CustomNotification notification, String? channelInfo) {
     final channel = (channelInfo == null) ? 'versiculo_diario' : channelInfo;
     androidNotificationDetails = AndroidNotificationDetails(
-      '${channel}_notification', channel,
+      '${channel}_notification',
+      channel,
       importance: Importance.max,
       priority: Priority.max,
       enableVibration: true,
       colorized: true,
-      color: Colors.brown
+      color: Colors.brown,
     );
 
     localNotificationsPlugin.show(
-        notification.id,
-        notification.title,
-        notification.body,
-        NotificationDetails(android: androidNotificationDetails),
-        payload: notification.payload
+      notification.id,
+      notification.title,
+      notification.body,
+      NotificationDetails(android: androidNotificationDetails),
+      payload: notification.payload,
     );
   }
 }

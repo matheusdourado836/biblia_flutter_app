@@ -2,13 +2,15 @@ import 'dart:io';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class DevocionalService {
   final FirebaseFirestore _database = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   Future<List<Devocional>?> getDevocionais({int? limit}) async {
     try {
@@ -42,9 +44,9 @@ class DevocionalService {
 
   Future<List<Devocional>> getUserDevocionais() async {
     try {
-      final userToken = await _messaging.getToken();
+      final userId = _auth.currentUser!.uid;
       List<Devocional> devocionais = [];
-      await _database.collection('devocionais').where('ownerId', isEqualTo: userToken).get().then((res) {
+      await _database.collection('devocionais').where('ownerId', isEqualTo: userId).get().then((res) {
         if(res.docs.isNotEmpty) {
           final docs = res.docs;
           for(var devocional in docs) {
@@ -59,6 +61,27 @@ class DevocionalService {
       return devocionais;
     }catch(e) {
       alertDialog(title: 'Erro', content: 'Não foi possível recuperar seus devocionais\n${e.toString()}');
+      return [];
+    }
+  }
+
+  Future<List<Devocional>> getDevocionaisById({required String id}) async {
+    try {
+      List<Devocional> devocionais = [];
+      await _database.collection('devocionais').where('ownerId', isEqualTo: id).get().then((res) {
+        if(res.docs.isNotEmpty) {
+          final docs = res.docs;
+          for(var doc in docs) {
+            if(doc.exists) {
+             devocionais.add(Devocional.fromJson(doc.data()));
+            }
+          }
+        }
+      });
+
+      return devocionais;
+    }catch(e) {
+      alertDialog(title: 'Erro', content: 'Não foi possível recuperar o devocional ${e.toString()}');
       return [];
     }
   }
@@ -106,9 +129,15 @@ class DevocionalService {
   }
 
   Future<void> postComment({required String devocionalId, required Comentario comentario}) async {
-    final userToken = await _messaging.getToken();
+    final userId = _auth.currentUser?.uid;
     final commentJson = comentario.toJson();
-    commentJson["autorId"] = userToken;
+    commentJson["autorId"] = userId;
+    try {
+      final HttpsCallable callable = _functions.httpsCallableFromUri(Uri.parse('https://sendcommentnotification-693460458631.us-central1.run.app'));
+      callable.call({'comment': commentJson, 'postId': devocionalId});
+    }catch(e) {
+      print('Erro ao enviar notificação: $e');
+    }
     final docRef = await _database.collection('devocionais').doc(devocionalId).collection('comentarios').add(commentJson);
     _database.collection('devocionais').doc(devocionalId).collection('comentarios').doc(docRef.id).update({'id': docRef.id});
     _database.collection('devocionais').doc(devocionalId).update({'qtdComentarios': FieldValue.increment(1)});
@@ -123,28 +152,18 @@ class DevocionalService {
 
   Future<String> postDevocional({required Devocional devocional}) async {
     try {
-      final userToken = await _messaging.getToken();
       final devocionalJson = devocional.toJson();
       devocionalJson["bgImagem"] = "";
-      devocionalJson["bgImagemUser"] = "";
       final docRef = await _database.collection('devocionais').add(devocionalJson);
       if(devocional.bgImagem != null) {
         final fileName = devocional.bgImagem!.split('/').last;
         final bgRef = _storage.ref().child('devocionais/${docRef.id}/bgImage/$fileName');
         await bgRef.putFile(File(devocional.bgImagem!));
         String photoURL = await bgRef.getDownloadURL();
-        updateUserData(docRef.id, {'bgImagem': photoURL});
-      }
-      if(devocional.bgImagemUser != null) {
-        final fileName = devocional.bgImagemUser!.split('/').last;
-        final userRef = _storage.ref().child('devocionais/${docRef.id}/bgUserImage/$fileName');
-        await userRef.putFile(File(devocional.bgImagemUser!));
-        String photoURL = await userRef.getDownloadURL();
-        updateUserData(docRef.id, {'bgImagemUser': photoURL});
+        updateDevocionalData(docRef.id, {'bgImagem': photoURL});
       }
 
       _database.collection('devocionais').doc(docRef.id).update({'id': docRef.id});
-      _database.collection('devocionais').doc(docRef.id).update({'ownerId': userToken});
       _database.collection('devocionais').doc(docRef.id).collection('comentarios');
 
       return docRef.id;
@@ -154,21 +173,31 @@ class DevocionalService {
     }
   }
 
-  Future<void> updateUserData(String devocionalId, Map<String, dynamic> info) async {
+  Future<void> updateDevocionalData(String devocionalId, Map<String, dynamic> info) async {
     return await _database.collection('devocionais').doc(devocionalId).update(info);
   }
 
   Future<void> likePost({required String postId, required bool like}) async {
-    final userToken = await _messaging.getToken();
+    final userId = _auth.currentUser?.uid;
+    if(userId == null) return;
+    if(like) {
+      final HttpsCallable callable = _functions.httpsCallable('sendPostLikedNotification');
+      try {
+        await callable.call({'postId': postId, 'userId': userId});
+      }catch(e) {
+        print('Erro ao enviar notificação: $e');
+      }
+    }
     return (like)
-        ? await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).set({})
-        : await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).delete();
+        ? await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).set({})
+        : await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).delete();
   }
 
   Future<bool> checkIfPostIsLiked({required String postId}) async {
-    final userToken = await _messaging.getToken();
+    final userId = _auth.currentUser?.uid;
+    if(userId == null) return false;
     bool isLiked = false;
-    await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userToken).get().then((res) {
+    await _database.collection('devocionais').doc(postId).collection('curtidas').doc(userId).get().then((res) {
       if(res.exists) {
         isLiked = true;
       }
@@ -178,8 +207,9 @@ class DevocionalService {
   }
 
   Future<void> countView(String devocionalId, String ownerDevocionalId) async {
-    final userToken = await _messaging.getToken();
-    if(userToken != ownerDevocionalId) {
+    final userId = _auth.currentUser?.uid;
+    if(userId == null) return;
+    if(userId != ownerDevocionalId) {
       _database.collection('devocionais').doc(devocionalId).update({'qtdViews': FieldValue.increment(1)});
     }
   }

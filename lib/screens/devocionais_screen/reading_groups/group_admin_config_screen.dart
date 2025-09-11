@@ -5,7 +5,7 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/wid
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../data/reading_groups_provider.dart';
+import '../../../data/user_provider.dart';
 import '../../../models/group.dart';
 
 class GroupAdminConfigScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class GroupAdminConfigScreen extends StatefulWidget {
 class _GroupAdminConfigScreenState extends State<GroupAdminConfigScreen> {
   @override
   Widget build(BuildContext context) {
-    final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+    final groupsProvider = Provider.of<UserProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações do grupo')),
       body: Column(
@@ -94,7 +94,7 @@ class _GroupAdminConfigScreenState extends State<GroupAdminConfigScreen> {
                 actions: [
                   TextButton(
                     onPressed: () {
-                      groupsProvider.deleteGroup(groupId: widget.group.id!).whenComplete(() {
+                      groupsProvider.deleteGroup(groupId: widget.group.id!, groupBgUrl: widget.group.bgUrl).whenComplete(() {
                         groupsProvider.getUserGroups(notify: true).whenComplete(
                           () => Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen')
                         );

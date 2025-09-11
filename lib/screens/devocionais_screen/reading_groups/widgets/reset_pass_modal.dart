@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +16,7 @@ class _ResetPassModalState extends State<ResetPassModal> {
   String _errorMsg = '';
 
   Future<void> resetPass() async {
-    final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+    final groupsProvider = Provider.of<UserProvider>(context, listen: false);
     try {
       setState(() => _loading = true);
       await groupsProvider.resetPassword(_emailContorller.text);

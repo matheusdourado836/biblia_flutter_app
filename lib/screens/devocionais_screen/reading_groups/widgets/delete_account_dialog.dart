@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,7 +23,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
   Future<void> deleteAccount() async {
     try {
       setState(() => _loading = true);
-      final groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+      final groupsProvider = Provider.of<UserProvider>(context, listen: false);
       final res = await groupsProvider.reauthenticateUser(_emailController.text, _passController.text);
       if(res is FirebaseAuthException) {
         throw FirebaseAuthException(code: res.code);

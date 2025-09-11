@@ -13,6 +13,12 @@ class ProgressDialog extends StatefulWidget {
 
 class _ProgressDialogState extends State<ProgressDialog> {
 
+  Future<void> loadBibleData(VersionProvider versionProvider) async {
+    await versionProvider.loadBibleData();
+    versionProvider.setDownloadProgress = false;
+    Navigator.pop(context, true);
+  }
+
   @override
   void initState() {
     final versionProvider = Provider.of<VersionProvider>(context, listen: false);
@@ -29,8 +35,7 @@ class _ProgressDialogState extends State<ProgressDialog> {
       content: Consumer<VersionProvider>(
         builder: (context, value, _) {
           if(value.downloadCompleted) {
-            value.setDownloadProgress = false;
-            Navigator.pop(context, true);
+            loadBibleData(value);
           }
           if(value.downloadError.isNotEmpty) {
             return Column(

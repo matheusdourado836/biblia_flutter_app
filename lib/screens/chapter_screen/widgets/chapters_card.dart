@@ -48,7 +48,7 @@ class ChapterCard extends StatelessWidget {
                     versesProvider.readChapters = readChapters;
                     versesProvider.openBottomSheet(false);
                     versesProvider.loadVerses(bookIndex, bookName, versionName: versionProvider.selectedOption.toLowerCase().split(' ')[0]);
-                    Navigator.pushNamed(
+                    Navigator.pushReplacementNamed(
                         context,
                         'verses_screen',
                         arguments: {

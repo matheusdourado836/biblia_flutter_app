@@ -1,10 +1,11 @@
 import 'group.dart';
 
 class MyUser {
-  final String? id;
+  String? id;
   final String? email;
   String? nomeUsuario;
   String? profilePhotoUrl;
+  int? qtdQuestionsLeft;
   String? fcmToken;
   List<Group>? gruposParticipantes;
 
@@ -13,17 +14,19 @@ class MyUser {
     this.email,
     this.nomeUsuario,
     this.profilePhotoUrl,
+    this.qtdQuestionsLeft,
     this.fcmToken,
     this.gruposParticipantes,
   });
 
   factory MyUser.fromJson(Map<String, dynamic> json) {
     return MyUser(
-      id: json['id'] as String,
+      id: json['id'],
       email: json['email'],
-      nomeUsuario: json['username'] as String,
+      nomeUsuario: json['username'],
       fcmToken: json['fcmToken'],
       profilePhotoUrl: json['profilePhotoUrl'] as String?,
+      qtdQuestionsLeft: json['qtdQuestionsLeft'] as int?,
     );
   }
 
@@ -35,6 +38,7 @@ class MyUser {
       'profilePhotoUrl': profilePhotoUrl,
       'fcmToken': fcmToken,
       'gruposParticipantes': gruposParticipantes?.map((g) => g.toJson()).toList(),
+      'qtdQuestionsLeft': qtdQuestionsLeft,
     };
   }
 }

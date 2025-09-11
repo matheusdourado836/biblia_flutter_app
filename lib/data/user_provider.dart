@@ -1,28 +1,39 @@
+import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:biblia_flutter_app/models/user.dart';
-import 'package:biblia_flutter_app/services/reading_group_service.dart';
+import 'package:biblia_flutter_app/services/user_service.dart';
 import 'package:flutter/material.dart';
-import '../models/daily_read.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/group.dart';
 import '../models/message.dart';
+import 'bible_data.dart';
 
-class ReadingGroupsProvider extends ChangeNotifier {
-  static final ReadingGroupService _service = ReadingGroupService();
+class UserProvider extends ChangeNotifier {
+  static final BibleData _bibleData = BibleData();
+  static final UserService _service = UserService();
   MyUser? currentUser;
   bool loading = false;
   int unreadMessages = 0;
+
+  List<Map<String, dynamic>> get bibleData => _bibleData.data;
+
+  List<AiChatMessage> _chatMessages = [];
+
+  List<AiChatMessage> get chatMessages => _chatMessages;
 
   void newMessage(List<Message> messages) {
     unreadMessages = messages.where((m) => !(m.hasSeen?.contains(currentUser!.id!) ?? true)).length;
     notifyListeners();
   }
 
-  Future<void> getUser() async {
+  Future<void> getLoggedUser() async {
     currentUser = await _service.getLoggedUser();
     if(currentUser?.id != null) {
       await getUserGroups();
     }
     notifyListeners();
   }
+
+  Future<MyUser?> getUserById({required String id}) async => await _service.getUserById(id: id);
 
   Future<void> getUserGroups({bool notify = false}) async {
     loading = true;
@@ -46,9 +57,11 @@ class ReadingGroupsProvider extends ChangeNotifier {
 
   Future<void> doLogin({required String email, required String pass}) async {
     await _service.doLogin(email: email, pass: pass);
-    await getUser();
+    await getLoggedUser();
     notifyListeners();
   }
+
+  Future<bool> updateUserProfilePicture(MyUser user) async => await _service.updateUserProfilePicture(user);
 
   Future<void> updateUsername({required String newUsername}) async {
     currentUser!.nomeUsuario = newUsername;
@@ -67,6 +80,10 @@ class ReadingGroupsProvider extends ChangeNotifier {
   Future<void> doLogout() async {
     currentUser = null;
     return await _service.doLogout();
+  }
+
+  Future<void> updateUserData(Map<String, dynamic> info) async {
+    return await _service.updateUserData(info, currentUser!.id!);
   }
 
   Future<bool> changePassword({required String newPassword}) async {
@@ -95,8 +112,8 @@ class ReadingGroupsProvider extends ChangeNotifier {
     return await _service.uploadGroupPicture(group).whenComplete(() => notifyListeners());
   }
 
-  Future<void> deleteGroup({required String groupId}) async {
-    return await _service.deleteGroup(groupId: groupId);
+  Future<void> deleteGroup({required String groupId, String? groupBgUrl}) async {
+    return await _service.deleteGroup(groupId: groupId, groupBgUrl: groupBgUrl);
   }
 
   Future<String> _gerarCodigoGrupo() async {
@@ -130,8 +147,10 @@ class ReadingGroupsProvider extends ChangeNotifier {
     return await _service.markMessagesAsRead(groupId: groupId);
   }
 
+  Future<Group?> getGroupById({required String groupId}) async => _service.getGroupById(groupId: groupId);
+
   Future<Group?> getGroupByCode({required int code}) async {
-    return await _service.getGroupByCode(code: code, user: currentUser!);
+    return await _service.getGroupByCode(code: code);
   }
 
   Future<void> leaveGroup({required Group group}) async {
@@ -149,25 +168,19 @@ class ReadingGroupsProvider extends ChangeNotifier {
     bool inviteAlreadyExists = group.solicitacoes?.where((i) => i.user?.id == currentUser!.id).isEmpty ?? true;
     bool userIsOwner = group.ownerId == currentUser!.id!;
     if(inviteAlreadyExists || userIsOwner) {
-      sendInviteNotification(
-          userId: group.ownerId!,
-          username: currentUser!.nomeUsuario!,
-          groupName: group.nome!
-      );
       return await _service.sendInvite(user: currentUser!, group: group);
     }
 
-    return true;
+    return false;
   }
 
-  Future<void> sendInviteNotification({
+  Future<bool> sendInviteNotification({
     required String userId,
-    required String username,
     required String groupName
   }) async {
     return await _service.sendInviteNotification(
         userId: userId,
-        username: username,
+        username: currentUser!.nomeUsuario!,
         groupName: groupName
     );
   }
@@ -193,9 +206,46 @@ class ReadingGroupsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateDailyReading(GroupDailyReading dailyReading, String groupId) async {
+  Future<void> updateDailyReading({
+    required String groupId,
+    required String dayId,
+    required String chapterId,
+    required String userId,
+    required bool isRead,
+  }) async {
+    return await _service.updateDailyReading(
+      groupId: groupId,
+      dayId: dayId,
+      chapterId: chapterId,
+      userId: userId,
+      isRead: isRead,
+    );
+  }
 
-    final updatedData = dailyReading.toJson();
-    return await updateGroupData({"dailyReading": updatedData}, groupId);
+  Future<void> markAllChaptersRead({
+    required String groupId,
+    required String dayId,
+    required int chapterIds,
+    required String userId
+  }) async {
+    return await _service.markAllChaptersRead(
+      groupId: groupId,
+      dayId: dayId,
+      chapterIds: chapterIds,
+      userId: userId
+    );
+  }
+
+  Future<void> saveAiChatHistory(List<Content> history) async {
+    return await _service.saveAiChatHistory(chatMessages: history, user: currentUser!);
+  }
+
+  Future<void> loadAiChatHistory() async {
+    _chatMessages = await _service.loadAiChatHistory();
+    return;
+  }
+
+  Future<void> deleteAiChatHistory() async {
+    return await _service.deleteAiChatHistory();
   }
 }

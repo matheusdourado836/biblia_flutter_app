@@ -28,11 +28,8 @@ class VersesProvider extends ChangeNotifier {
   static final VersesDao _versesDao = VersesDao();
   static final AnnotationsDao _annotationsDao = AnnotationsDao();
   static final BibleService _service = BibleService();
-  List<VerseModel> _lista = [];
   List<VerseModel> _listaBd = [];
-  List<Annotation> _listAnnotations = [];
   List<Annotation> _listAnnotationsDb = [];
-  List<Map<String, dynamic>> _listMapVerses = [];
   List<Map<String, dynamic>> _listMap = [];
   List<int> _versesFound = [];
   bool _bottomSheetOpened = false;
@@ -44,13 +41,11 @@ class VersesProvider extends ChangeNotifier {
   Map<int, dynamic> _allVerses = {};
   String currentBook = '';
 
+  List<Map<String, dynamic>> get bibleData => _bibleData.data;
+
   bool get bottomSheetOpened => _bottomSheetOpened;
 
-  UnmodifiableListView<VerseModel> get lista => UnmodifiableListView(_lista);
-
   List<VerseModel> get listaBd => _listaBd;
-
-  UnmodifiableListView<Annotation> get listaAnnotations => UnmodifiableListView(_listAnnotations);
 
   List<Annotation> get listaAnnotationsDb => _listAnnotationsDb;
 
@@ -66,15 +61,13 @@ class VersesProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> get listMap => _listMap;
 
-  List<Map<String, dynamic>> get listMapVerses => _listMapVerses;
-
   List<bool> readChapters = [];
 
   List<int> get versesFoundList => _versesFound;
 
   Map<int, dynamic>? get allVerses => _allVerses;
 
-  void loadUserData() async {
+  Future<void> loadUserData() async {
     _listaBd = [];
     _listAnnotationsDb = [];
     final BibleDataController bibleDataController = BibleDataController();
@@ -82,6 +75,7 @@ class VersesProvider extends ChangeNotifier {
       _versesDao.findAll().then((verses) => _listaBd = verses),
       bibleDataController.getAllAnnotations().then((annotations) => _listAnnotationsDb = annotations)
     ]);
+    return;
   }
 
   void newFontSize(double newSize, bool save) async {
@@ -108,71 +102,77 @@ class VersesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi'}) {
+  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi', bool forMultiVersion = false}) {
+    final Map<int, dynamic> allVerses = {};
     final versionNameFormatted = versionToName(versionName);
-    final bibleData = _bibleData.data.where((bible) => bible["version"] == versionNameFormatted).first;
-    if (_listMapVerses.isEmpty) {
-      List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
-      for (int i = 0; i < chapters.length; i++) {
-        refreshFunction(bookName, bookIndex, i, versionName: versionNameFormatted);
+    final bibleData = _bibleData.data.firstWhere((bible) => bible["version"] == versionNameFormatted);
+    final List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
+
+    if(!forMultiVersion) {
+      _allVerses.clear(); // limpar dados anteriores
+    }
+    for (int chapter = 0; chapter < chapters.length; chapter++) {
+      final List<dynamic> versesByChapter = chapters[chapter];
+      final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
+
+      // Corrigir se o último versículo for uma anotação especial
+      final lastVerse = versesByChapter.last;
+      if (lastVerse is String && (lastVerse.startsWith('[') || lastVerse.startsWith(' ['))) {
+        final parts = lastVerse.split(']')[0].split('-');
+        final initialVerse = int.parse(parts[0].replaceAll('[', ''));
+        final finalVerse = int.parse(parts[1]);
+        final difference = finalVerse - initialVerse;
+        for (var i = 0; i < difference; i++) {
+          versesByChapter.add('');
+        }
       }
-      notifyListeners();
-      return _allVerses;
+
+      final List<Map<String, dynamic>> versesMap = [];
+      for (var i = 0; i < versesByChapterDefault.length; i++) {
+        final verseText = versesByChapter[i];
+        final defaultVerseText = versesByChapterDefault[i];
+
+        // Cor e versão com base no banco de dados
+        final foundDb = _listaBd.where((verse) => verse.verse == defaultVerseText);
+
+        final verseColor = foundDb.isNotEmpty
+            ? ConvertColors().convertColors(foundDb.first.verseColor)
+            : Colors.transparent;
+
+        final annotationFound = _listAnnotationsDb.where(
+          (annotation) =>
+            annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1,
+        );
+
+        versesMap.add({
+          "bookName": bookName,
+          "chapter": chapter + 1,
+          "verseNumber": i + 1,
+          "verse": verseText,
+          "verseDefault": defaultVerseText,
+          "verseColor": verseColor,
+          "version": versionNameFormatted,
+          "isSelected": false,
+          "isEditing": false,
+          "annotation": annotationFound.firstOrNull
+        });
+      }
+
+      if(forMultiVersion) {
+        allVerses[chapter + 1] = versesMap;
+      }else {
+        _allVerses[chapter + 1] = versesMap;
+      }
     }
 
+    if(forMultiVersion) {
+      return allVerses;
+    }
+    notifyListeners();
     return _allVerses;
   }
 
-  void refreshFunction(String bookName, int bookIndex, int chapter, {String versionName = 'nvi'}) {
-    final listColorsDb = [];
-    _listMapVerses = [];
-    final bibleData = _bibleData.data.where((bible) => bible["version"] == versionName).first;
-    final List<dynamic> versesByChapter = bibleData["text"][bookIndex]['chapters'][chapter];
-    final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
-    final lastVerse = versesByChapter.last as String;
-    if(lastVerse.startsWith('[') || lastVerse.startsWith(' [')) {
-      final parts = lastVerse.split(']')[0].split('-');
-      final initialVerse = int.parse(parts[0].replaceAll('[', ''));
-      final finalVerse = int.parse(parts[1]);
-      final difference = finalVerse - initialVerse;
-      for(var i = 0; i < difference; i++) {
-        versesByChapter.add('');
-      }
-    }
-    for (var i = 0; i < versesByChapterDefault.length; i++) {
-      if(_listaBd.isNotEmpty && _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).isNotEmpty) {
-        final verseFound = _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).first;
-        listColorsDb.add({
-          "verse": versesByChapterDefault[i],
-          "version": verseFound.version,
-          "color": ConvertColors().convertColors(verseFound.verseColor)
-        });
-      }else {
-        listColorsDb.add({
-          "verse": versesByChapterDefault[i],
-          "version": 0,
-          "color": Colors.transparent
-        });
-      }
-      final annotationFound = _listAnnotationsDb.where((annotation) => annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1);
-      _listMapVerses.add({
-        "bookName": bookName,
-        "chapter": chapter + 1,
-        "verseNumber": i + 1,
-        "verse": versesByChapter[i],
-        "verseDefault": versesByChapterDefault[i],
-        "verseColor": listColorsDb[i]["color"],
-        "version": versionName,
-        "isSelected": false,
-        "isEditing": false,
-        "annotation": annotationFound.isEmpty ? null : annotationFound.first
-      });
-    }
-    _allVerses[chapter + 1] = _listMapVerses;
-  }
-
   void clear() {
-    _listMapVerses = [];
     _allVerses = {};
     notifyListeners();
   }
@@ -294,7 +294,7 @@ class VersesProvider extends ChangeNotifier {
 
     String verses = listMap.map((v) => '${v["verseNumber"]} ${v["verse"]}').join(' ');
 
-    Share.share('$book $verses');
+    Share.share('$book "$verses"');
   }
 
   void share(
@@ -302,10 +302,10 @@ class VersesProvider extends ChangeNotifier {
     String verse,
     int chapter,
     int verseNumber
-  ) => Share.share('$bookName $chapter:$verseNumber $verse');
+  ) => Share.share('$bookName $chapter:$verseNumber "$verse"');
 
   copyText(String bookName, String verse, int chapter, int verseNumber) => Clipboard.setData(
-    ClipboardData(text: '$bookName $chapter:$verseNumber $verse')
+    ClipboardData(text: '$bookName $chapter:$verseNumber "$verse')
   );
 
   copyVerses(List<Map<String, dynamic>> listMap, String bookname, int chapter) {
@@ -318,7 +318,7 @@ class VersesProvider extends ChangeNotifier {
 
     String verses = listMap.map((v) => '${v["verseNumber"]} ${v["verse"]}').join(' ');
 
-    Clipboard.setData(ClipboardData(text: '$book $verses'));
+    Clipboard.setData(ClipboardData(text: '$book "$verses"'));
   }
 
   Future<void> deleteVerse(String verse) async {
@@ -332,9 +332,10 @@ class VersesProvider extends ChangeNotifier {
         element["verseColor"] = Colors.transparent;
         element["isSelected"] = false;
         element["isEditing"] = false;
-        _versesDao.delete(element["verseDefault"]);
+        await _versesDao.delete(element["verseDefault"]);
       }
     }
+    await loadUserData();
     notifyListeners();
   }
 
@@ -357,8 +358,8 @@ class VersesProvider extends ChangeNotifier {
   }
 
   Future<void> getAnnotations() async {
-    _listAnnotations = await _annotationsDao.findAll();
-    _qtdAnnotations = _listAnnotations.length;
+    _listAnnotationsDb = await _annotationsDao.findAll();
+    _qtdAnnotations = _listAnnotationsDb.length;
   }
 
   Future<int> saveAnnotation({required Annotation annotation}) async => await _annotationsDao.save(annotation);
@@ -397,10 +398,9 @@ class VersesProvider extends ChangeNotifier {
   }
 
   void refresh() async {
-    _lista = await _versesDao.findAll();
-    _qtdVerses = _lista.length;
-    _listAnnotations = await _annotationsDao.findAll();
-    _qtdAnnotations = _listAnnotations.length;
+    _listaBd = await _versesDao.findAll();
+    _qtdVerses = _listaBd.length;
+    getAnnotations();
     _listMap = await _booksDao.findAll();
     notifyListeners();
   }

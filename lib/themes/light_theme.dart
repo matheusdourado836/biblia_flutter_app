@@ -16,9 +16,7 @@ ThemeData lightTheme = ThemeData(
     onError: Colors.white,
     surface: Colors.white,
     onSurface: Colors.black),
-  cardTheme: const CardTheme(
-    color: Colors.brown,
-  ),
+  cardTheme: const CardThemeData(color: Colors.brown),
   dropdownMenuTheme: const DropdownMenuThemeData(
     textStyle: TextStyle(
         color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),

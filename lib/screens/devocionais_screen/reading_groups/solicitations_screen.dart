@@ -1,4 +1,4 @@
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/group.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +14,7 @@ class SolicitationsScreen extends StatefulWidget {
 }
 
 class _SolicitationsScreenState extends State<SolicitationsScreen> {
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+  late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen: false);
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class _SolicitationsScreenState extends State<SolicitationsScreen> {
       body: SizedBox(
         height: MediaQuery.sizeOf(context).height,
         width: MediaQuery.sizeOf(context).width,
-        child: Consumer<ReadingGroupsProvider>(
+        child: Consumer<UserProvider>(
           builder: (context, value, _) {
             if(value.loading) {
               return const Center(

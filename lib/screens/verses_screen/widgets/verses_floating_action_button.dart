@@ -19,7 +19,6 @@ int _count = 0;
 Map<dynamic, dynamic> _selectedLanguage = {};
 
 class VersesFloatingActionButton extends StatefulWidget {
-  final bool notScrolling;
   final String bookName;
   final int chapter;
   final int chapters;
@@ -28,7 +27,6 @@ class VersesFloatingActionButton extends StatefulWidget {
   final bool? readingPlan;
   const VersesFloatingActionButton({
     super.key,
-    required this.notScrolling,
     required this.chapter,
     required this.chapters,
     required this.pageController,
@@ -192,7 +190,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      height: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+      height: (versesProvider.bottomSheetOpened == false)
           ? 146
           : 0,
       child: Row(
@@ -214,7 +212,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
           heroTag: 'btn2',
           backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
           onPressed: () {
-            if(widget.notScrolling && versesProvider.bottomSheetOpened == false) {
+            if(versesProvider.bottomSheetOpened == false) {
               if(_voices.isEmpty) {
                 alertDialog(title: 'Erro', content: 'Não é possível ouvir os versículos em áudio no momento.\nTente novamente mais tarde.');
                 return;
@@ -238,7 +236,7 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
           },
           child: Icon(
             CupertinoIcons.speaker_2,
-            size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+            size: versesProvider.bottomSheetOpened == false
                 ? 22
                 : 0,
             color:
@@ -250,11 +248,11 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
           heroTag: 'btn3',
           backgroundColor: Theme.of(context).buttonTheme.colorScheme?.secondary,
           onPressed: () {
-            if(widget.notScrolling && versesProvider.bottomSheetOpened == false) goToNextChapter();
+            if(versesProvider.bottomSheetOpened == false) goToNextChapter();
           },
           child: Icon(
             Icons.arrow_forward_ios_rounded,
-            size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+            size: (versesProvider.bottomSheetOpened == false)
                 ? 22
                 : 0,
             color: Theme.of(context).buttonTheme.colorScheme?.onSurface,
@@ -272,11 +270,11 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
         backgroundColor:
         Theme.of(context).buttonTheme.colorScheme?.secondary,
         onPressed: () {
-          if(widget.notScrolling && versesProvider.bottomSheetOpened == false) goToPrevChapter();
+          if(versesProvider.bottomSheetOpened == false) goToPrevChapter();
         },
         child: Icon(
           Icons.arrow_back_ios_rounded,
-          size: (widget.notScrolling && versesProvider.bottomSheetOpened == false)
+          size: versesProvider.bottomSheetOpened == false
               ? 22
               : 0,
           color: Theme.of(context).buttonTheme.colorScheme?.onSurface,

@@ -2,14 +2,16 @@ import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/widgets/register_user_modal.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/widgets/reset_email_sent_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/widgets/reset_pass_modal.dart';
+import 'package:event_bus/event_bus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/reading_groups_provider.dart';
+import '../../../data/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final EventBus? eventBus;
+  const LoginScreen({super.key, this.eventBus});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -32,9 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> doLogin() async {
     try {
       setState(() => _loading = true);
-      final readingGroupProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+      final readingGroupProvider = Provider.of<UserProvider>(context, listen: false);
       await readingGroupProvider.doLogin(email: _emailController.text.trim(), pass: _passController.text.trim());
       setState(() => _loading = false);
+      widget.eventBus?.fire('Refresh');
       Navigator.pushReplacementNamed(context, 'user_home_screen');
     }on FirebaseAuthException catch(e) {
       setState(() {
@@ -209,14 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ).then((res) {
                           if(res is String) {
                             _emailController.text = res;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                margin: EdgeInsets.fromLTRB(12, 0, 12, 8),
-                                padding: EdgeInsets.only(top: 16, bottom: 16, left: 12),
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Usuário criado com sucesso!')
-                              )
-                            );
+                            showCustomSnackBar(child: Text('Usuário criado com sucesso!'));
                           }
                         }),
                         child: const Text.rich(

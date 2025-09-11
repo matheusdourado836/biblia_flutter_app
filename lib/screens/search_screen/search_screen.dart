@@ -1,4 +1,3 @@
-import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:flutter/material.dart';
@@ -18,13 +17,12 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _textEditingController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final BibleData _bibleData = BibleData();
   late SearchVersesProvider _searchVersesProvider;
   late VersesProvider _versesProvider;
   late VersionProvider versionProvider;
   List<Map<String, dynamic>>? listResult;
   Map<String, dynamic> map = {};
-  ValueNotifier<String> _findInSelectedOption = ValueNotifier('');
+  final ValueNotifier<String> _findInSelectedOption = ValueNotifier('');
   String _selectedOption = '';
   final List<String> _findInOptions = [
     'Toda a Biblia',
@@ -51,7 +49,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _OTBooks.add('Todos');
     _NTBooks.add('Todos');
     _selectedBook.value = 'Todos';
-    for (var book in _bibleData.data[0]["text"]) {
+    for (var book in _versesProvider.bibleData[0]["text"]) {
       _findInBooks.value.add(book["name"]);
     }
     _allBooks = _findInBooks.value;
@@ -68,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> doSearch() async {
     if (_textEditingController.text != '') {
-      List<dynamic> allBooks = _bibleData.data[0]["text"];
+      List<dynamic> allBooks = _versesProvider.bibleData[0]["text"];
       final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
       final versionIndex = versionProvider.options.indexOf(_selectedOption);
       _focusNode.unfocus();
@@ -130,8 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   isExpanded: true,
                                   itemHeight: 120.0,
                                   value: versionProvider.selectedOption,
-                                  items: versionProvider.options.map((option) {
-                                    versionProvider.setListItem(option.split(' ')[0]);
+                                  items: versionProvider.options.where((v) => v != 'Multi versão').map((option) {
                                     if(value.getDownloadedVersion(versionToName(option))) {
                                       return DropdownMenuItem(
                                         value: option,
@@ -175,7 +172,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                     });
                                   },
                                   selectedItemBuilder: (BuildContext context) {
-                                    return versionProvider.versionsList;
+                                    return value.options.where((v) => v != 'Multi versão').map(
+                                      (v) => Center(
+                                        child: Text(v.toUpperCase().split(' ')[0]),
+                                      )
+                                    ).toList();
                                   },
                                 );
                               },

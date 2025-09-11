@@ -1,5 +1,6 @@
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:biblia_flutter_app/themes/theme_colors.dart';
+import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import '../../../data/bible_data.dart';
 
@@ -9,6 +10,7 @@ class VerseArea extends StatelessWidget {
   final Color verseColor;
   final List<TextSpan> verse;
   final Annotation? annotation;
+  final EventBus eventBus;
 
   const VerseArea({
     super.key,
@@ -16,6 +18,7 @@ class VerseArea extends StatelessWidget {
     required this.verse,
     required this.verseColor,
     required this.chapter,
+    required this.eventBus,
     this.annotation,
   });
 
@@ -51,7 +54,8 @@ class VerseArea extends StatelessWidget {
                 Navigator.pushNamed(context, 'annotation_widget', arguments: {
                   'annotation': annotation,
                   'verses': verses,
-                  'isEditing': true
+                  'isEditing': true,
+                  'eventBus': eventBus
                 });
               },
               icon: const Icon(Icons.mode_edit_outline_outlined)
@@ -68,6 +72,7 @@ class VerseAreaDark extends StatelessWidget {
   final Color verseColor;
   final List<TextSpan> verse;
   final Annotation? annotation;
+  final EventBus eventBus;
 
   const VerseAreaDark({
     super.key,
@@ -75,6 +80,7 @@ class VerseAreaDark extends StatelessWidget {
     required this.verseNumber,
     required this.verseColor,
     required this.verse,
+    required this.eventBus,
     this.annotation
   });
 
@@ -98,18 +104,22 @@ class VerseAreaDark extends StatelessWidget {
               children: verse,
             ),
           ),
-          (annotation != null) ? IconButton(onPressed: (() {
-            final List<dynamic> list = BibleData().data[0]["text"];
-            final bookInfo = list.where((element) => element['name'] == annotation!.book).toList();
-            List<dynamic> verses = [];
-            verses = bookInfo[0]['chapters'][chapter - 1];
-            Navigator.pushNamed(context, 'annotation_widget', arguments: {
-              'annotation': annotation,
-              'verses': verses,
-              'isEditing': true
-            });
-          }), icon: const Icon(Icons.mode_edit_outline_outlined))
-              : Container()
+          if (annotation != null)
+            IconButton(
+              onPressed: () {
+                final List<dynamic> list = BibleData().data[0]["text"];
+                final bookInfo = list.where((element) => element['name'] == annotation!.book).toList();
+                List<dynamic> verses = [];
+                verses = bookInfo[0]['chapters'][chapter - 1];
+                Navigator.pushNamed(context, 'annotation_widget', arguments: {
+                  'annotation': annotation,
+                  'verses': verses,
+                  'isEditing': true,
+                  'eventBus': eventBus
+                });
+              },
+              icon: const Icon(Icons.mode_edit_outline_outlined)
+            )
         ],
       ),
     );

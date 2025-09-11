@@ -19,7 +19,7 @@ class BibleData {
   }
 
   BibleData._internal() {
-    loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
+    //loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
   }
 
   Future<void> loadBibleData(List<String> versions) async {
@@ -36,26 +36,20 @@ class BibleData {
     _data = data;
   }
 
-  Future<List<dynamic>> getDownloadedVersions() async {
-    final externalStorageDirectory = await getExternalStorageDirectory();
-    if (externalStorageDirectory != null) {
-      final specificDirectoryPath = '${externalStorageDirectory.path}/data/user/0/com.bibleWise.biblia_flutter_app/files';
-      final specificDirectory = Directory(specificDirectoryPath);
-      if (await specificDirectory.exists()) {
-        final List<dynamic> downloadedVersions = specificDirectory.listSync();
-        final pathList = [];
-        for (File file in downloadedVersions) {
-          pathList.add(file.path);
+  Future<void> deleteVersions({required List<String> versions}) async {
+    String versionsDirPath = await getVersionsDirectoryPath();
+
+    List<dynamic> files = Directory(versionsDirPath).listSync();
+    for(File file in files) {
+      for(var version in versions) {
+        if(file.path.split('/').last.split('.')[0] == version) {
+          await file.delete();
+          _data.removeWhere((element) => element["version"] == version);
+          _downloadedVersions.removeWhere((e) => e == version);
         }
-        return await loadFromBd(pathList);
-      } else {
-        print('Diretório não encontrado: $specificDirectoryPath');
-        return [];
       }
-    } else {
-      print('Falha ao obter o diretório de armazenamento externo.');
-      return [];
     }
+    return;
   }
 
   Future<List<dynamic>> listDownloadedFilesIOS() async {
@@ -88,22 +82,16 @@ Future<String> getVersionsDirectoryPath() async {
     for(var path in paths) {
       final file = File(path);
       if (await file.exists()) {
-        _downloadedVersions.add(file.path.split('/').last.split('.')[0]);
+        final fileName = file.path.split('/').last.split('.')[0];
+        int fileSize = await file.length();
+        final fileSizeMega = (fileSize / (1024 * 1024)).toStringAsFixed(2);
+        if(!_downloadedVersions.contains(fileName)) {
+          _downloadedVersions.add(fileName);
+        }
         final contents = await file.readAsString();
-        data.add({"version": file.path.split('/').last.split('.')[0], "text": json.decode(contents)});
-        await addVersionToList(path);
+        data.add({"version": file.path.split('/').last.split('.')[0], "text": json.decode(contents), "size": fileSizeMega});
       }
     }
     return data;
-  }
-
-  Future<void> addVersionToList(String path) async {
-    final file = File(path);
-    if (await file.exists()) {
-      final fileName = file.path.split('/').last.split('.')[0];
-      final contents = await file.readAsString();
-      _data.add({"version": fileName, "text": json.decode(contents)});
-      _downloadedVersions.add(fileName);
-    }
   }
 }

@@ -1,11 +1,10 @@
-import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../data/version_provider.dart';
 
 class AnnotationsScreen extends StatefulWidget {
   const AnnotationsScreen({super.key});
@@ -19,108 +18,104 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
 
   @override
   void initState() {
-    versesProvider.loadUserData();
+    versesProvider.loadUserData().whenComplete(() => setState(() {}));
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
-    versesProvider.getAnnotations();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Suas anotações'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              onPressed: (versesProvider.listaAnnotations.isNotEmpty)
-                ? () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        titlePadding: const EdgeInsets.all(0),
-                        title: Container(
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(28),
-                              topRight: Radius.circular(28)
-                            ),
-                            color: Colors.red.withValues(alpha: 0.8),
+          IconButton(
+            onPressed: (versesProvider.listaAnnotationsDb.isNotEmpty)
+              ? () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      titlePadding: const EdgeInsets.all(0),
+                      title: Container(
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(28),
+                            topRight: Radius.circular(28)
                           ),
-                          child: Center(
-                            child: Text(
-                              'Alerta',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.displayMedium,
-                            ),
+                          color: Colors.red.withValues(alpha: 0.8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Alerta',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.displayMedium,
                           ),
                         ),
-                        content: Text(
-                          'Tem certeza que deseja deletar todas as suas anotações?',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                        ),
-                        actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  textStyle: const TextStyle(color: Colors.white),
-                                  minimumSize: const Size(80, 36),
-                                  backgroundColor: Colors.red.withValues(alpha: 0.65)
-                                ),
-                                onPressed: () {
-                                  versesProvider.deleteAllAnnotations().then((value) => {
-                                      versesProvider.refresh(),
-                                      Navigator.pop(context)
-                                    });
-                                },
-                                child: Text(
-                                  'Sim',
-                                  style: Theme.of(context)
+                      ),
+                      content: Text(
+                        'Tem certeza que deseja deletar todas as suas anotações?',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium
+                      ),
+                      actions: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                textStyle: const TextStyle(color: Colors.white),
+                                minimumSize: const Size(80, 36),
+                                backgroundColor: Colors.red.withValues(alpha: 0.65)
+                              ),
+                              onPressed: () {
+                                versesProvider.deleteAllAnnotations().then((value) => {
+                                    versesProvider.refresh(),
+                                    Navigator.pop(context)
+                                  });
+                              },
+                              child: Text(
+                                'Sim',
+                                style: Theme.of(context)
+                                  .textTheme
+                                  .displayMedium!
+                                  .copyWith(fontSize: 14)
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context)
+                                  .highlightColor
+                                  .withValues(alpha: 0.4),
+                                minimumSize: const Size(80, 36),
+                                textStyle: const TextStyle(color: Colors.white)
+                              ),
+                              onPressed: () => Navigator.pop(context, 'Não'),
+                              child: Text(
+                                'Cancelar',
+                                style: Theme.of(context)
                                     .textTheme
                                     .displayMedium!
                                     .copyWith(fontSize: 14)
-                                ),
                               ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context)
-                                    .highlightColor
-                                    .withValues(alpha: 0.4),
-                                  minimumSize: const Size(80, 36),
-                                  textStyle: const TextStyle(color: Colors.white)
-                                ),
-                                onPressed: () => Navigator.pop(context, 'Não'),
-                                child: Text(
-                                  'Cancelar',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .displayMedium!
-                                      .copyWith(fontSize: 14)
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      );
-                    });
-                  }
-                : null,
-              icon: const Icon(Icons.delete_forever, size: 32,)
-            ),
+                            ),
+                          ],
+                        )
+                      ],
+                    );
+                  });
+                }
+              : null,
+            icon: const Icon(Icons.delete_forever, size: 32,)
           )
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
       body: Consumer<VersesProvider>(
         builder: (context, value, _) {
-          if (value.listaAnnotations.isEmpty) {
+          if (value.listaAnnotationsDb.isEmpty) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -139,10 +134,10 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
           }
 
           return ListView.builder(
-            itemCount: value.listaAnnotations.length,
+            itemCount: value.listaAnnotationsDb.length,
             itemBuilder: (context, index) {
-              Annotation annotation = value.listaAnnotations[index];
-              final List<dynamic> list = BibleData().data[0]["text"];
+              Annotation annotation = value.listaAnnotationsDb[index];
+              final List<dynamic> list = value.bibleData[0]["text"];
               final bookInfo = list
                   .where((element) => element['name'] == annotation.book)
                   .toList();
@@ -180,11 +175,10 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          value.deleteAnnotation(
-                                            value.listaAnnotations[index].annotationId
-                                          ).then((res) => {
-                                              value.refresh(),
-                                              Navigator.pop(context)
+                                          value.deleteAnnotation(annotation.annotationId).then((res) {
+                                            value.loadUserData();
+                                            setState(() => value.listaAnnotationsDb.removeWhere((a) => a.annotationId == annotation.annotationId));
+                                            Navigator.pop(context);
                                           });
                                         },
                                         child: const Text('Sim'),
@@ -246,33 +240,34 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                   annotation.title,
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
-                                TextButton(
-                                  onPressed: (() {
+                                TextButton.icon(
+                                  iconAlignment: IconAlignment.end,
+                                  onPressed: () {
+                                    final versionProvider = Provider.of<VersionProvider>(context, listen: false);
                                     versesProvider.clear();
                                     versesProvider.loadVerses(
                                       list.indexOf(bookInfo.first),
-                                      annotation.book
-                                    );
-                                    GoToVerseScreen().goToVersePage(
                                       annotation.book,
-                                      bookInfo[0]['abbrev'],
-                                      list.indexOf(bookInfo.first),
-                                      bookInfo[0]['chapters'].length,
-                                      annotation.chapter,
-                                      annotation.verseEnd ?? 1
+                                      versionName: versionProvider.selectedOption
                                     );
-                                  }),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Theme.of(context).colorScheme.onPrimary
+                                    Navigator.pushNamed(
+                                      context,
+                                      'verses_screen',
+                                      arguments: {
+                                        'bookName': annotation.book,
+                                        "abbrev": bookInfo[0]['abbrev'],
+                                        "bookIndex": list.indexOf(bookInfo.first),
+                                        "chapters": bookInfo[0]['chapters'].length,
+                                        "chapter": annotation.chapter,
+                                        "verseNumber": annotation.verseEnd ?? 1,
+                                      }
+                                    );
+                                  },
+                                  label: Text(
+                                    'Ler passagem',
+                                    style: Theme.of(context).textTheme.titleLarge
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        'Ler passagem  ',
-                                        style: Theme.of(context).textTheme.titleLarge
-                                      ),
-                                      const Icon(Icons.menu_book, color: Colors.white)
-                                  ]),
+                                  icon: const Icon(Icons.menu_book, color: Colors.white),
                                 )
                               ],
                             ),

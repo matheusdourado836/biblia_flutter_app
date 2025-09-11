@@ -6,16 +6,17 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/post_feed_
 import 'package:biblia_flutter_app/helpers/tutorial_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide CarouselController;
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../data/devocional_provider.dart';
 import '../../data/plans_provider.dart';
+import '../../data/user_provider.dart';
 import '../../models/devocional.dart';
 import 'community/feed_screen.dart';
 
-TutorialCoachMark? _coachMark;
 List<TargetFocus> _targets = [];
 ValueNotifier<bool> _removeBackground = ValueNotifier(false);
 
@@ -31,7 +32,14 @@ class DevocionaisScreen extends StatefulWidget {
 }
 
 class _DevocionaisScreenState extends State<DevocionaisScreen> {
+  late final userProvider = Provider.of<UserProvider>(context, listen: false);
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    if(userProvider.currentUser == null) userProvider.getLoggedUser().whenComplete(() => setState(() {}));
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -45,6 +53,18 @@ class _DevocionaisScreenState extends State<DevocionaisScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Devocionais'),
+        actions: [
+          IconButton(
+              onPressed: () {
+                if(userProvider.currentUser == null) {
+                  Navigator.pushNamed(context, 'login_screen');
+                }else {
+                  Navigator.pushNamed(context, 'user_config_screen');
+                }
+              },
+              icon: const Icon(CupertinoIcons.person_crop_circle)
+          )
+        ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
       body: Stack(
@@ -95,6 +115,7 @@ class JornadaEspiritual extends StatefulWidget {
 }
 
 class _JornadaEspiritualState extends State<JornadaEspiritual> {
+  TutorialCoachMark? _coachMark;
   ThemeProvider? _themeProvider;
 
   @override

@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/devocional_provider.dart';
+import '../../data/user_provider.dart';
 
 ScrollController? scrollController;
 
@@ -40,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     getLayout();
     final chapterProvider = Provider.of<ChaptersProvider>(context, listen: false);
     final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.getLoggedUser();
     devocionalProvider.getCompletedTutorials();
     chapterProvider.innerList = bibleDataController.books;
     versesProvider.getFontSize();

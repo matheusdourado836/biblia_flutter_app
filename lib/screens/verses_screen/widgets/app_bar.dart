@@ -1,6 +1,9 @@
+import 'package:biblia_flutter_app/models/book.dart';
+import 'package:biblia_flutter_app/models/chapter.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/verses_screen.dart';
 import 'package:biblia_flutter_app/helpers/progress_dialog.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/select_versions_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -129,7 +132,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
               onTap: () {
                 _versesProvider.refresh();
                 _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
-                Navigator.pushNamedAndRemoveUntil(context, 'chapter_screen', (route) => false,
+                Navigator.pushNamed(context, 'chapter_screen',
                   arguments: {
                     'bookName': widget.bookName,
                     'abbrev': widget.abbrev,
@@ -146,64 +149,85 @@ class _VersesAppBarState extends State<VersesAppBar> {
               constraints: const BoxConstraints(maxWidth: 250),
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  width: 2,
+                ),
               ),
               child: Consumer<VersionProvider>(
                 builder: (context, value, _) {
-                  return DropdownButton(
-                    underline: Container(
-                      height: 0,
-                      color: Colors.transparent,
-                    ),
-                    style: Theme.of(context).dropdownMenuTheme.textStyle,
-                    isExpanded: true,
-                    itemHeight: 120.0,
-                    value: value.selectedOption,
-                    items: value.options.map((option) {
-                      value.setListItem(option.split(' ')[0]);
-                      if(value.getDownloadedVersion(versionToName(option))) {
-                        return DropdownMenuItem(
-                          value: option,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  option,
-                                  style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withValues(alpha: .5)),
-                                ),
+                  final theme = Theme.of(context);
+                  final textStyle = theme.textTheme.titleSmall!.copyWith(fontSize: 12);
+
+                  List<DropdownMenuItem<String>> buildDropdownItems() {
+                    final options = value.options;
+                    return options.map((option) {
+                      final isDownloaded = value.getDownloadedVersion(versionToName(option));
+
+                      Widget content = isDownloaded && option != 'Multi versão'
+                          ? Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              option,
+                              style: textStyle.copyWith(
+                                color: textStyle.color?.withAlpha(128),
                               ),
-                              const Icon(Icons.download, size: 16,)
-                            ],
+                            ),
                           ),
-                        );
-                      }
+                          const Icon(Icons.download, size: 16),
+                        ],
+                      )
+                          : Center(child: Text(option, style: textStyle));
+
                       return DropdownMenuItem(
                         value: option,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0, left: 4, right: 4),
-                          child: Center(
-                              child: Text(
-                                option,
-                                style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12),
-                              )
-                          ),
-                        ),
+                        child: content,
                       );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      final versionName = newValue!.toLowerCase().split(' ')[0];
-                      final versionNameRaw = newValue.split(' ')[0];
+                    }).toList();
+                  }
+
+                  return DropdownButton<String>(
+                    underline: const SizedBox.shrink(),
+                    style: theme.dropdownMenuTheme.textStyle,
+                    isExpanded: true,
+                    itemHeight: 110.0,
+                    value: value.selectedOption,
+                    items: buildDropdownItems(),
+                    onChanged: (newValue) async {
+                      if (newValue == null) return;
+                      if(newValue == 'Multi versão') {
+                        final book = BookFull(
+                          bookIndex: widget.bookIndex,
+                          abbrev: widget.abbrev,
+                          chapter: widget.chapter,
+                          chapters: List.generate(widget.chapters, (i) => Chapter(verses: [])),
+                          name: widget.bookName,
+                          verseNumber: 1
+                        );
+                        showDialog(
+                          context: context,
+                          builder: (context) => SelectVersionsDialog(book: book)
+                        );
+                        return;
+                      }
+
+                      final versionKey = newValue.split(' ')[0].toLowerCase();
+                      final versionRaw = newValue.split(' ')[0];
+                      final isDownloaded = value.getDownloadedVersion(versionToName(newValue));
 
                       void handleVersionChange() {
                         if (_versesProvider.bottomSheetOpened) {
                           Navigator.pop(context);
                           _versesProvider.openBottomSheet(false);
                         }
+
                         _versesProvider.resetVersesFoundCounter();
                         setState(() {
                           listVerses = [];
                           initialVerse = widget.itemPositionsListener.itemPositions.value.first.index + 1;
                         });
+
                         value.changeVersion(newValue);
                       }
 
@@ -212,40 +236,39 @@ class _VersesAppBarState extends State<VersesAppBar> {
                         _versesProvider.loadVerses(
                           widget.bookIndex,
                           widget.bookName,
-                          versionName: versionName,
+                          versionName: versionKey,
                         );
                       }
 
-                      if (value.getDownloadedVersion(versionToName(newValue))) {
-                        showDialog(
+                      if (isDownloaded) {
+                        final result = await showDialog<bool>(
                           context: context,
                           barrierDismissible: false,
                           builder: (context) => ProgressDialog(
                             versionName: versionToName(newValue),
-                            versionNameRaw: versionNameRaw,
+                            versionNameRaw: versionRaw,
                           ),
-                        ).then((res) {
-                          if (res ?? false) {
-                            handleVersionChange();
-                            value.loadBibleData().whenComplete(() {
-                              loadVerses();
-                            });
-                          }
-                        });
+                        );
+
+                        if (result ?? false) {
+                          handleVersionChange();
+                          loadVerses();
+                        }
                       } else {
                         handleVersionChange();
-                        _versesProvider.clear();
                         loadVerses();
                       }
                     },
-                    selectedItemBuilder: (BuildContext context) {
-                      return value.versionsList;
-                    },
+                    selectedItemBuilder: (_) => value.options.map(
+                      (v) => Center(
+                        child: Text(v.toUpperCase().split(' ')[0]),
+                      )
+                    ).toList(),
                   );
                 },
               ),
             ),
-          ),
+          )
         ],
       ).animate(target: start.value ? 1 : 0).fadeOut(duration: 1300.ms),
       actions: [

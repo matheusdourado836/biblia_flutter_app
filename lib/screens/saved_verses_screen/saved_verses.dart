@@ -2,7 +2,6 @@ import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
 import 'package:biblia_flutter_app/helpers/convert_colors.dart';
-import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/helpers/version_to_name.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/widgets/delete_all_saved_verses_dialog.dart';
 import 'package:biblia_flutter_app/screens/saved_verses_screen/widgets/delete_saved_verse.dart';
@@ -86,17 +85,16 @@ class _SavedVersesState extends State<SavedVerses> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              onPressed: (_versesProvider.lista.isNotEmpty)
+              onPressed: (_versesProvider.listaBd.isNotEmpty)
                 ? (() {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       return DeleteAllSavedVersesDialog(
                         onDelete: () {
-                          _versesProvider.deleteAllVerses()
-                              .then((value) => {
-                            _versesProvider.refresh(),
-                            Navigator.pop(context)
+                          _versesProvider.deleteAllVerses().then((value) {
+                              _versesProvider.loadUserData();
+                              Navigator.pop(context);
                           });
                         }
                       );
@@ -111,7 +109,7 @@ class _SavedVersesState extends State<SavedVerses> {
       backgroundColor: Theme.of(context).primaryColor,
       body: Consumer<VersesProvider>(
         builder: (context, list, child) {
-          if (_versesProvider.lista.isEmpty) {
+          if (_versesProvider.listaBd.isEmpty) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -127,7 +125,7 @@ class _SavedVersesState extends State<SavedVerses> {
             );
           }
 
-          return coresListWidget(list: _versesProvider.lista, corSelecionada: _selectedOption);
+          return coresListWidget(list: _versesProvider.listaBd, corSelecionada: _selectedOption);
         },
       ),
     );
@@ -177,15 +175,19 @@ class _SavedVersesState extends State<SavedVerses> {
               _versesProvider.clear();
               for (var i = 0; i < allBooksList.length; i++) {
                 if (allBooksList[i]["bookName"] == book) {
-                  _versionProvider.changeOptionBd(versionName);
+                  _versionProvider.changeVersion(versionName.trim());
                   _versesProvider.loadVerses(allBooksList[i]["bookIndex"], book, versionName: version);
-                  GoToVerseScreen().goToVersePage(
-                    book,
-                    allBooksList[i]["abbrev"],
-                    allBooksList[i]["bookIndex"],
-                    allBooksList[i]["chapters"],
-                    chapter,
-                    verseNumber
+                  Navigator.pushNamed(
+                      context,
+                      'verses_screen',
+                      arguments: {
+                        'bookName': book,
+                        "abbrev": allBooksList[i]["abbrev"],
+                        "bookIndex": allBooksList[i]["bookIndex"],
+                        "chapters": allBooksList[i]["chapters"],
+                        "chapter": chapter,
+                        "verseNumber": verseNumber,
+                      }
                   );
                 }
               }
@@ -204,7 +206,8 @@ class _SavedVersesState extends State<SavedVerses> {
                           return DeleteSavedVerse(
                             onDelete: () {
                               _versesProvider.deleteVerse(verse).whenComplete(() {
-                                _versesProvider.refresh();
+                                _versesProvider.loadUserData();
+                                setState(() => list.removeWhere((v) => v.verse == verse));
                                 Navigator.pop(context);
                               });
                             }

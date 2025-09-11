@@ -1,5 +1,5 @@
 import 'package:biblia_flutter_app/data/ai_helper.dart';
-import 'package:biblia_flutter_app/data/reading_groups_provider.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/user.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +21,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late final ReadingGroupsProvider _groupsProvider = Provider.of<ReadingGroupsProvider>(context, listen: false);
+  late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen: false);
   GlobalKey<FlutterMentionsState> key = GlobalKey<FlutterMentionsState>();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
@@ -47,7 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
         margin: const EdgeInsets.symmetric(vertical: 5),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.75),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary,
           borderRadius: const BorderRadius.only(
@@ -58,22 +58,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: _buildFormattedText(message.text, Colors.white),
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 10, color: Colors.white),
-                )
-              ],
-            ),
+            _buildFormattedText(message.text, Colors.white),
+            const SizedBox(width: 12),
+            Text(
+              '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+              style: const TextStyle(fontSize: 10, color: Colors.white70),
+            )
           ],
         ),
       ),
@@ -195,12 +188,15 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Text.rich(
+      textWidthBasis: TextWidthBasis.longestLine,
+      overflow: TextOverflow.visible,
       TextSpan(
         style: TextStyle(
           fontFamily: 'Poppins',
           color: textColor,
           fontSize: 16,
           height: 1.4,
+          overflow: TextOverflow.clip
         ),
         children: children,
       ),
@@ -267,50 +263,48 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           child: SelectionArea(
             child: ListView.builder(
-                reverse: true,
-                itemCount: messages.length,
-                controller: _scrollController,
-                padding: const EdgeInsets.all(8),
-                itemBuilder: (context, index) {
-                  final message = messages[index];
-                  final messageDate = DateFormat('yyyy-MM-dd').format(message.timestamp);
-                  String? dayLabel;
+              reverse: true,
+              itemCount: messages.length,
+              controller: _scrollController,
+              padding: const EdgeInsets.all(8),
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                final messageDate = DateFormat('yyyy-MM-dd').format(message.timestamp);
+                String? dayLabel;
 
-                  // Determina o rótulo do dia
-                  if (index == messages.length - 1 ||
-                      DateFormat('yyyy-MM-dd').format(messages[index + 1].timestamp) != messageDate) {
-                    final today = DateTime.now();
-                    if (messageDate == DateFormat('yyyy-MM-dd').format(today)) {
-                      dayLabel = 'Hoje';
-                    } else if (messageDate == DateFormat('yyyy-MM-dd').format(today.subtract(const Duration(days: 1)))) {
-                      dayLabel = 'Ontem';
-                    } else {
-                      dayLabel = DateFormat('dd/MM/yyyy').format(message.timestamp);
-                    }
+                // Determina o rótulo do dia
+                if (index == messages.length - 1 ||
+                    DateFormat('yyyy-MM-dd').format(messages[index + 1].timestamp) != messageDate) {
+                  final today = DateTime.now();
+                  if (messageDate == DateFormat('yyyy-MM-dd').format(today)) {
+                    dayLabel = 'Hoje';
+                  } else if (messageDate == DateFormat('yyyy-MM-dd').format(today.subtract(const Duration(days: 1)))) {
+                    dayLabel = 'Ontem';
+                  } else {
+                    dayLabel = DateFormat('dd/MM/yyyy').format(message.timestamp);
                   }
+                }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (dayLabel != null)
-                        Center(
-                          child: Chip(
-                            label: Text(
-                              dayLabel,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 10
-                              ),
-                            ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (dayLabel != null)
+                      Center(
+                        child: Chip(
+                          label: Text(
+                            dayLabel,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
                           ),
                         ),
-                      if(message.senderId == _groupsProvider.currentUser!.id!)
-                        _senderContainer(message)
-                      else
-                        _receiverContainer(message, constraints),
-                    ],
-                  );
-                },
-              )
+                      ),
+                    if(message.senderId == _groupsProvider.currentUser!.id!)
+                      _senderContainer(message)
+                    else
+                      _receiverContainer(message, constraints),
+                  ],
+                );
+              },
+            )
           )
         );
       },

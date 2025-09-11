@@ -1,21 +1,26 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:biblia_flutter_app/data/ai_helper.dart';
+import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
+import 'package:biblia_flutter_app/helpers/extensions.dart';
+import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:biblia_flutter_app/screens/ai_screen/ad_dialog.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:event_bus/event_bus.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import '../../data/bible_data.dart';
 import '../../data/theme_provider.dart';
 import '../../helpers/go_to_verse_screen.dart';
 import '../../themes/theme_colors.dart';
+import 'package:intl/intl.dart';
 
 class AiScreen extends StatefulWidget {
   const AiScreen({super.key});
@@ -25,15 +30,20 @@ class AiScreen extends StatefulWidget {
 }
 
 class _AiScreenState extends State<AiScreen> {
+  Future<void>? _chatHistoryFuture;
+  late final _userProvider = Provider.of<UserProvider>(context, listen:  false);
+  final EventBus eventBus = EventBus();
   InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedAd;
-  late final ChatSession _chat;
+  ChatSession? _chat;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFieldFocus = FocusNode(debugLabel: 'TextField');
+  final ValueNotifier<String?> dayLabel = ValueNotifier(null);
   List<Content> _history = [];
   int _qtdQuestions = 0;
   bool _loading = false;
+  bool requireLabel = false;
 
   Future<void> loadAd() async {
     await RewardedAd.load(
@@ -104,17 +114,18 @@ class _AiScreenState extends State<AiScreen> {
   @override
   void initState() {
     super.initState();
-    FirebaseAnalytics.instance.logEvent(
-      name: "teste_evento",
-      parameters: {"status": "funcionando"},
-    );
-    FirebaseAnalytics.instance.logScreenView(screenName: "ai_screen");
+    eventBus.on().listen((event) {
+      if(event == 'Refresh') {
+        setState(() {
+          _chatHistoryFuture = _loadChatHistory();
+        });
+      }
+    });
     if(showAd()) {
       _createInterstitialAd();
     }
     loadAd();
-    getAvailableQuestions();
-    _loadChatHistory();
+    _chatHistoryFuture = _loadChatHistory();
   }
 
   void _scrollDown() {
@@ -130,49 +141,92 @@ class _AiScreenState extends State<AiScreen> {
     );
   }
 
-  Future<void> _loadChatHistory() async {
+  Future<void> getQuestionsCountFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? chatHistoryJson = prefs.getString('chat_history');
+    setState(() => _qtdQuestions = prefs.getInt('available_questions') ?? 5);
+  }
 
-    if (chatHistoryJson != null) {
-      final List<dynamic> decodedHistory = jsonDecode(chatHistoryJson);
-      for (var item in decodedHistory) {
-        final role = item['role'];
-        final parts = (item['parts'] as List<dynamic>)
-            .map((part) => TextPart(part['text']))
-            .toList();
-        _history.add(Content(role, parts));
+  Future<void> _loadChatHistory() async {
+    if(_userProvider.currentUser == null) {
+      getQuestionsCountFromLocal();
+      AiHelper().initChat(_history);
+      _chat = AiHelper.chat;
+      _history = _chat!.history.toList();
+      return;
+    }
+    _qtdQuestions = _userProvider.currentUser!.qtdQuestionsLeft ?? 5;
+    await _userProvider.loadAiChatHistory();
+
+    if (_userProvider.chatMessages.isNotEmpty) {
+      for (var item in _userProvider.chatMessages) {
+        final role = item.role;
+        _history.add(Content(role, item.parts ?? []));
       }
     }
     AiHelper().initChat(_history);
     _chat = AiHelper.chat;
-    setState(() {
-      _chat;
-      _history = _chat.history.toList();
-    });
+    _history = _chat!.history.toList();
     _scrollDown();
+    return;
   }
 
-  Future<void> _saveChatHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setInt('available_questions', _qtdQuestions);
-    _history = _chat.history.toList();
-    final List<Map<String, dynamic>> historyToSave = _history.map((msg) => {
-      'role': msg.role,
-      'parts': msg.parts.map((part) => {'text': (part as TextPart).text}).toList(),
-    }).toList();
-    await prefs.setString('chat_history', jsonEncode(historyToSave));
+  Future<void> _saveChatHistory(List<Content> contents) async {
+    _history = _chat!.history.toList();
+    if(_userProvider.currentUser == null) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setInt('available_questions', _qtdQuestions);
+      final randomBool = Random().nextBool();
+      if(randomBool) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text.rich(TextSpan(
+                    text: 'Para salvar seu histórico ',
+                    children: [
+                      TextSpan(
+                          text: 'crie uma conta',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.blue,
+                            decorationStyle: TextDecorationStyle.solid,
+                          )
+                      ),
+                      TextSpan(text: ' ou '),
+                      TextSpan(
+                          text: 'faça login',
+                          recognizer: TapGestureRecognizer()..onTap = () {
+                            Navigator.pushNamed(
+                                context,
+                                'login_screen',
+                                arguments: {"eventBus" : eventBus}
+                            );
+                          },
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.blue,
+                            decorationStyle: TextDecorationStyle.solid,
+                          )
+                      )
+                    ]
+                ))
+            )
+        );
+      }
+      return;
+    }
+    _userProvider.saveAiChatHistory(contents);
+    _userProvider.updateUserData({"qtdQuestionsLeft": _qtdQuestions});
   }
 
   Future<void> _deleteHistory() async {
-    final prefs = await SharedPreferences.getInstance();
     setState(() => _history.clear());
-    await prefs.remove('chat_history').whenComplete(() => Navigator.pop(context));
-  }
-
-  Future<void> getAvailableQuestions() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    _qtdQuestions = prefs.getInt('available_questions') ?? 5;
+    if(_userProvider.currentUser != null) {
+      await _userProvider.deleteAiChatHistory();
+    }
+    getQuestionsCountFromLocal();
+    Navigator.pop(context);
+    return;
   }
 
   @override
@@ -193,11 +247,11 @@ class _AiScreenState extends State<AiScreen> {
               showDialog(context: context, builder: (context) => AlertDialog(
                 title: const Text('Deletar histórico?'),
                 content: const Text('Tem certeza que deseja deletar todo seu histórico de conversa?\n'
-                    'Essta ação não poderá ser desfeita.'
+                    'Esta ação não poderá ser desfeita.'
                 ),
                 actions: [
-                  TextButton(onPressed: (() => _deleteHistory()), child: const Text('Sim')),
-                  TextButton(onPressed: (() => Navigator.pop(context)), child: const Text('Não')),
+                  TextButton(onPressed: () => _deleteHistory(), child: const Text('Sim')),
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Não')),
                 ],
               )
               );
@@ -207,152 +261,257 @@ class _AiScreenState extends State<AiScreen> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: SafeArea(
-        child: TextSelectionTheme(
-          data: const TextSelectionThemeData(
-            selectionColor: Colors.grey,
-            selectionHandleColor: Colors.black,
-          ),
-          child: SelectionArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                  child: Center(
-                    child: Text(
-                      'Éden pode gerar informação incorreta. Considere verificar informações importantes.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
+      body: FutureBuilder(
+        future: _chatHistoryFuture,
+        builder: (context, snapshot) {
+          if(snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }else if(snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar histórico: ${snapshot.error}'),
+            );
+          }
+          return SafeArea(
+            child: TextSelectionTheme(
+              data: const TextSelectionThemeData(
+                selectionColor: Colors.grey,
+                selectionHandleColor: Colors.black,
+              ),
+              child: SelectionArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                      child: Center(
+                        child: Text(
+                          'Éden pode gerar informação incorreta. Considere verificar informações importantes.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                Expanded(
-                    child: _history.isEmpty
-                        ? SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Container(
-                            constraints: const BoxConstraints(maxWidth: 300),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(18),
+                    Center(
+                      child: ValueListenableBuilder(
+                        valueListenable: dayLabel,
+                        builder: (context, value, _) {
+                          if(value == null) return Container();
+
+                          return Chip(
+                            label: Text(
+                              value,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 15,
-                              horizontal: 20,
-                            ),
-                            margin: const EdgeInsets.all(16),
-                            child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
+                          );
+                        }
+                      )
+                    ),
+                    Expanded(
+                      child: _history.isEmpty
+                          ? SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Container(
+                              constraints: const BoxConstraints(maxWidth: 300),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 20,
+                              ),
+                              margin: const EdgeInsets.all(16),
+                              child: const Text('Olá eu sou a Éden, uma assistente projetada para fornecer respostas sobre a Bíblia e temas bíblicos. '
                                 'Posso ajudá-lo a entender passagens bíblicas, explicar conceitos teológicos, fornecer informações sobre personagens e eventos bíblicos, e responder perguntas sobre a fé cristã.\n'
-                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃'),
-                          )
+                                'Quer fazer uma pergunta? Ficarei feliz em ajudar 😃'
+                              ),
+                            )
+                          ],
+                        ),
+                      )
+                          : SelectionArea(
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          shrinkWrap: true,
+                          physics: const ClampingScrollPhysics(),
+                          padding: const EdgeInsets.all(12.0),
+                          itemCount: _history.length,
+                          itemBuilder: (context, idx) {
+                            final content = _history[idx];
+                            final timestamp = _userProvider.chatMessages[idx].timestamp;
+                            final currentMsgTime = DateTime.fromMillisecondsSinceEpoch(timestamp ?? 0);
+
+                            final now = DateTime.now();
+                            final today = DateTime(now.year, now.month, now.day);
+                            final yesterday = today.subtract(Duration(days: 1));
+                            final msgDay = DateTime(currentMsgTime.year, currentMsgTime.month, currentMsgTime.day);
+
+                            String currentLabel;
+                            if (msgDay == today) {
+                              currentLabel = "Hoje";
+                            } else if (msgDay == yesterday) {
+                              currentLabel = "Ontem";
+                            } else {
+                              currentLabel = DateFormat('dd/MM/yyyy').format(currentMsgTime);
+                            }
+
+                            // Verifica se precisa exibir o chip de data
+                            String? previousLabel;
+                            if (idx > 0) {
+                              final prevTimestamp = _userProvider.chatMessages[idx - 1].timestamp;
+                              final prevMsgTime = DateTime.fromMillisecondsSinceEpoch(prevTimestamp ?? 0);
+                              final prevDay = DateTime(prevMsgTime.year, prevMsgTime.month, prevMsgTime.day);
+
+                              if (prevDay == today) {
+                                previousLabel = "Hoje";
+                              } else if (prevDay == yesterday) {
+                                previousLabel = "Ontem";
+                              } else {
+                                previousLabel = DateFormat('dd/MM/yyyy').format(prevMsgTime);
+                              }
+                            }
+
+                            final showDateLabel = idx == 0 || currentLabel != previousLabel;
+
+                            // Atualiza o label fixo no topo se essa mensagem estiver visível
+                            return VisibilityDetector(
+                              key: ValueKey(_userProvider.chatMessages[idx].timestamp),
+                              onVisibilityChanged: (info) {
+                                var visiblePercentage = info.visibleFraction * 100;
+                                if (visiblePercentage == 100) {
+                                  // Atualiza o label fixo apenas se não for "Hoje"
+                                  if (msgDay != today) {
+                                    dayLabel.value = currentLabel;
+                                  } else {
+                                    dayLabel.value = null;
+                                  }
+                                }
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (showDateLabel)
+                                    Center(
+                                      child: Chip(
+                                        label: Text(
+                                          currentLabel,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                                        ),
+                                      ),
+                                    ),
+                                  MessageWidget(
+                                    text: content.parts.whereType<TextPart>().map((e) => e.text).join(''),
+                                    isFromUser: content.role == 'user',
+                                    timestamp: timestamp,
+                                  ),
+                                  if (idx == _history.length - 1)
+                                    const SizedBox(height: 100),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                maxHeight: 150,
+                              ),
+                              child: TextField(
+                                controller: _textController,
+                                focusNode: _textFieldFocus,
+                                maxLines: null,
+                                onSubmitted: (value) => _sendChatMessage(value),
+                                decoration: InputDecoration(
+                                  hintText: 'Digite a pergunta aqui...',
+                                  fillColor: Theme.of(context).colorScheme.secondary,
+                                  filled: true,
+                                  focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                                  errorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                                  focusedErrorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                                  enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (!_loading)
+                            InkWell(
+                              onTap: (() {
+                                if(_qtdQuestions == 0) {
+                                  showDialog(context: context, builder: (context) => AdDialog(
+                                      onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
+                                        Navigator.pop(context);
+                                        setState(() => _qtdQuestions = rewardItem.amount.toInt());
+                                      })
+                                  )
+                                  );
+                                  return;
+                                }
+                                if(_textController.text.isNotEmpty) {
+                                  _sendChatMessage(_textController.text);
+                                }
+                              }),
+                              child: Container(
+                                height: 50,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(50)
+                                ),
+                                child: const Icon(Icons.send, size: 22, color: Colors.white,),
+                              ),
+                            )
+                          else
+                            const CircularProgressIndicator(),
                         ],
                       ),
                     )
-                        : SelectionArea(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        shrinkWrap: true,
-                        physics: const ClampingScrollPhysics(),
-                        padding: const EdgeInsets.all(12.0),
-                        itemCount: _history.length,
-                        itemBuilder: (context, idx) {
-                          final content = _history[idx];
-                          final text = content.parts
-                              .whereType<TextPart>()
-                              .map<String>((e) => e.text)
-                              .join('');
-                          return MessageWidget(
-                            text: text,
-                            isFromUser: content.role == 'user',
-                          );
-                        },
-                      ),
-                    )
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            maxHeight: 150,
-                          ),
-                          child: TextField(
-                            controller: _textController,
-                            focusNode: _textFieldFocus,
-                            maxLines: null,
-                            onSubmitted: (value) => _sendChatMessage(value),
-                            decoration: InputDecoration(
-                              hintText: 'Digite a pergunta aqui...',
-                              fillColor: Theme.of(context).colorScheme.secondary,
-                              filled: true,
-                              focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                              errorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                              focusedErrorBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                              enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(50))),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (!_loading)
-                        InkWell(
-                          onTap: (() {
-                            if(_qtdQuestions == 0) {
-                              showDialog(context: context, builder: (context) => AdDialog(
-                                onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
-                                  Navigator.pop(context);
-                                  setState(() => _qtdQuestions = rewardItem.amount.toInt());
-                                })
-                              )
-                              );
-                              return;
-                            }
-                            if(_textController.text.isNotEmpty) {
-                              _sendChatMessage(_textController.text);
-                            }
-                          }),
-                          child: Container(
-                            height: 50,
-                            width: 50,
-                            decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(50)
-                            ),
-                            child: const Icon(Icons.send, size: 22, color: Colors.white,),
-                          ),
+              ),
+            ),
+          );
+        }
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'scroll_down_button',
+            onPressed: _scrollDown,
+            child: const Icon(Icons.arrow_downward),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 80.0),
+            child: FloatingActionButton(
+              heroTag: 'qtd_questions_button',
+              onPressed: _qtdQuestions == 0
+                ? () {
+                    showDialog(context: context, builder:
+                        (context) => AdDialog(
+                            onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
+                              Navigator.pop(context);
+                              setState(() => _qtdQuestions = rewardItem.amount.toInt());
+                            })
                         )
-                      else
-                        const CircularProgressIndicator(),
-                    ],
-                  ),
-                )
-              ],
+                    );
+                  }
+                : null,
+              tooltip: 'Perguntas restantes',
+              child: Text(_qtdQuestions.toString(), style: const TextStyle(fontSize: 24),),
             ),
           ),
-        ),
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80.0),
-        child: FloatingActionButton(
-          onPressed: _qtdQuestions == 0
-              ? () {
-                  showDialog(context: context, builder: 
-                      (context) => AdDialog(
-                          onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
-                            Navigator.pop(context);
-                            setState(() => _qtdQuestions = rewardItem.amount.toInt());
-                          })
-                      )
-                  );
-                }
-              : null,
-          tooltip: 'Perguntas restantes',
-          child: Text(_qtdQuestions.toString(), style: const TextStyle(fontSize: 24),),
-        ),
+        ],
       ),
     );
   }
@@ -363,9 +522,7 @@ class _AiScreenState extends State<AiScreen> {
         String text = '';
 
         try {
-          final response = await _chat.sendMessage(
-            Content.text(message),
-          );
+          final response = await _chat!.sendMessage(Content.text(message));
           text = response.text ?? '';
 
           if (text.isEmpty) {
@@ -377,16 +534,30 @@ class _AiScreenState extends State<AiScreen> {
               _loading = false;
               _scrollDown();
             });
-            _saveChatHistory();
+            final userContent = Content('user', [TextPart(message)]);
+            final aiContent = Content('model', [TextPart(response.text!)]);
+            _userProvider.chatMessages.addAll([
+              AiChatMessage(
+                role: 'user',
+                parts: [TextPart(message)],
+                timestamp: DateTime.now().millisecondsSinceEpoch
+              ),
+              AiChatMessage(
+                role: 'model',
+                parts: [TextPart(response.text!)],
+                timestamp: DateTime.now().millisecondsSinceEpoch
+              )
+            ]
+            );
+            _saveChatHistory([userContent, aiContent]);
           }
-        } catch (e) {
+        } catch (e, stack) {
           _showError(e.toString());
           setState(() => _loading = false);
+          print('ERRO AO ENVIAR MENSAGEM: $e /// STACK $stack');
         } finally {
           _textController.clear();
-          setState(() {
-            _loading = false;
-          });
+          setState(() => _loading = false);
 
           _textFieldFocus.unfocus();
         }
@@ -424,10 +595,12 @@ class MessageWidget extends StatelessWidget {
     super.key,
     required this.text,
     required this.isFromUser,
+    required this.timestamp
   });
 
   final String text;
   final bool isFromUser;
+  final int? timestamp;
 
   Widget _buildFormattedText(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -453,6 +626,7 @@ class MessageWidget extends StatelessWidget {
     }
 
     return Text.rich(
+      textWidthBasis: TextWidthBasis.longestLine,
       TextSpan(
         style: TextStyle(
           fontFamily: 'Poppins',
@@ -461,6 +635,18 @@ class MessageWidget extends StatelessWidget {
           height: 1.4
         ),
         children: children,
+      ),
+    );
+  }
+
+  Widget _timestampWidget(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final darkMode = !themeProvider.isOn;
+    return Text(
+      DateTime.fromMillisecondsSinceEpoch(timestamp ?? 0).formattedShort(),
+      style: TextStyle(
+        fontSize: 10,
+        color: isFromUser ? Colors.white70 : (darkMode) ? Colors.white70 : Colors.black54,
       ),
     );
   }
@@ -498,11 +684,18 @@ class MessageWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
             padding: const EdgeInsets.symmetric(
-              vertical: 15,
-              horizontal: 20,
+              vertical: 8,
+              horizontal: 12,
             ),
             margin: const EdgeInsets.only(bottom: 16),
-            child: _buildFormattedText(context),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildFormattedText(context),
+                _timestampWidget(context)
+              ],
+            ),
           ),
           if (passageMatches.isNotEmpty)
             Container(
@@ -561,7 +754,7 @@ class MessageWidget extends StatelessWidget {
                   );
                 },
               ),
-            )
+            ),
         ],
       );
     });
