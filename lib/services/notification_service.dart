@@ -17,18 +17,19 @@ class NotificationService {
     _setupNotifications();
   }
 
-  _setupNotifications() async {
+  Future<void> _setupNotifications() async {
     await _setupTimezone();
     await _initializeNotifications();
   }
 
   Future<void> _setupTimezone() async {
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    final timezone = await FlutterTimezone.getLocalTimezone();
+    final String timeZoneName = timezone.identifier;
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
-  _initializeNotifications() async {
+  Future<void> _initializeNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iOS = DarwinInitializationSettings();
     await localNotificationsPlugin.initialize(

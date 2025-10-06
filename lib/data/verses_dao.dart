@@ -56,13 +56,13 @@ class VersesDao {
     return toList(result);
   }
 
-  updateColor(String verse, String newColor) async => await _versesInstance.rawUpdate(
+  Future<int> updateColor(String verse, String newColor) async => await _versesInstance.rawUpdate(
     'UPDATE $_tablename SET $_verseColor = ? WHERE $_verse = ?', [newColor, verse]
   );
 
-  delete(String verse) async => _versesInstance.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
+  Future<int> delete(String verse) async => await _versesInstance.delete(_tablename, where: '$_verse = ?', whereArgs: [verse]);
 
-  deleteAllVerses() async => _versesInstance.delete(_tablename);
+  Future<int> deleteAllVerses() async => await _versesInstance.delete(_tablename);
 
   String intToVersion(int verisionInt) {
     switch(verisionInt) {

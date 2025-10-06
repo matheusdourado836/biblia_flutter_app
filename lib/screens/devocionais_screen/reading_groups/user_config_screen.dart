@@ -6,13 +6,9 @@ import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/wid
 import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/widgets/delete_account_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/reading_groups/widgets/edit_username_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:native_image_cropper/native_image_cropper.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import '../../../helpers/pick_and_crop_image.dart';
 
 class UserConfigScreen extends StatelessWidget {
   const UserConfigScreen({super.key});
@@ -106,172 +102,30 @@ class _ProfileContainer extends StatefulWidget {
 }
 
 class _ProfileContainerState extends State<_ProfileContainer> {
-  final imagePicker = ImagePicker();
   late Widget avatar;
   bool _loading = false;
 
-  Future<File?> cropImage(File file) async {
-    final cropController = CropController();
-
-    try {
-      final imageBytes = await file.readAsBytes();
-      Uint8List? croppedBytes;
-
-      await showModalBottomSheet(
-          context: context,
-          useSafeArea: true,
-          builder: (context) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 300,
-                height: 300,
-                child: CropPreview(
-                    controller: cropController,
-                    mode: CropMode.oval,
-                    maskOptions: const MaskOptions(
-                      backgroundColor: Colors.black38,
-                      borderColor: Colors.grey,
-                      strokeWidth: 2,
-                      aspectRatio: 4 / 4,
-                      minSize: 25,
-                    ),
-                    bytes: imageBytes
-                ),
-              ),
-              TextButton(
-                  onPressed: () async {
-                    croppedBytes = await cropController.crop();
-                    Navigator.pop(context, true);
-                  },
-                  child: const Text('Cortar')
-              )
-            ],
-          )
-      );
-
-      if (croppedBytes == null) {
-        return null;
-      }
-
-      final directory = await getTemporaryDirectory();
-      final croppedFilePath = '${directory.path}/cropped_image_${DateTime.now().millisecondsSinceEpoch}.png';
-      final croppedFile = File(croppedFilePath);
-      await croppedFile.writeAsBytes(croppedBytes!);
-
-      return croppedFile;
-    } catch (e) {
-      print('Erro ao cortar a imagem: $e');
-      return null;
-    }
-  }
-
-  pick(ImageSource source) async {
-    var storageStatus = await Permission.storage.status;
-    var cameraStatus = await Permission.camera.status;
-    if (source == ImageSource.camera && cameraStatus.isDenied) {
-      Permission.camera.request();
-    }
-    if(source == ImageSource.gallery && storageStatus.isDenied) {
-      Permission.storage.request();
-    }
-    final pickedFile = await imagePicker.pickImage(source: source);
-
-    if (pickedFile != null) {
-      final croppedImage = await cropImage(File(pickedFile.path));
-      if (!mounted) return;
-      if(croppedImage != null) {
-        final imageFile = File(croppedImage.path);
-        saveImageEdit(croppedImage);
-        setState(() {
-          avatar = CircleAvatar(
-            backgroundImage: FileImage(imageFile),
-            radius: 55,
-          );
-        });
-      }
-    }
-  }
-
-  void _showOpcoesBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).primaryColor,
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(' Adicionar foto de perfil'),
-              const SizedBox(height: 24),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(50)
-                  ),
-                  child: Icon(
-                    Icons.image,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                title: const Text('Galeria',),
-                onTap: () {
-                  Navigator.pop(context);
-                  pick(ImageSource.gallery);
-                },
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(50)
-                  ),
-                  child: Icon(
-                    Icons.camera_alt_rounded,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                title: const Text('Tirar foto',),
-                onTap: () {
-                  Navigator.pop(context);
-                  pick(ImageSource.camera);
-                },
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(50)
-                  ),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                title: const Text('Remover'),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    avatar = const CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/icone_bg.png'),
-                      radius: 55,
-                    );
-                  });
-                },
-              ),
-            ],
-          ),
+  Future<void> setImage() async {
+    final res = await showOpcoesBottomSheet(context, label: ' Adicionar foto de perfil');
+    if(res == null) return;
+    if(res == true) {
+      setState(() {
+        avatar = const CircleAvatar(
+          backgroundImage: AssetImage('assets/images/icone_bg.png'),
+          radius: 55,
         );
-      },
-    );
+      });
+      saveImageEdit(null);
+      return;
+    }
+    File croppedImage = res;
+    saveImageEdit(croppedImage);
+    setState(() {
+      avatar = CircleAvatar(
+        backgroundImage: FileImage(croppedImage),
+        radius: 55,
+      );
+    });
   }
 
   Future<void> saveImageEdit(File? file) async {
@@ -329,7 +183,7 @@ class _ProfileContainerState extends State<_ProfileContainer> {
                 borderRadius: BorderRadiusDirectional.circular(100)
               ),
               child: _loading ? Center(child: const CircularProgressIndicator()) : IconButton(
-                  onPressed: () => _showOpcoesBottomSheet(),
+                  onPressed: () => setImage(),
                   icon: const Icon(Icons.camera_alt_outlined, color: Colors.white70,)
               ),
             )

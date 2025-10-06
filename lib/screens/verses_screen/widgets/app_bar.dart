@@ -84,8 +84,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
             if(_versesProvider.bottomSheetOpened) {
               Navigator.pop(context);
             }
-            _versesProvider
-                .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
+            _versesProvider.clearSelectedVerses(_versesProvider.allVerses?[widget.chapter] ?? {});
             _versesProvider.resetVersesFoundCounter();
             setState(() {
               textEditingController.text = '';

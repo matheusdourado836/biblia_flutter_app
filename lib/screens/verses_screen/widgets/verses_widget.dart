@@ -205,7 +205,8 @@ class _VersesWidgetState extends State<VersesWidget> {
         if (listMap[index]["verseColor"] != Colors.transparent) {
           setState(() => listMap[index]["isEditing"] = true);
         }
-        _versesProvider.updateColors(listMap, themeColor, colorString);
+        final selectedVerses = listMap.where((v) => v["isSelected"] == true).toList();
+        _versesProvider.updateColors(selectedVerses, themeColor, colorString);
         _versesProvider.refresh();
         Navigator.pop(ctx);
       }),

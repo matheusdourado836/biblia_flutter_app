@@ -41,7 +41,7 @@ class AnnotationsDao {
     );
   }
 
-  delete(String annotationId) async {
+  Future<Future<int>> delete(String annotationId) async {
     return _versesInstance.delete(_tablename, where: '$_annotationId = ?', whereArgs: [annotationId]);
   }
 

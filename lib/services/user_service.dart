@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/group.dart';
 import '../models/message.dart';
 import '../models/user.dart';
@@ -111,7 +111,7 @@ class UserService {
       final credential = await _auth.createUserWithEmailAndPassword(email: user.email!, password: pass);
       if(credential.user != null) {
         await _auth.currentUser!.updateDisplayName(user.nomeUsuario);
-        final fcmToken = await _messaging.getToken();
+        final fcmToken = Platform.isIOS ? await _messaging.getAPNSToken() : await _messaging.getToken();
         await _database.collection('users').doc(_auth.currentUser!.uid).set(user.toJson());
         await _database.collection('users').doc(_auth.currentUser!.uid).update({
           "id": _auth.currentUser!.uid,
@@ -159,22 +159,35 @@ class UserService {
     return await _auth.currentUser!.updateDisplayName(newUsername);
   }
 
+  Future<void> _clearImages(String path) async {
+    final files = await _storage.ref().child(path).listAll();
+    if(files.items.isNotEmpty) {
+      await files.items.first.delete();
+    }
+    return;
+  }
+
   Future<bool> updateUserProfilePicture(MyUser user) async {
+    Future<void> setImage(String? photoURL) async {
+      user.profilePhotoUrl = photoURL;
+      await _auth.currentUser!.updatePhotoURL(photoURL);
+      await updateUserData({'profilePhotoUrl': photoURL}, user.id!);
+    }
     try {
+      if(user.profilePhotoUrl?.isEmpty ?? true) {
+        await _clearImages('users/${user.id!}');
+        await setImage('');
+        return true;
+      }
       final file = File(user.profilePhotoUrl!);
       final fileName = file.path.split('/').last;
       final timeStamp = DateTime.now().microsecondsSinceEpoch;
       final uploadRef = _storage.ref().child('users/${user.id!}/$timeStamp-$fileName');
-      final files = await _storage.ref().child('users/${user.id!}').listAll();
-      if(files.items.isNotEmpty) {
-        await files.items.first.delete();
-      }
+      await _clearImages('users/${user.id!}');
       await uploadRef.putFile(file);
 
       String photoURL = await uploadRef.getDownloadURL();
-      user.profilePhotoUrl = photoURL;
-      await _auth.currentUser!.updatePhotoURL(photoURL);
-      await updateUserData({'profilePhotoUrl': photoURL}, user.id!);
+      await setImage(photoURL);
       return true;
     }on FirebaseException catch(e) {
       print('Não foi possível atualizar a imagem ${e.message}');
@@ -277,21 +290,27 @@ class UserService {
     }
   }
 
+
   Future<bool> uploadGroupPicture(Group group) async {
+    Future<void> setImage(String? photoURL) async {
+      group.bgUrl = photoURL;
+      await updateGroupData({'bgUrl': photoURL}, group.id!);
+    }
     try {
+      if(group.bgUrl?.isEmpty ?? true) {
+        await _clearImages('groups/${group.id!}');
+        await setImage('');
+        return true;
+      }
       final file = File(group.bgUrl!);
       final fileName = file.path.split('/').last;
       final timeStamp = DateTime.now().microsecondsSinceEpoch;
       final uploadRef = _storage.ref().child('groups/${group.id!}/$timeStamp-$fileName');
-      final files = await _storage.ref().child('groups/${group.id!}').listAll();
-      if(files.items.isNotEmpty) {
-        await files.items.first.delete();
-      }
+      await _clearImages('groups/${group.id!}');
       await uploadRef.putFile(file);
 
       String photoURL = await uploadRef.getDownloadURL();
-      group.bgUrl = photoURL;
-      await updateGroupData({'bgUrl': photoURL}, group.id!);
+      await setImage(photoURL);
       return true;
     }on FirebaseException catch(e) {
       print('Não foi possível atualizar a imagem ${e.message}');
@@ -341,6 +360,7 @@ class UserService {
     await chatRef.add(message.toJson());
   }
 
+  //TODO: TROCAR FCMTOKENS POR IDS DOS PARTICIPANTES E REMOVER O ID DE QUEM ESTA ENVIANDO A MENSAGEM
   Future<void> sendGroupMessageNotification({
     required String groupName,
     required String username,

@@ -23,7 +23,6 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>>? listResult;
   Map<String, dynamic> map = {};
   final ValueNotifier<String> _findInSelectedOption = ValueNotifier('');
-  String _selectedOption = '';
   final List<String> _findInOptions = [
     'Toda a Biblia',
     'Antigo Testamento',
@@ -42,7 +41,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     _versesProvider.loadUserData();
-    _selectedOption = versionProvider.selectedOption;
     _findInSelectedOption.value = _findInOptions[0];
     _findInBooks.value.add('Todos');
     _allBooks.add('Todos');
@@ -60,7 +58,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void onTap() {
     _versesProvider.clear();
-    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionName: _selectedOption.toLowerCase().split(' ')[0]);
+    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionName: versionProvider.selectedOption.toLowerCase().split(' ')[0]);
     Navigator.pushNamed(context, 'verses_screen', arguments: map);
   }
 
@@ -68,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_textEditingController.text != '') {
       List<dynamic> allBooks = _versesProvider.bibleData[0]["text"];
       final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
-      final versionIndex = versionProvider.options.indexOf(_selectedOption);
+      final versionIndex = versionProvider.options.indexOf(versionProvider.selectedOption);
       _focusNode.unfocus();
       setState(() {
         if (bookIndex != -1) {
@@ -92,7 +90,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    versionProvider.changeSelectedOption = _selectedOption;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -167,7 +164,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                   }).toList(),
                                   onChanged: (newValue) {
                                     setState(() {
-                                      _selectedOption = newValue!;
                                       versionProvider.changeVersion(newValue.toString());
                                     });
                                   },

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
@@ -129,33 +130,40 @@ class VersesProvider extends ChangeNotifier {
 
       final List<Map<String, dynamic>> versesMap = [];
       for (var i = 0; i < versesByChapterDefault.length; i++) {
-        final verseText = versesByChapter[i];
-        final defaultVerseText = versesByChapterDefault[i];
+        try{
+          final verseText = versesByChapter[i];
+          final defaultVerseText = versesByChapterDefault[i];
 
-        // Cor e versão com base no banco de dados
-        final foundDb = _listaBd.where((verse) => verse.verse == defaultVerseText);
+          // Cor e versão com base no banco de dados
+          final foundDb = _listaBd.where((verse) => verse.verse == defaultVerseText);
 
-        final verseColor = foundDb.isNotEmpty
-            ? ConvertColors().convertColors(foundDb.first.verseColor)
-            : Colors.transparent;
+          final verseColor = foundDb.isNotEmpty
+              ? ConvertColors().convertColors(foundDb.first.verseColor)
+              : Colors.transparent;
 
-        final annotationFound = _listAnnotationsDb.where(
-          (annotation) =>
+          final annotationFound = _listAnnotationsDb.where(
+                (annotation) =>
             annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1,
-        );
+          );
 
-        versesMap.add({
-          "bookName": bookName,
-          "chapter": chapter + 1,
-          "verseNumber": i + 1,
-          "verse": verseText,
-          "verseDefault": defaultVerseText,
-          "verseColor": verseColor,
-          "version": versionNameFormatted,
-          "isSelected": false,
-          "isEditing": false,
-          "annotation": annotationFound.firstOrNull
-        });
+          versesMap.add({
+            "bookName": bookName,
+            "chapter": chapter + 1,
+            "verseNumber": i + 1,
+            "verse": verseText,
+            "verseDefault": defaultVerseText,
+            "verseColor": verseColor,
+            "version": versionNameFormatted,
+            "isSelected": false,
+            "isEditing": false,
+            "annotation": annotationFound.firstOrNull
+          });
+        }catch(e) {
+          print('DEU ERRO NO CAPITULO $chapter /// $e');
+          for(final verse in versesByChapter) {
+            log(verse);
+          }
+        }
       }
 
       if(forMultiVersion) {
@@ -264,12 +272,12 @@ class VersesProvider extends ChangeNotifier {
 
       if (byteData != null) {
         Uint8List pngBytes = byteData.buffer.asUint8List();
-        bytesToXFile(pngBytes).then((image) => Share.shareXFiles(image));
+        bytesToXFile(pngBytes).then((image) => SharePlus.instance.share(ShareParams(files: image)));
       }
     } catch (e) {
       alertDialog(
-          content:
-              'Não foi possível compartilhar o versículo! Se o erro persistir, envie um feedback de erro.\nErro: $e');
+        content: 'Não foi possível compartilhar o versículo! Se o erro persistir, envie um feedback de erro.\nErro: $e'
+      );
     }
   }
 
@@ -294,7 +302,7 @@ class VersesProvider extends ChangeNotifier {
 
     String verses = listMap.map((v) => '${v["verseNumber"]} ${v["verse"]}').join(' ');
 
-    Share.share('$book "$verses"');
+    SharePlus.instance.share(ShareParams(text: '$book "$verses"'));
   }
 
   void share(
@@ -304,11 +312,11 @@ class VersesProvider extends ChangeNotifier {
     int verseNumber
   ) => Share.share('$bookName $chapter:$verseNumber "$verse"');
 
-  copyText(String bookName, String verse, int chapter, int verseNumber) => Clipboard.setData(
+  Future<void> copyText(String bookName, String verse, int chapter, int verseNumber) => Clipboard.setData(
     ClipboardData(text: '$bookName $chapter:$verseNumber "$verse')
   );
 
-  copyVerses(List<Map<String, dynamic>> listMap, String bookname, int chapter) {
+  void copyVerses(List<Map<String, dynamic>> listMap, String bookname, int chapter) {
     int startIndex = listMap.first["verseNumber"];
     int? endIndex = listMap.length > 1 ? listMap.last["verseNumber"] : null;
 
@@ -432,14 +440,12 @@ class VersesProvider extends ChangeNotifier {
 
   void updateColors(List<Map<String, dynamic>> listMap, Color newColor, String bdColor) {
     for (var element in listMap) {
-      if(element["isSelected"] == true) {
-        element["verseColor"] = newColor;
-        element["isSelected"] = false;
-        if(element["isEditing"] == true) {
-          _versesDao.updateColor(element["verseDefault"], bdColor);
-        }else {
-          _versesDao.save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
-        }
+      element["verseColor"] = newColor;
+      element["isSelected"] = false;
+      if(element["isEditing"] == true) {
+        _versesDao.updateColor(element["verseDefault"], bdColor);
+      }else {
+        _versesDao.save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
       }
     }
   }

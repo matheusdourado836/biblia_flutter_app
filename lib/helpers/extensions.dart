@@ -109,3 +109,21 @@ extension StringFormatter on String {
     return textoSemAcentos;
   }
 }
+
+extension Initials on String? {
+
+  String initials() {
+    if(this == null) return '';
+    if (this!.contains(' ')) {
+      final parts = this!.trim().split(' ');
+      final first = parts.first.characters.first.toUpperCase();
+      final second = parts.last.characters.first.toUpperCase();
+      return '$first$second';
+    }else {
+      final first = this!.characters.first.toUpperCase();
+      final second = this!.characters.elementAt(1).toUpperCase();
+      return '$first$second';
+    }
+  }
+
+}

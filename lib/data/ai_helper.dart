@@ -1,5 +1,5 @@
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AiHelper {
   static ChatSession? _chatSessionInstance;
@@ -14,7 +14,7 @@ class AiHelper {
     if(_chatSessionInstance == null) {
       return _modelInstance!.startChat(
           safetySettings: [
-            SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
+            SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium, null),
           ],
           generationConfig: GenerationConfig()
       );
@@ -32,14 +32,17 @@ class AiHelper {
   }
 
   void _initModel() {
-    _modelInstance = GenerativeModel(
-        model: 'gemini-1.5-flash-latest',
-        apiKey: token!,
-        systemInstruction: Content.system('Seu nome é Éden e você é uma assistente do aplicativo BibleWise focado em fornecer respostas relacionadas à Bíblia e temas bíblicos. '
-          'Evite discutir qualquer outro tópico que não seja relacionado ao conteúdo bíblico. '
-          'Sempre que for citar uma passagem bíblica coloque esse símbolo "~" antes da referência da passagem e depois. '
-          'Não utilize "*" antes e depois dos textos.'
-        )
+    _modelInstance = FirebaseAI.googleAI().generativeModel(
+      model: 'gemini-2.5-flash',
+      safetySettings: [
+        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium, null),
+      ],
+      systemInstruction: Content.system('Seu nome é Éden e você é uma assistente do aplicativo BibleWise focado em fornecer respostas relacionadas à Bíblia e temas bíblicos. '
+        'Evite discutir qualquer outro tópico que não seja relacionado ao conteúdo bíblico. '
+        'Sempre que for citar uma passagem bíblica coloque esse símbolo "~" antes da referência da passagem e depois. '
+        'Não utilize "*" antes e depois dos textos.'
+      ),
+      generationConfig: GenerationConfig()
     );
   }
 
@@ -47,7 +50,7 @@ class AiHelper {
     _chatSessionInstance = _modelInstance!.startChat(
       history: history,
       safetySettings: [
-        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium),
+        SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.medium, null),
       ],
       generationConfig: GenerationConfig()
     );

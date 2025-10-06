@@ -1,8 +1,8 @@
 import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:biblia_flutter_app/models/user.dart';
 import 'package:biblia_flutter_app/services/user_service.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/material.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/group.dart';
 import '../models/message.dart';
 import 'bible_data.dart';

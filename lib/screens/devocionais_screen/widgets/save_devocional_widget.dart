@@ -2,23 +2,21 @@ import 'dart:io';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
+import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/helpers/format_data.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/devocional_saved_dialog.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/frosted_container.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/services.dart';
-import 'package:native_image_cropper/native_image_cropper.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../data/theme_provider.dart';
 import '../../../helpers/expandable_container.dart';
+import '../../../helpers/pick_and_crop_image.dart';
 import '../../../helpers/tutorial_widget.dart';
 import 'package:path_provider/path_provider.dart';
 import '../community/feed_screen.dart';
@@ -185,113 +183,33 @@ class _PostContainerState extends State<_PostContainer> {
   List<TargetFocus> _targets = [];
   TutorialCoachMark? _coachMark;
 
-  pick(ImageSource source) async {
-    var storageStatus = await Permission.storage.status;
-    var cameraStatus = await Permission.camera.status;
-    if (source == ImageSource.camera && cameraStatus.isDenied) {
-      Permission.camera.request();
-    }
-    if (source == ImageSource.gallery && storageStatus.isDenied) {
-      Permission.storage.request();
-    }
-    final pickedFile = await imagePicker.pickImage(source: source);
-
-    if (pickedFile != null) {
-      final croppedImage = await cropImage(File(pickedFile.path));
-      if (!mounted) return;
-      if(croppedImage != null) {
-        setState(() {
-          imageFile = File(croppedImage.path);
-          bgImageFile = File(croppedImage.path);
-          widget.devocional.bgImagem = bgImageFile!.path;
-        });
-      }
-    }
-  }
-
-  Future<File?> cropImage(File file) async {
-    final cropController = CropController();
-
-    try {
-      final imageBytes = await file.readAsBytes();
-      Uint8List? croppedBytes;
-
-      await showModalBottomSheet(
-          context: context,
-          useSafeArea: true,
-          builder: (context) => Column(
-            children: [
-              SizedBox(
-                width: 300,
-                height: 300,
-                child: CropPreview(
-                    controller: cropController,
-                    maskOptions: const MaskOptions(
-                      backgroundColor: Colors.black38,
-                      borderColor: Colors.grey,
-                      strokeWidth: 2,
-                      aspectRatio: 5 / 4,
-                      minSize: 25,
-                    ),
-                    bytes: imageBytes
-                ),
-              ),
-              TextButton(
-                  onPressed: () async {
-                    croppedBytes = await cropController.crop();
-                    Navigator.pop(context, true);
-                  },
-                  child: const Text('Cortar')
-              )
-            ],
-          )
-      );
-
-      if (croppedBytes == null) {
-        return null;
-      }
-
-      final directory = await getTemporaryDirectory();
-      final croppedFilePath = '${directory.path}/cropped_image_${DateTime.now().millisecondsSinceEpoch}.png';
-      final croppedFile = File(croppedFilePath);
-      await croppedFile.writeAsBytes(croppedBytes!);
-
-      return croppedFile;
-    } catch (e) {
-      print('Erro ao cortar a imagem: $e');
-      return null;
-    }
-  }
-
   Future<void> loadApiImage() async {
     final versesProvider = Provider.of<VersesProvider>(context, listen: false);
     setState(() => _loadingImage = true);
-    await versesProvider.getOnlyImage().then((res) async {
-      if(res != null) {
-        apiImage = res;
-        final croppedImage = await cropImage(File(res.path));
-        if(croppedImage != null) {
-          bgImageFile = File(croppedImage.path);
-          widget.devocional.bgImagem = bgImageFile!.path;
-          setState(() => bgImageFile);
-        }
-      }else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível gerar uma imagem, tente novamente')));
+    final res = await versesProvider.getOnlyImage();
+    if(res != null) {
+      apiImage = res;
+      final croppedImage = await cropImageSquare(context, File(res.path));
+      if(croppedImage != null) {
+        bgImageFile = File(croppedImage.path);
+        widget.devocional.bgImagem = bgImageFile!.path;
+        setState(() => bgImageFile);
       }
-    });
-    
+    }else {
+      showCustomSnackBar(child: Text('Não foi possível gerar uma imagem, tente novamente'));
+    }
     setState(() => _loadingImage = false);
   }
 
   Future<void> deleteApiImage() async {
-    if (apiImage != null && await apiImage!.exists()) {
+    if (await apiImage?.exists() ?? false) {
       await apiImage!.delete();
       return;
     }
   }
 
   Future<void> editImage() async {
-    final editedImage = await cropImage(bgImageFile!);
+    final editedImage = await cropImageSquare(context, bgImageFile!);
     if(editedImage != null) {
       setState(() => bgImageFile = File(editedImage.path));
       widget.devocional.bgImagem = bgImageFile!.path;
@@ -304,9 +222,7 @@ class _PostContainerState extends State<_PostContainer> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.longestSide
-      ),
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.longestSide),
       backgroundColor: Theme.of(context).primaryColor,
       builder: (_) {
         return Padding(
@@ -318,9 +234,9 @@ class _PostContainerState extends State<_PostContainer> {
               Text(
                 ' Selecione a imagem',
                 style: Theme.of(context)
-                    .textTheme
-                    .titleLarge!
-                    .copyWith(fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
+                  .textTheme
+                  .titleLarge!
+                  .copyWith(fontSize: 20, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 20),
               ListTile(
@@ -328,17 +244,23 @@ class _PostContainerState extends State<_PostContainer> {
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(50)),
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(50)
+                  ),
                   child: Icon(
                     Icons.image,
                     color: Theme.of(context).primaryColor,
                   ),
                 ),
                 title: const Text('Galeria'),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  pick(ImageSource.gallery);
+                  final croppedImage = await pick(context, ImageSource.gallery, mode: 'square');
+                  setState(() {
+                    imageFile = croppedImage;
+                    bgImageFile = croppedImage;
+                    widget.devocional.bgImagem = croppedImage?.path;
+                  });
                 },
               ),
               const SizedBox(height: 12),
@@ -347,17 +269,23 @@ class _PostContainerState extends State<_PostContainer> {
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(50)),
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(50)
+                  ),
                   child: Icon(
                     Icons.camera_alt_rounded,
                     color: Theme.of(context).primaryColor,
                   ),
                 ),
                 title: const Text('Tirar foto'),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  pick(ImageSource.camera);
+                  final croppedImage = await pick(context, ImageSource.camera, mode: 'square');
+                  setState(() {
+                    imageFile = croppedImage;
+                    bgImageFile = croppedImage;
+                    widget.devocional.bgImagem = croppedImage?.path;
+                  });
                 },
               ),
               const SizedBox(height: 12),
@@ -385,16 +313,17 @@ class _PostContainerState extends State<_PostContainer> {
                   },
                 ),
               ),
-              (imageFile != null || bgImageFile != null)
-              ? Padding(
+              if (imageFile != null || bgImageFile != null)
+                Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(50)),
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(50)
+                    ),
                     child: Icon(
                       Icons.edit,
                       color: Theme.of(context).primaryColor,
@@ -405,15 +334,15 @@ class _PostContainerState extends State<_PostContainer> {
                     editImage().whenComplete(() => Navigator.pop(context));
                   },
                 ),
-              )
-                : const SizedBox(),
+              ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error,
-                      borderRadius: BorderRadius.circular(50)),
+                    color: Theme.of(context).colorScheme.error,
+                    borderRadius: BorderRadius.circular(50)
+                  ),
                   child: Icon(
                     Icons.delete,
                     color: Theme.of(context).primaryColor,
@@ -505,11 +434,11 @@ class _PostContainerState extends State<_PostContainer> {
   }
 
   Widget iconInfo({required Widget icon, required String text}) => Column(
-        children: [
-          icon,
-          const SizedBox(height: 4),
-          Text(text, style: const TextStyle(color: Colors.white, fontSize: 13)),
-        ],
+    spacing: 4,
+    children: [
+      icon,
+      Text(text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+    ],
   );
 
   Future<void> clearCache() async {
@@ -526,7 +455,7 @@ class _PostContainerState extends State<_PostContainer> {
 
   @override
   void dispose() {
-    if (apiImage != null && apiImage!.existsSync()) {
+    if (apiImage?.existsSync() ?? false) {
       apiImage!.deleteSync();
     }
     clearCache();
@@ -555,21 +484,29 @@ class _PostContainerState extends State<_PostContainer> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              (_loadingImage)
-                  ? const SizedBox(height: 250, width: 30, child: Center(child: LoadingWidget(bgColor: Colors.white, txtColor: Colors.white,)),)
-                  : InkWell(
-                onTap: (() => _showOpcoesBottomSheet()),
+              if (_loadingImage)
+                const SizedBox(
+                  height: 250,
+                  width: 30,
+                  child: Center(
+                    child: LoadingWidget(bgColor: Colors.white, txtColor: Colors.white)
+                  ),
+                )
+              else
+                InkWell(
+                onTap: () => _showOpcoesBottomSheet(),
                 child: (bgImageFile == null)
                     ? SizedBox(
                   height: constraints.maxWidth > 400 ? 400 : 250,
                   child: DottedBorder(
-                    borderType: BorderType.RRect,
-                    color: Colors.white,
-                    dashPattern: const [5, 5],
-                    radius: const Radius.circular(12),
+                    options: RoundedRectDottedBorderOptions(
+                      radius: const Radius.circular(8),
+                      color: Colors.white,
+                      dashPattern: const [5, 5],
+                    ),
                     child: ClipRRect(
                       key: bgKey,
-                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
                       child: Container(
                         color: Colors.grey,
                         child: const Column(
@@ -664,11 +601,11 @@ class _PostContainerState extends State<_PostContainer> {
                           icon: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: (() {}),
+                              onTap: () {},
                               radius: 40,
                               borderRadius: BorderRadius.circular(50),
                               child: const Icon(
-                                CupertinoIcons.heart_fill,
+                                Icons.favorite,
                                 color: Colors.red,
                                 size: 18,
                               )
