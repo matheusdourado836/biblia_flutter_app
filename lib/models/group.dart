@@ -37,6 +37,19 @@ class Group {
     this.endDate,
   });
 
+  Map<String, dynamic> simpleJson() => {
+    'nome': nome,
+    'code': code,
+    'descricao': descricao,
+    'bgUrl': bgUrl,
+    'maxPeople': maxPeople,
+    'plan': plan,
+    'books': books,
+    'createdAt': createdAt?.toIso8601String(),
+    'startDate': startDate?.toIso8601String(),
+    'endDate': endDate?.toIso8601String(),
+  };
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

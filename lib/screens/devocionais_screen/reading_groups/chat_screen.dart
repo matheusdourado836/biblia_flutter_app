@@ -4,10 +4,11 @@ import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/user.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_mentions/flutter_mentions.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../data/theme_provider.dart';
 import '../../../models/group.dart';
 import '../../../models/message.dart';
 
@@ -20,26 +21,36 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin{
   late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen: false);
+  late final AnimationController _controller = AnimationController(vsync: this);
+  static final AiHelper _aiHelper = AiHelper();
   GlobalKey<FlutterMentionsState> key = GlobalKey<FlutterMentionsState>();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-  final _chat = AiHelper.chat;
-  late final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
   bool darkMode = false;
+  bool isTyping = false;
+  List<Message> messages = [];
+
+  void _animation() {
+    if(_controller.isCompleted) {
+      Future.delayed(1000.ms, () => _controller.repeat());
+    }
+  }
 
   @override
   void initState() {
-    if(themeProvider.themeMode == null) {
-      themeProvider.getThemeMode().whenComplete(() {
-        darkMode = !themeProvider.isOn;
-        setState(() {});
-      });
-    }else {
-      darkMode = !themeProvider.isOn;
-    }
+    _aiHelper.initializeGroupAi(widget.group, participants: widget.participantes.map((p) => p.nomeUsuario!).toList());
+    _controller.addListener(_animation);
+    WidgetsBinding.instance.addPostFrameCallback((_) => darkMode = Theme.of(context).brightness == Brightness.dark);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controller.stop();
+    _controller.removeListener(_animation);
+    super.dispose();
   }
 
   Widget _senderContainer(Message message) => Align(
@@ -119,9 +130,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(
-                        child: _buildFormattedText(
-                          message.text,
-                          darkMode ? Colors.white : Colors.black
+                        child: Markdown(
+                          data: message.text,
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
                         ),
                       ),
                       Text(
@@ -251,7 +264,7 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
 
-        final messages = snapshot.data!;
+        messages = snapshot.data!;
         if(snapshot.data!.where((m) => !(m.hasSeen?.contains(_groupsProvider.currentUser!.id!) ?? true)).isNotEmpty) {
           _groupsProvider.markMessagesAsRead(groupId: widget.group.id!);
         }
@@ -334,11 +347,21 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendAiChatMessage(String message) async {
+    final history = messages.reversed.map((m) => Content(
+        m.senderId.isEmpty ? 'model' : 'user',
+        [TextPart(m.text)]
+    )).toList();
+
+    _aiHelper.initGroupChat(history);
+    final chat = AiHelper.chat;
     String text = '';
     String defaultPrompt = 'se apresente para os usuários';
     try {
-      final response = await _chat.sendMessage(
-          Content.text(message.replaceAll('@Eden', ''))
+      setState(() => isTyping = true);
+      final username = _groupsProvider.currentUser!.nomeUsuario!;
+      final userMessage = '$username enviou esta mensagem - ${message.replaceAll('@Eden', '')}';
+      final response = await chat.sendMessage(
+          Content.text(userMessage)
       );
       text = response.text ?? defaultPrompt;
       final messageAi = Message(
@@ -352,6 +375,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     } catch (e) {
       _showError(e.toString());
+    }finally {
+      setState(() => isTyping = false);
     }
   }
 
@@ -464,6 +489,45 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _animatedDots() {
+    Widget dot(double delay) => Container(
+      height: 5,
+      width: 5,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        shape: BoxShape.circle
+      ),
+    )
+    .animate(controller: _controller)
+    .moveY(begin: 3, end: -3, delay: delay.ms)
+    .then()
+    .moveY(begin: -3, end: 3)
+    .then()
+    .moveY(begin: 1, end: -1)
+    .then()
+    .moveY(begin: -1, end: 1);
+
+    return Row(
+      spacing: 4,
+      children: [
+        dot(0),
+        dot(200),
+        dot(500),
+      ],
+    );
+  }
+  
+  Widget _typingBuilder() => Padding(
+    padding: const EdgeInsetsGeometry.only(left: 16),
+    child: Row(
+      spacing: 6,
+      children: [
+        _animatedDots(),
+        Text('Éden está digitando'),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -472,8 +536,11 @@ class _ChatScreenState extends State<ChatScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: groupMessageList(widget.group.id!, constraints)),
+              if(isTyping)
+                _typingBuilder(),
               groupMessageInput(widget.group.id!),
             ],
           );

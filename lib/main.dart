@@ -10,6 +10,7 @@ import 'package:biblia_flutter_app/themes/light_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_mentions/flutter_mentions.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +39,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage? message) async {
 }
 
 void main() async {
+  Animate.restartOnHotReload = true;
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessagingService firebaseMessagingService = FirebaseMessagingService();

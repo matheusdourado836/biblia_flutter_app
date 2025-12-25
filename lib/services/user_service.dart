@@ -382,7 +382,7 @@ class UserService {
   }
 
   Stream<List<Message>> getGroupMessages(String groupId) {
-    return FirebaseFirestore.instance
+    return _database
         .collection('groups')
         .doc(groupId)
         .collection('chat')
@@ -392,23 +392,21 @@ class UserService {
         .map((doc) => Message.fromJson(doc.data()))
         .toList());
   }
-  
+
   Future<void> markMessagesAsRead({required String groupId}) async {
     final userId = _auth.currentUser!.uid;
-    await _database.collection('groups').doc(groupId).collection('chat').where('hasSeen', whereNotIn: [userId]).get().then((res) async {
-      if(res.docs.isNotEmpty) {
-        final docs = res.docs;
-        for(var doc in docs) {
-          if(doc.exists) {
-            List<String>? hasSeen = (doc.data()['hasSeen'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-            hasSeen.add(userId);
-            await _database.collection('groups').doc(groupId).collection('chat').doc(doc.id).update({"hasSeen": hasSeen});
-          }
-        }
-      }
-    });
 
-    return;
+    final snapshot = await _database
+        .collection('groups')
+        .doc(groupId)
+        .collection('chat')
+        .get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.update({
+        'hasSeen': FieldValue.arrayUnion([userId]),
+      });
+    }
   }
 
   Future<Group?> getGroupById({required String groupId}) async {

@@ -54,7 +54,7 @@ class _GroupSelectedScreenState extends State<GroupSelectedScreen> {
 
     difference = DateTime.now().difference(startDate).inDays;
 
-    if (difference < daysList.length) {
+    if (difference > 0 && difference < daysList.length) {
       final daysPassed = daysList.sublist(0, difference);
       daysMissed = daysPassed.where(
             (d) => d.value.capitulos.values
@@ -163,6 +163,26 @@ class _GroupSelectedScreenState extends State<GroupSelectedScreen> {
     );
   }
 
+  Widget _buildDaysCount() {
+    if(group?.startDate?.isAfter(DateTime.now()) ?? false) {
+      return Text(
+        'Começa em ${group?.startDate?.difference(DateTime.now()).inDays} dias',
+        style: TextStyle(fontSize: 12)
+      );
+    }
+    if (daysMissed == -1) {
+      return const Text('Leitura finalizada', style: TextStyle(fontSize: 12));
+    } else if (daysMissed == 0) {
+      return const Text('Leitura em dia', style: TextStyle(fontSize: 12));
+    }
+    else {
+      return Text(
+        'Leitura atrasada em $daysMissed dias',
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      );
+    }
+  }
+
   AppBar _buildAppBar() {
     return AppBar(
       centerTitle: true,
@@ -170,15 +190,7 @@ class _GroupSelectedScreenState extends State<GroupSelectedScreen> {
         children: [
           Text(group?.nome ?? ''),
           const SizedBox(height: 4),
-          if (daysMissed == -1)
-            const Text('Leitura finalizada', style: TextStyle(fontSize: 12))
-          else if (daysMissed == 0)
-            const Text('Leitura em dia', style: TextStyle(fontSize: 12))
-          else
-            Text(
-              'Leitura atrasada em $daysMissed dias',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            )
+          _buildDaysCount()
         ],
       ),
       actions: [
