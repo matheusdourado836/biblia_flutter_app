@@ -198,21 +198,23 @@ class _HomeAppBarState extends State<HomeAppBar> {
         ),
         IconButton(
           key: _randomVerseKey,
-          onPressed: () {
+          onPressed: () async {
             final versesProvider = Provider.of<VersesProvider>(context, listen: false);
             versesProvider.clear();
-            BibleService().checkInternetConnectivity().then((value) => {
-              if (value) {
-                if(showAd()) {
-                  _showInterstitialAd()
-                }else {
-                  Navigator.pushNamed(context, 'random_verse_screen')
-                }
-              }
-              else {
-                alertDialog(content: 'Você precisa estar conectado a internet para receber um versiculo aleatório')
-              }
-            });
+            final hasInternet = await BibleService().checkInternetConnectivity();
+
+            if (!hasInternet) {
+              alertDialog(content: 'Você precisa estar conectado a internet para receber um versiculo aleatório');
+              return;
+            }
+
+            if (showAd()) {
+              _showInterstitialAd();
+              return;
+            }
+
+            if (!context.mounted) return;
+            Navigator.pushNamed(context, 'random_verse_screen');
           },
           tooltip: 'Versículo Aleatório',
           icon: const Icon(Icons.help_outline_rounded),

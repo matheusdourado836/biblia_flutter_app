@@ -1,8 +1,9 @@
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/widgets/no_bg_placeholders.dart';
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/widgets/post_container.dart';
 import 'dart:ui';
 
 import 'package:biblia_flutter_app/models/devocional.dart';
 import 'package:biblia_flutter_app/models/user.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,7 @@ Future<dynamic> showOpcoesBottomSheet(BuildContext context, {required String lab
               title: const Text('Galeria'),
               onTap: () async {
                 final file = await pick(context, ImageSource.gallery);
+                if (!context.mounted) return;
                 Navigator.pop(context, file);
               },
             ),
@@ -55,6 +57,7 @@ Future<dynamic> showOpcoesBottomSheet(BuildContext context, {required String lab
               title: const Text('Tirar foto'),
               onTap: () async {
                 final file = await pick(context, ImageSource.camera);
+                if (!context.mounted) return;
                 Navigator.pop(context, file);
               },
             ),
@@ -135,6 +138,7 @@ Future<File?> cropImage(BuildContext context, File file) async {
           TextButton(
             onPressed: () async {
               croppedBytes = await cropController.crop();
+              if (!context.mounted) return;
               Navigator.pop(context, true);
             },
             child: const Text('Cortar')
@@ -154,7 +158,7 @@ Future<File?> cropImage(BuildContext context, File file) async {
 
     return croppedFile;
   } catch (e) {
-    print('Erro ao cortar a imagem: $e');
+    logError('Erro ao cortar a imagem: $e');
     return null;
   }
 }
@@ -192,6 +196,7 @@ Future<File?> cropImageSquare(BuildContext context, File file) async {
           TextButton(
             onPressed: () async {
               croppedBytes = await cropController.crop();
+              if (!context.mounted) return;
               Navigator.pop(context, true);
             },
             child: const Text('Cortar')
@@ -211,7 +216,7 @@ Future<File?> cropImageSquare(BuildContext context, File file) async {
 
     return croppedFile;
   } catch (e) {
-    print('Erro ao cortar a imagem: $e');
+    logError('Erro ao cortar a imagem: $e');
     return null;
   }
 }

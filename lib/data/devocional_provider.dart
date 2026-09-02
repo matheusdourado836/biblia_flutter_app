@@ -38,27 +38,25 @@ class DevocionalProvider extends ChangeNotifier {
     notifyListeners();
     _devocionais = [];
     _devocionais = await _service.getDevocionais(limit: limit);
-    for(var devocional in _devocionais ?? []) {
-      final user = await _userService.getUserById(id: devocional.ownerId!);
-      devocional.bgImagemUser = user?.profilePhotoUrl;
-    }
+    await _attachAuthorPhotos(_devocionais);
+
     if(_devocionais?.isNotEmpty ?? false) {
-      _devocionais!.sort((a, b) => b.qtdCurtidas! > a.qtdCurtidas! ? 0 : 1);
+      final now = DateTime.now();
+      // Destaques das últimas 24h primeiro (mais recentes no topo); o restante
+      // por curtidas e, em empate, pelo mais recente.
       _devocionais!.sort((a, b) {
-        final createdDateA = DateTime.parse(a.createdAt!);
-        final createdDateB = DateTime.parse(b.createdAt!);
+        final dateA = _parseDate(a.createdAt);
+        final dateB = _parseDate(b.createdAt);
+        final freshA = now.difference(dateA).inHours <= 24;
+        final freshB = now.difference(dateB).inHours <= 24;
 
-        if(DateTime.now().difference(createdDateA).inHours <= 24) {
-          final differenceA = DateTime.now().difference(createdDateA);
-          final differenceB = DateTime.now().difference(createdDateB);
-          if(differenceB.inHours <= 24) {
-            return differenceA.inMinutes.compareTo(differenceB.inMinutes);
-          }
+        if (freshA != freshB) return freshA ? -1 : 1;
+        if (freshA && freshB) return dateB.compareTo(dateA);
 
-          return 0;
-        }
+        final likes = (b.qtdCurtidas ?? 0).compareTo(a.qtdCurtidas ?? 0);
+        if (likes != 0) return likes;
 
-        return 1;
+        return dateB.compareTo(dateA);
       });
     }
     isLoading = false;
@@ -72,19 +70,46 @@ class DevocionalProvider extends ChangeNotifier {
     _devocionais = [];
     _devocionais = await _service.getUserDevocionais();
     if(_devocionais?.isNotEmpty ?? false) {
+      // Mais recentes primeiro; publicações do mesmo dia, mais curtidas primeiro.
       _devocionais!.sort((a, b) {
-        final createdDateA = DateTime.parse(a.createdAt!);
-        final createdDateB = DateTime.parse(b.createdAt!);
-        if(createdDateA.day == createdDateB.day && createdDateA.month == createdDateB.month && createdDateA.year == createdDateB.year) {
-          return a.qtdCurtidas! > b.qtdCurtidas! ? 0 : 1;
+        final dateA = _parseDate(a.createdAt);
+        final dateB = _parseDate(b.createdAt);
+        final sameDay = dateA.year == dateB.year &&
+            dateA.month == dateB.month &&
+            dateA.day == dateB.day;
+
+        if (sameDay) {
+          return (b.qtdCurtidas ?? 0).compareTo(a.qtdCurtidas ?? 0);
         }
-        return createdDateA.isBefore(createdDateB) ? 1 : 0;
+
+        return dateB.compareTo(dateA);
       });
     }
     isLoading = false;
     notifyListeners();
     return;
   }
+
+  /// Busca as fotos dos autores em lote (antes era uma consulta por item).
+  Future<void> _attachAuthorPhotos(List<Devocional>? devocionais) async {
+    if (devocionais == null || devocionais.isEmpty) return;
+
+    final ownerIds = devocionais
+        .map((d) => d.ownerId)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    if (ownerIds.isEmpty) return;
+
+    final users = await _userService.getUsersById(ids: ownerIds) ?? [];
+    final photoById = {for (final u in users) u.id: u.profilePhotoUrl};
+    for (final devocional in devocionais) {
+      devocional.bgImagemUser = photoById[devocional.ownerId];
+    }
+  }
+
+  static DateTime _parseDate(String? value) =>
+      DateTime.tryParse(value ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   Future<List<Devocional>> getDevocionaisById({required String id}) async => await _service.getDevocionaisById(id: id);
 
@@ -110,12 +135,22 @@ class DevocionalProvider extends ChangeNotifier {
     isLoading = true;
     _comments = [];
     _comments = await _service.getComments(devocionalId: devocionalId);
-    for(var comment in _comments) {
-      if(comment.autorId == null) continue;
-      final user = await _userService.getUserById(id: comment.autorId!);
-      comment.authorPhotoUrl = user?.profilePhotoUrl;
+
+    // Uma consulta em lote no lugar de um getUserById por comentário.
+    final authorIds = _comments
+        .map((c) => c.autorId)
+        .whereType<String>()
+        .toSet()
+        .toList();
+    if (authorIds.isNotEmpty) {
+      final users = await _userService.getUsersById(ids: authorIds) ?? [];
+      final photoById = {for (final u in users) u.id: u.profilePhotoUrl};
+      for (final comment in _comments) {
+        comment.authorPhotoUrl = photoById[comment.autorId];
+      }
     }
-    _comments.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+
+    _comments.sort((a, b) => _parseDate(b.createdAt).compareTo(_parseDate(a.createdAt)));
     isLoading = false;
     notifyListeners();
   }

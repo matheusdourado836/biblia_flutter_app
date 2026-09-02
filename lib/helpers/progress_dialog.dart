@@ -16,6 +16,7 @@ class _ProgressDialogState extends State<ProgressDialog> {
   Future<void> loadBibleData(VersionProvider versionProvider) async {
     await versionProvider.loadBibleData();
     versionProvider.setDownloadProgress = false;
+    if (!mounted) return;
     Navigator.pop(context, true);
   }
 

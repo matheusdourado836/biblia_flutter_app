@@ -56,10 +56,10 @@ class PlansProvider extends ChangeNotifier {
   List<List<String>> get chaptersDivided => _chaptersDivided;
 
   static final List<Plan> _staticList =  [
-    Plan(label: 'Bíblia em 1 ano', description: 'Leia a Bíblia em 1 ano', imgPath: 'assets/images/santidade.png', planType: PlanType.ONE_YEAR, duration: 397, qtdChapters: 3),
-    Plan(label: 'Bíblia toda em 3 meses', description: 'Leia a Bíblia em 3 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.THREE_MONTHS, duration: 92, qtdChapters: 13),
-    Plan(label: 'Novo testamento em 2 meses', description: 'Leia o novo testamento em 2 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.TWO_MONTHS_NEW, duration: 66, qtdChapters: 4, isNewTestament: true),
-    Plan(label: 'Antigo testamento em 6 meses', description: 'Leia o antigo testamento em 6 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.SIX_MONTHS_OLD, duration: 186, qtdChapters: 5, bibleLength: 39),
+    Plan(label: 'Bíblia em 1 ano', description: 'Leia a Bíblia em 1 ano', imgPath: 'assets/images/santidade.png', planType: PlanType.oneYear, duration: 397, qtdChapters: 3),
+    Plan(label: 'Bíblia toda em 3 meses', description: 'Leia a Bíblia em 3 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.threeMonths, duration: 92, qtdChapters: 13),
+    Plan(label: 'Novo testamento em 2 meses', description: 'Leia o novo testamento em 2 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.twoMonthsNew, duration: 66, qtdChapters: 4, isNewTestament: true),
+    Plan(label: 'Antigo testamento em 6 meses', description: 'Leia o antigo testamento em 6 meses', imgPath: 'assets/images/santidade.png', planType: PlanType.sixMonthsOld, duration: 186, qtdChapters: 5, bibleLength: 39),
   ];
 
   void getDailyReads({required int progressId}) async {

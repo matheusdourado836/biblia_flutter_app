@@ -3,7 +3,7 @@ import 'package:biblia_flutter_app/main.dart';
 import 'package:provider/provider.dart';
 
 class GoToVerseScreen {
-  goToVersePage(String bookName, String abbrev, int bookIndex, int chapters, int chapter, int verseNumber) {
+  void goToVersePage(String bookName, String abbrev, int bookIndex, int chapters, int chapter, int verseNumber) {
     final versesProvider = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false);
     Map<String, dynamic> mapBooks = {};
     mapBooks["bookName"] = bookName;

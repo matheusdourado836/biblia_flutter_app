@@ -45,7 +45,7 @@ class AnnotationsDao {
     return _versesInstance.delete(_tablename, where: '$_annotationId = ?', whereArgs: [annotationId]);
   }
 
-  deleteAllAnnotations() async => _versesInstance.delete(_tablename);
+  Future<int> deleteAllAnnotations() async => _versesInstance.delete(_tablename);
 
   Future<List<Map<String, dynamic>>> find(String annotationId) async {
     final List<Map<String, dynamic>> result = await _versesInstance.query(

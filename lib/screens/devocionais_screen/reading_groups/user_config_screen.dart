@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'dart:io';
 import 'package:biblia_flutter_app/data/user_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
@@ -75,9 +76,11 @@ class UserConfigScreen extends StatelessWidget {
                   trailing: const Icon(Icons.arrow_forward_ios_rounded),
                 ),
                 ListTile(
-                  onTap: () => userProvider.doLogout().whenComplete(() => Navigator.pushNamedAndRemoveUntil(
-                      context, 'login_screen', (route) => route.settings.name == 'devocionais_screen'
-                  )),
+                  onTap: () => userProvider.doLogout().whenComplete(() {
+                    if (!context.mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, 'login_screen', (route) => route.settings.name == 'devocionais_screen');
+                  }),
                   leading: const Icon(Icons.logout),
                   iconColor: Colors.red,
                   textColor: Colors.red,
@@ -138,7 +141,7 @@ class _ProfileContainerState extends State<_ProfileContainer> {
       showCustomSnackBar(child: Text('Foto de perfil atualizada com sucesso!'));
       return;
     }catch(e, stack) {
-      print('ERRO AO ATUALIZAR FOTO DE PERFIL: $e /// STACK $stack');
+      logError('ERRO AO ATUALIZAR FOTO DE PERFIL: $e /// STACK $stack');
       showCustomSnackBar(child: Text('Houve um erro ao atualizar sua foto de perfil!'));
       return;
     }finally {

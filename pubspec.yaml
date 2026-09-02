@@ -17,7 +17,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 9.1.0+65
+version: 9.5.1+69
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -30,17 +30,18 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   animated_toggle_switch: ^0.8.2
-  cached_network_image: ^3.3.1
+  cached_network_image: ^4.0.0
   carousel_slider: ^5.0.0
   cloud_firestore: ^6.0.2
   cloud_functions: ^6.0.2
-  native_image_cropper: ^0.7.0
+  native_image_cropper: ^0.8.0
+  collection: ^1.19.0
   connectivity_plus: ^7.0.0
   dio: ^5.8.0+1
   dotted_border: ^3.1.0
   event_bus: ^2.0.1
   expandable: ^5.0.1
-  firebase_ai: ^3.3.0
+  firebase_ai: ^4.0.0
   firebase_auth: ^6.1.0
   firebase_core: ^4.1.1
   firebase_storage: ^13.0.2
@@ -48,26 +49,27 @@ dependencies:
   flutter_mentions: ^2.0.1
   firebase_messaging: ^16.0.2
   flutter_native_splash: ^2.4.5
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^22.3.0
   flutter_timezone: ^5.0.0
   flutter_slidable: ^4.0.0
   flutter_dotenv: ^6.0.0
   flutter_animate: ^4.5.0
   flutter_tts: ^4.2.1
   flutter_svg: ^2.0.9
-  flutter_quill: ^11.1.0
-  google_mobile_ads: ^6.0.0
+  flutter_quill: ^11.5.1
+  google_mobile_ads: ^9.1.0
   http: ^1.4.0
+  intl: ^0.20.2
   image_picker: ^1.1.2
   page_transition: ^2.1.0
-  permission_handler: ^12.0.1
+  permission_handler: ^13.0.1
   scrollable_positioned_list: ^0.3.8
   sentry_flutter: ^9.6.0
-  share_plus: ^12.0.0
+  share_plus: ^13.3.0
   shared_preferences: ^2.5.2
-  shimmer: ^3.0.0
+  shimmer: ^4.0.0
   sqflite: ^2.4.2
-  timezone: ^0.10.0
+  timezone: ^0.11.0
   tutorial_coach_mark: ^1.3.0
   url_launcher: ^6.3.1
   uuid: ^4.4.0
@@ -75,11 +77,10 @@ dependencies:
   provider:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   path_provider: any
   path: any
-dependency_overrides:
-  intl: ^0.20.2
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -87,6 +88,8 @@ dependency_overrides:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to

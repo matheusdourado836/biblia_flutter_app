@@ -31,9 +31,10 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  pod 'FirebaseFirestore',
-    :git => 'https://github.com/invertase/firestore-ios-sdk-frameworks.git',
-    :tag => '12.2.0'
+  # O pod pré-compilado do Firestore (invertase) existia para fugir do tempo de
+  # compilação do FirebaseFirestore. Com o Swift Package Manager o cloud_firestore
+  # já traz o FirebaseFirestore por SPM (com abseil/grpc binários), e manter os
+  # dois causava 380 símbolos duplicados no link.
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   #target 'RunnerTests' do

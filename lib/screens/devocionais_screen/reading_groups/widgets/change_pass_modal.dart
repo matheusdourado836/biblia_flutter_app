@@ -36,6 +36,7 @@ class _ChangePassModalState extends State<ChangePassModal> {
 
           if (success) {
             showCustomSnackBar(child: const Text('Sua senha foi atualizada com sucesso!'));
+            if (!mounted) return;
             Navigator.pop(context);
           } else {
             _showError('Não foi possível alterar sua senha');
@@ -138,5 +139,12 @@ class _ChangePassModalState extends State<ChangePassModal> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _oldPassController.dispose();
+    _newPassController.dispose();
+    super.dispose();
   }
 }

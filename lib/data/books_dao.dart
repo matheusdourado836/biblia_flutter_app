@@ -15,7 +15,7 @@ class BooksDao {
   static const String _chapters = 'chapters';
   static const String _finishedReading = 'finishedReading';
 
-  save(String bookName, int chapters, int finishedReading) async {
+  Future<int> save(String bookName, int chapters, int finishedReading) async {
     final itemExists = await find(bookName);
     final chaptersString = jsonEncode(setChapters(chapters, 1));
     Map<String, dynamic> bookMap = toJson(bookName, chaptersString, finishedReading);
@@ -65,7 +65,7 @@ class BooksDao {
     return list;
   }
 
-  delete(String bookName) async {
+  Future<int> delete(String bookName) async {
     return _versesInstance.delete(_tablename, where: '$_bookName = ?', whereArgs: [bookName]);
   }
 

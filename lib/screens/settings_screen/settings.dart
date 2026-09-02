@@ -205,6 +205,7 @@ class _OptionsState extends State<Options> {
                                     if(res == true) {
                                       setNewPreferredVersion(option);
                                       _versionProvider.changeVersion(option);
+                                      if (!context.mounted) return;
                                       Navigator.pop(context);
                                     }
                                   }),

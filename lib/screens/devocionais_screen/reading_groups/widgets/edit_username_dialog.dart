@@ -25,7 +25,17 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
     final groupsProvider = Provider.of<UserProvider>(context, listen:  false);
     final usernameAvailable = await groupsProvider.checkIfUsernameIsAvailable(username: _nameController.text);
     if(usernameAvailable) {
-      await groupsProvider.updateUsername(newUsername: _nameController.text);
+      // A reserva pode falhar mesmo depois da checagem (alguém pegou o nome no
+      // meio do caminho), então o resultado do save também é conferido.
+      final atualizado = await groupsProvider.updateUsername(newUsername: _nameController.text);
+      if (!mounted) return;
+      if (!atualizado) {
+        setState(() {
+          _loading = false;
+          _errorMsg = 'Este nome de usuário não está disponível';
+        });
+        return;
+      }
       setState(() => _loading = false);
       showCustomSnackBar(child: const Text('Nome de usuário atualizado com sucesso!')
       );
@@ -91,5 +101,11 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 }

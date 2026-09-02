@@ -21,6 +21,7 @@ class _ResetPassModalState extends State<ResetPassModal> {
       setState(() => _loading = true);
       await groupsProvider.resetPassword(_emailContorller.text);
       setState(() => _loading = false);
+      if (!mounted) return;
       Navigator.pop(context, _emailContorller.text);
     }catch(e) {
       setState(() {
@@ -81,5 +82,11 @@ class _ResetPassModalState extends State<ResetPassModal> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailContorller.dispose();
+    super.dispose();
   }
 }

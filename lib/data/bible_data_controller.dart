@@ -59,7 +59,7 @@ class BibleDataController {
     return _books;
   }
 
-  getColorName(String option) {
+  int getColorName(String option) {
     switch (option) {
       case 'todas':
         return 0;
@@ -79,6 +79,10 @@ class BibleDataController {
         return 7;
       case 'rosa':
         return 8;
+      default:
+        // Antes o método caía fora do switch e devolvia null, quebrando o
+        // índice da lista de cores.
+        return 0;
     }
   }
 }

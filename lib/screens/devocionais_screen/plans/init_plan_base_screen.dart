@@ -137,7 +137,7 @@ class _DaysListState extends State<_DaysList> {
                                     setState(() {});
                                   })
                               )
-                          ).then((value) => (value) ? Navigator.pop(context) : null)
+                          ).then((value) => (value == true && context.mounted) ? Navigator.pop(context) : null)
                           ),
                           icon: const Icon(Icons.delete, color: Colors.white), label: const Text('Cancelar plano', style: TextStyle(color: Colors.white)),
                         ),

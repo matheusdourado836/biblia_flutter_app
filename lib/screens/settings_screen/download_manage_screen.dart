@@ -81,8 +81,12 @@ class _DownloadManageScreenState extends State<DownloadManageScreen> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final defaultVersions = ['nvi', 'acf', 'en_kjv', 'ntlh', 'aa'];
-      _downloadedVersions = _versionProvider.getVersions().where((v) => !defaultVersions.contains(v["version"])).toList();
-      setState(() {});
+      // downloadedFiles traz nome/tamanho sem exigir que a versão esteja
+      // decodificada em memória.
+      _downloadedVersions = _versionProvider.downloadedFiles
+          .where((v) => !defaultVersions.contains(v["version"]))
+          .toList();
+      if (mounted) setState(() {});
     });
     super.initState();
   }

@@ -63,9 +63,19 @@ class UserProvider extends ChangeNotifier {
 
   Future<bool> updateUserProfilePicture(MyUser user) async => await _service.updateUserProfilePicture(user);
 
-  Future<void> updateUsername({required String newUsername}) async {
-    currentUser!.nomeUsuario = newUsername;
-    return await _service.updateUsername(newUsername: newUsername);
+  /// false quando o nome foi tomado por outra pessoa entre a checagem e o save.
+  Future<bool> updateUsername({required String newUsername}) async {
+    final anterior = currentUser!.nomeUsuario;
+    final ok = await _service.updateUsername(
+      newUsername: newUsername,
+      currentUsername: anterior,
+    );
+    if (ok) {
+      currentUser!.nomeUsuario = newUsername;
+      notifyListeners();
+    }
+
+    return ok;
   }
 
   Future<Object?> reauthenticateUser(String email, String password) async {
@@ -73,8 +83,9 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<void> deleteAccount() async {
+    final username = currentUser?.nomeUsuario;
     currentUser = null;
-    return await _service.deleteAccount();
+    return await _service.deleteAccount(username: username);
   }
 
   Future<void> doLogout() async {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/bible_data_controller.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 //import 'package:biblia_flutter_app/main.dart';
@@ -28,7 +29,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   late final VersesProvider versesProvider = Provider.of<VersesProvider>(context, listen: false);
   final BibleDataController bibleDataController = BibleDataController();
   BannerAd? _bannerAd;
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     userProvider.getLoggedUser();
     devocionalProvider.getCompletedTutorials();
     chapterProvider.innerList = bibleDataController.books;
+    chapterProvider.getOrderStyle();
     versesProvider.getFontSize();
     versesProvider.refresh();
     versesProvider.getImage();
@@ -93,7 +95,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  /// Chamado quando o usuário volta para a home vindo de outra tela: é aqui
+  /// que os dados são recarregados, e não mais a cada `build`.
+  @override
+  void didPopNext() {
+    versesProvider.refresh();
+    versesProvider.loadUserData();
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _bannerAd?.dispose();
     _bannerAd = null;
     super.dispose();
@@ -101,8 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    versesProvider.refresh();
-    versesProvider.loadUserData();
     return Scaffold(
       appBar: HomeAppBar(books: bibleDataController.books),
       drawer: const HomeDrawer(),
@@ -111,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Consumer<ChaptersProvider>(
           builder: (context, value, _) {
-            value.getOrderStyle();
             if(value.isSearching) {
               return SearchBookWidget(books: value.innerList);
             }

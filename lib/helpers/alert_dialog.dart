@@ -1,7 +1,7 @@
 import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
 
-alertDialog({String content = 'Não foi possível completar o login', String title = 'Alerta'}) {
+Future<void> alertDialog({String content = 'Não foi possível completar o login', String title = 'Alerta'}) {
   return showDialog(
       context: navigatorKey!.currentContext!,
       builder: (BuildContext context) {

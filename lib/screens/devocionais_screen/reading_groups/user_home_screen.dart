@@ -131,7 +131,10 @@ class UserHomeScreen extends StatelessWidget {
                     onPressed: () => showDialog(
                         context: context,
                         builder: (context) => const JoinGroupDialog()
-                    ).whenComplete(() => Navigator.pop(context)),
+                    ).whenComplete(() {
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                    }),
                     label: const Text('Entrar em um grupo'),
                     icon: const Icon(Icons.login),
                   ),

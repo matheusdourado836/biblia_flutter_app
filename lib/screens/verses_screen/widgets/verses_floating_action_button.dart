@@ -122,15 +122,18 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
     }
   }
 
-  void initNextChapter() {
+  Future<void> initNextChapter() async {
     if(!_isChapterRead) {
       final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
       chaptersProvider.setChapterRead(widget.bookName, _chapter.toString(), widget.chapters, true);
     }
     Navigator.pop(context);
     setState(() => _isSpeaking = true);
-    Future.delayed(1000.ms).whenComplete(() {
-      showModalBottomSheet(
+
+    await Future.delayed(1000.ms);
+    if (!mounted) return;
+
+    showModalBottomSheet(
           context: context,
           isScrollControlled: true,
           isDismissible: false,
@@ -145,11 +148,9 @@ class _VersesFloatingActionButtonState extends State<VersesFloatingActionButton>
             setVoice: (voice) => setVoice(voice),
           )
       );
-      _flutterTts.speak('${widget.verses[_count]["bookName"]}, Capítulo ${widget.verses[_count]["chapter"]}, verso, 1');
-      versesProvider.highlightSpeechBloc(widget.chapter, _count);
-      setState(() => _resetCounter = true);
-    });
-
+    _flutterTts.speak('${widget.verses[_count]["bookName"]}, Capítulo ${widget.verses[_count]["chapter"]}, verso, 1');
+    versesProvider.highlightSpeechBloc(widget.chapter, _count);
+    setState(() => _resetCounter = true);
   }
 
   @override

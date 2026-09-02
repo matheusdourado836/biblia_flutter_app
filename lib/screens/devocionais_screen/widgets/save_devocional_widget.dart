@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/widgets/no_bg_placeholders.dart';
 import 'dart:io';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/data/user_provider.dart';
@@ -19,7 +20,6 @@ import '../../../helpers/expandable_container.dart';
 import '../../../helpers/pick_and_crop_image.dart';
 import '../../../helpers/tutorial_widget.dart';
 import 'package:path_provider/path_provider.dart';
-import '../community/feed_screen.dart';
 
 class SaveDevocionalWidget extends StatefulWidget {
   final Devocional devocional;
@@ -187,6 +187,7 @@ class _PostContainerState extends State<_PostContainer> {
     final versesProvider = Provider.of<VersesProvider>(context, listen: false);
     setState(() => _loadingImage = true);
     final res = await versesProvider.getOnlyImage();
+    if (!mounted) return;
     if(res != null) {
       apiImage = res;
       final croppedImage = await cropImageSquare(context, File(res.path));
@@ -202,7 +203,7 @@ class _PostContainerState extends State<_PostContainer> {
   }
 
   Future<void> deleteApiImage() async {
-    if (await apiImage?.exists() ?? false) {
+    if (apiImage?.existsSync() ?? false) {
       await apiImage!.delete();
       return;
     }
@@ -330,8 +331,10 @@ class _PostContainerState extends State<_PostContainer> {
                     ),
                   ),
                   title: const Text('Editar'),
-                  onTap: () {
-                    editImage().whenComplete(() => Navigator.pop(context));
+                  onTap: () async {
+                    await editImage();
+                    if (!mounted) return;
+                    Navigator.pop(context);
                   },
                 ),
               ),

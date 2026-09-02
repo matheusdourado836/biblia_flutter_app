@@ -66,6 +66,7 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
                       userId: res.ownerId!,
                       groupName: res.nome!
                   );
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   showCustomSnackBar(child: const Text('Sua solicitação foi enviada com sucesso!'));
                 }else {
@@ -81,5 +82,11 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
           )
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

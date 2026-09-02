@@ -70,11 +70,11 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                 minimumSize: const Size(80, 36),
                                 backgroundColor: Colors.red.withValues(alpha: 0.65)
                               ),
-                              onPressed: () {
-                                versesProvider.deleteAllAnnotations().then((value) => {
-                                    versesProvider.refresh(),
-                                    Navigator.pop(context)
-                                  });
+                              onPressed: () async {
+                                await versesProvider.deleteAllAnnotations();
+                                versesProvider.refresh();
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
                               },
                               child: Text(
                                 'Sim',
@@ -178,6 +178,7 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                                           value.deleteAnnotation(annotation.annotationId).then((res) {
                                             value.loadUserData();
                                             setState(() => value.listaAnnotationsDb.removeWhere((a) => a.annotationId == annotation.annotationId));
+                                            if (!context.mounted) return;
                                             Navigator.pop(context);
                                           });
                                         },
@@ -204,7 +205,8 @@ class _AnnotationsScreenState extends State<AnnotationsScreen> {
                         children: [
                           SlidableAction(
                             onPressed: (context) {
-                              Share.share('Veja que interessante essa reflexão:\n${annotation.title} ${annotation.content}');
+                              SharePlus.instance.share(ShareParams(
+                                  text: 'Veja que interessante essa reflexão:\n${annotation.title} ${annotation.content}'));
                             },
                             icon: Icons.share,
                             label: 'Compartilhar',

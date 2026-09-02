@@ -85,7 +85,6 @@ class _VersesWidgetState extends State<VersesWidget> {
 
   @override
   void dispose() {
-    itemScrollController;
     super.dispose();
   }
 
@@ -272,7 +271,7 @@ class _VersesWidgetState extends State<VersesWidget> {
                       icon: const Icon(Icons.photo_outlined),
                     ),
                     IconButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final List<dynamic> verses = listMap.map((element) => element["verse"]).toList();
                         bibleDataController.getStartAndEndIndex(listMap);
                         Annotation innerAnnotation = Annotation(
@@ -285,20 +284,21 @@ class _VersesWidgetState extends State<VersesWidget> {
                           verseStart: bibleDataController.startIndex,
                           verseEnd: bibleDataController.endIndex
                         );
-                        bibleDataController.verifyAnnotationExists(widget.bookName, widget.chapter, bibleDataController.endIndex)
-                          .then((value) {
-                            final annotation = value?[0] ?? innerAnnotation;
-                            Navigator.popAndPushNamed(
-                              context, 'annotation_widget',
-                              arguments: {
-                                'annotation': annotation,
-                                'verses': verses,
-                                'isEditing': value != null,
-                                'eventBus': widget.eventBus
-                              });
-                            _versesProvider.openBottomSheet(false);
-                            _versesProvider.clearSelectedVerses(listMap);
+                        final value = await bibleDataController.verifyAnnotationExists(
+                            widget.bookName, widget.chapter, bibleDataController.endIndex);
+                        if (!mounted) return;
+
+                        final annotation = value?[0] ?? innerAnnotation;
+                        Navigator.popAndPushNamed(
+                          context, 'annotation_widget',
+                          arguments: {
+                            'annotation': annotation,
+                            'verses': verses,
+                            'isEditing': value != null,
+                            'eventBus': widget.eventBus
                           });
+                        _versesProvider.openBottomSheet(false);
+                        _versesProvider.clearSelectedVerses(listMap);
                       },
                       icon: const Icon(Icons.edit_rounded),
                     ),

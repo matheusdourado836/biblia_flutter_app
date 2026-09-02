@@ -95,9 +95,10 @@ class _GroupAdminConfigScreenState extends State<GroupAdminConfigScreen> {
                   TextButton(
                     onPressed: () {
                       groupsProvider.deleteGroup(groupId: widget.group.id!, groupBgUrl: widget.group.bgUrl).whenComplete(() {
-                        groupsProvider.getUserGroups(notify: true).whenComplete(
-                          () => Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen')
-                        );
+                        groupsProvider.getUserGroups(notify: true).whenComplete(() {
+                          if (!context.mounted) return;
+                          Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
+                        });
                       });
                     },
                     child: const Text('Sim')

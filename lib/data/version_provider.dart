@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:biblia_flutter_app/data/bible_data.dart';
+import 'package:biblia_flutter_app/helpers/version_to_name.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -47,13 +48,19 @@ class VersionProvider extends ChangeNotifier {
     _downloadCompleted = newValue;
   }
 
-  void getPreferredVersion() async {
+  Future<void> getPreferredVersion() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _selectedOption = prefs.getString('version') ?? _selectedOption;
+    await _data.ensureVersionLoaded(versionToName(_selectedOption));
   }
 
-  void changeVersion(String newVersion) {
+  /// Troca a versão ativa garantindo que ela esteja em memória antes de
+  /// notificar as telas — com o carregamento sob demanda, a versão pode ainda
+  /// não ter sido decodificada.
+  Future<void> changeVersion(String newVersion) async {
     _selectedOption = newVersion;
+    notifyListeners();
+    await _data.ensureVersionLoaded(versionToName(newVersion));
     notifyListeners();
   }
 
@@ -63,20 +70,31 @@ class VersionProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> getVersions() => _data.data;
 
+  /// Versões que o usuário baixou (nome e tamanho), sem exigir que estejam
+  /// decodificadas em memória.
+  List<Map<String, dynamic>> get downloadedFiles => _data.downloadedFiles;
+
   Future<String> getVersionsDirectoryPath() async {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String versionsDirPath = '${appDocDir.path}/versions';
 
     final versionsDir = Directory(versionsDirPath);
-    if (!await versionsDir.exists()) {
+    if (!versionsDir.existsSync()) {
       await versionsDir.create(recursive: true);
     }
 
     return versionsDirPath;
   }
 
+  /// Reavalia o que está disponível em disco e garante que a versão
+  /// selecionada esteja pronta para uso.
   Future<void> loadBibleData() async {
-    return await BibleData().loadBibleData(['nvi', 'acf', 'ntlh', 'aa', 'en_kjv']);
+    await _data.refreshDownloadedFiles();
+    await _data.ensureVersionLoaded(versionToName(_selectedOption));
+  }
+
+  Future<void> ensureVersionLoaded(String versionLabel) async {
+    await _data.ensureVersionLoaded(versionToName(versionLabel));
   }
 
   void downloadVersion({required String versionName}) async {
@@ -104,6 +122,8 @@ class VersionProvider extends ChangeNotifier {
               });
 
           if (response.statusCode == 200) {
+            await _data.refreshDownloadedFiles();
+            await _data.ensureVersionLoaded(versionName);
             _downloadCompleted = true;
             _downloadProgress = 0;
             downloadError = '';

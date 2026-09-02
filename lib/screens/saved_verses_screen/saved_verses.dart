@@ -94,6 +94,7 @@ class _SavedVersesState extends State<SavedVerses> {
                         onDelete: () {
                           _versesProvider.deleteAllVerses().then((value) {
                               _versesProvider.loadUserData();
+                              if (!context.mounted) return;
                               Navigator.pop(context);
                           });
                         }
@@ -208,6 +209,7 @@ class _SavedVersesState extends State<SavedVerses> {
                               _versesProvider.deleteVerse(verse).whenComplete(() {
                                 _versesProvider.loadUserData();
                                 setState(() => list.removeWhere((v) => v.verse == verse));
+                                if (!context.mounted) return;
                                 Navigator.pop(context);
                               });
                             }

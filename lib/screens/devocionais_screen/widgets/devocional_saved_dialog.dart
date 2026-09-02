@@ -91,6 +91,7 @@ class _EmailDialogState extends State<EmailDialog> {
               }
               setState(() => _isLoading = true);
               devocionalProvider.postDevocional(devocional: widget.devocional).then((value) {
+                if (!context.mounted) return;
                 setState(() => _isLoading = false);
                 if (value.isNotEmpty) {
                   saveUserPost(value);
@@ -108,6 +109,13 @@ class _EmailDialogState extends State<EmailDialog> {
         )
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _confirmEmailController.dispose();
+    super.dispose();
   }
 }
 

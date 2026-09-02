@@ -40,7 +40,13 @@ class _MultiVersionScreenState extends State<MultiVersionScreen> {
   final List<List<ItemScrollController>> _itemsControllers = [];
   final List<List<ItemPositionsListener>> _itemsListeners = [];
 
-  void loadVersions() {
+  Future<void> loadVersions() async {
+    // Com o carregamento sob demanda, as duas versões precisam estar em
+    // memória antes de montar as colunas.
+    await _bibleData.ensureVersionsLoaded(
+      [versionToName(widget.verision1), versionToName(widget.verision2)],
+    );
+    if (!mounted) return;
     final version1 = versesProvider.loadVerses(widget.book.bookIndex ?? 0, widget.book.name ?? '', versionName: widget.verision1, forMultiVersion: true);
     final versionMapped = version1.entries.map((entry) => Chapter.fromJson(entry.value)).toList();
     final version2 = versesProvider.loadVerses(widget.book.bookIndex ?? 0, widget.book.name ?? '', versionName: widget.verision2, forMultiVersion: true);
@@ -57,6 +63,7 @@ class _MultiVersionScreenState extends State<MultiVersionScreen> {
 
   Future<void> addVersion() async {
     final version = await showDialog(context: context, builder: (context) => const AddVersionDialog());
+    if (!mounted) return;
     if(version != null && version is String) {
       if(!_downloadedVersions.contains(versionToName(version))) {
         final versionProvider = Provider.of<VersionProvider>(context, listen: false);
@@ -71,6 +78,8 @@ class _MultiVersionScreenState extends State<MultiVersionScreen> {
         if(res != true) return;
         await versionProvider.loadBibleData();
       }
+      await _bibleData.ensureVersionLoaded(versionToName(version));
+      if (!mounted) return;
       final chapters = versesProvider.loadVerses(widget.book.bookIndex ?? 0, widget.book.name ?? '', versionName: version, forMultiVersion: true);
       final chaptersMapped = chapters.entries.map((entry) => Chapter.fromJson(entry.value)).toList();
       setState(() {

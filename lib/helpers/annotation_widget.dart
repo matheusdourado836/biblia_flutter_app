@@ -173,8 +173,13 @@ class _AnnotationWidgetState extends State<AnnotationWidget> {
               showAlignmentButtons: true,
               multiRowsDisplay: false,
               showQuote: false,
+              // Marcados como experimentais pelo flutter_quill; são a única
+              // forma de esconder esses botões da toolbar.
+              // ignore: experimental_member_use
               showClipboardCopy: false,
+              // ignore: experimental_member_use
               showClipboardPaste: false,
+              // ignore: experimental_member_use
               showClipboardCut: false,
               showSubscript: false,
               showSuperscript: false,

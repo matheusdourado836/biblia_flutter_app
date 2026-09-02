@@ -22,7 +22,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
   double height = 0.0;
   bool removeBadge = false;
 
-  _formatValue(double value) {
+  double _formatValue(double value) {
     value = value * 100;
     var formatedLevel = value.toStringAsFixed(2);
 

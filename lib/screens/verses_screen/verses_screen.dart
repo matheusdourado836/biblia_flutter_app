@@ -78,7 +78,6 @@ class _VersesScreenState extends State<VersesScreen> {
   @override
   dispose() {
     _pageController.dispose();
-    itemPositionsListener;
     eventBus.destroy();
     super.dispose();
   }

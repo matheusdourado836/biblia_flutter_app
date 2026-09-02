@@ -25,7 +25,10 @@ class BibleService {
         return false;
       }
     } on PlatformException catch (e) {
-      return alertDialog(content: e.toString());
+      // Sem conectividade confirmada: avisa e responde "offline" em vez de
+      // devolver o Future do diálogo como se fosse o resultado da checagem.
+      alertDialog(content: e.toString());
+      return false;
     }
   }
 

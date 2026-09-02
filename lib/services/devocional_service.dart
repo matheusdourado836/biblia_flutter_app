@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'dart:io';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
@@ -136,7 +137,7 @@ class DevocionalService {
       final HttpsCallable callable = _functions.httpsCallableFromUri(Uri.parse('https://sendcommentnotification-693460458631.us-central1.run.app'));
       callable.call({'comment': commentJson, 'postId': devocionalId});
     }catch(e) {
-      print('Erro ao enviar notificação: $e');
+      logError('Erro ao enviar notificação: $e');
     }
     final docRef = await _database.collection('devocionais').doc(devocionalId).collection('comentarios').add(commentJson);
     _database.collection('devocionais').doc(devocionalId).collection('comentarios').doc(docRef.id).update({'id': docRef.id});
@@ -185,7 +186,7 @@ class DevocionalService {
       try {
         await callable.call({'postId': postId, 'userId': userId});
       }catch(e) {
-        print('Erro ao enviar notificação: $e');
+        logError('Erro ao enviar notificação: $e');
       }
     }
     return (like)

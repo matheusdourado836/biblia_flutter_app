@@ -81,9 +81,13 @@ class ChaptersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getOrderStyle() async {
+  Future<void> getOrderStyle() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    _orderStyle = prefs.getInt('orderStyle') ?? 0;
+    final stored = prefs.getInt('orderStyle') ?? 0;
+    if (stored != _orderStyle) {
+      _orderStyle = stored;
+      notifyListeners();
+    }
   }
 
   void updateSearch(List<Book> books, String query) {

@@ -30,10 +30,11 @@ class _SearchScreenState extends State<SearchScreen> {
   ];
   final ValueNotifier<String> _selectedBook = ValueNotifier('');
   final ValueNotifier<List<String>> _findInBooks = ValueNotifier([]);
-  final List<String> _OTBooks = [];
-  final List<String> _NTBooks = [];
+  final List<String> _otBooks = [];
+  final List<String> _ntBooks = [];
   List<String> _allBooks = [];
   final ValueNotifier<bool> _preciseSearch = ValueNotifier(false);
+  final ValueNotifier<bool> _searching = ValueNotifier(false);
 
   @override
   void initState() {
@@ -44,15 +45,15 @@ class _SearchScreenState extends State<SearchScreen> {
     _findInSelectedOption.value = _findInOptions[0];
     _findInBooks.value.add('Todos');
     _allBooks.add('Todos');
-    _OTBooks.add('Todos');
-    _NTBooks.add('Todos');
+    _otBooks.add('Todos');
+    _ntBooks.add('Todos');
     _selectedBook.value = 'Todos';
     for (var book in _versesProvider.bibleData[0]["text"]) {
       _findInBooks.value.add(book["name"]);
     }
     _allBooks = _findInBooks.value;
-    _OTBooks.addAll(_allBooks.sublist(1, 40));
-    _NTBooks.addAll(_allBooks.sublist(40, 67));
+    _otBooks.addAll(_allBooks.sublist(1, 40));
+    _ntBooks.addAll(_allBooks.sublist(40, 67));
     super.initState();
   }
 
@@ -63,28 +64,43 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> doSearch() async {
-    if (_textEditingController.text != '') {
-      List<dynamic> allBooks = _versesProvider.bibleData[0]["text"];
-      final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
-      final versionIndex = versionProvider.options.indexOf(versionProvider.selectedOption);
-      _focusNode.unfocus();
-      setState(() {
-        if (bookIndex != -1) {
-          _findInSelectedOption.value = _findInOptions[0];
-        }
-        listResult = _searchVersesProvider.searchVerses(
-            _textEditingController.text.trim(), versionIndex,
-            findIn: _findInSelectedOption.value.toLowerCase(),
-            findInBookIndex: bookIndex,
-            preciseSearch: _preciseSearch.value
-        );
-      });
+    if (_textEditingController.text.trim().isEmpty || _searching.value) return;
+
+    List<dynamic> allBooks = _versesProvider.bibleData[0]["text"];
+    final bookIndex = (_selectedBook.value == 'Todos')
+        ? -1
+        : allBooks.indexWhere((element) => element["name"] == _selectedBook.value);
+    _focusNode.unfocus();
+
+    if (bookIndex != -1) {
+      _findInSelectedOption.value = _findInOptions[0];
+    }
+    _searching.value = true;
+
+    try {
+      final results = await _searchVersesProvider.searchVerses(
+        _textEditingController.text.trim(),
+        versionProvider.selectedOption,
+        findIn: _findInSelectedOption.value.toLowerCase(),
+        findInBookIndex: bookIndex,
+        preciseSearch: _preciseSearch.value,
+      );
+      if (!mounted) return;
+      setState(() => listResult = results);
+    } finally {
+      if (mounted) _searching.value = false;
     }
   }
 
   @override
   void dispose() {
     _textEditingController.dispose();
+    _focusNode.dispose();
+    _findInSelectedOption.dispose();
+    _selectedBook.dispose();
+    _findInBooks.dispose();
+    _preciseSearch.dispose();
+    _searching.dispose();
     super.dispose();
   }
 
@@ -136,6 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                               builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: option.split(' ')[0])
                                           ).whenComplete(() {
                                             value.loadBibleData().whenComplete(() {
+                                              if (!context.mounted) return;
                                               Navigator.pop(context);
                                               setState(() {});
                                             });
@@ -207,9 +224,9 @@ class _SearchScreenState extends State<SearchScreen> {
                               _findInSelectedOption.value = newValue!;
                               _selectedBook.value = 'Todos';
                               if(newValue == 'Antigo Testamento') {
-                                _findInBooks.value = _OTBooks;
+                                _findInBooks.value = _otBooks;
                               }else if(newValue == 'Novo Testamento') {
-                                _findInBooks.value = _NTBooks;
+                                _findInBooks.value = _ntBooks;
                               }else {
                                 _findInBooks.value = _allBooks;
                               }
@@ -340,11 +357,25 @@ class _SearchScreenState extends State<SearchScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if(listResult?.isNotEmpty ?? false)
-                        Text(
-                          '${listResult!.length} Resultados',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        )
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _searching,
+                        builder: (context, searching, _) {
+                          if (searching) {
+                            return const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            );
+                          }
+                          if (listResult?.isNotEmpty ?? false) {
+                            return Text(
+                              '${listResult!.length} Resultados',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      )
                     ],
                   ),
                 ),
@@ -462,7 +493,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text.rich(
-                                        TextSpan(children: l["highlightedTexts"]),
+                                        TextSpan(
+                                          children: _searchVersesProvider.buildHighlightedSpans(
+                                            l,
+                                            baseStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                              fontSize: _versesProvider.fontSize,
+                                            ),
+                                            highlightStyle: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: _versesProvider.fontSize,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],

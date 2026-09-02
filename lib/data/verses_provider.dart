@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
@@ -106,23 +105,40 @@ class VersesProvider extends ChangeNotifier {
   Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi', bool forMultiVersion = false}) {
     final Map<int, dynamic> allVerses = {};
     final versionNameFormatted = versionToName(versionName);
-    final bibleData = _bibleData.data.firstWhere((bible) => bible["version"] == versionNameFormatted);
+    int versionIndex = _bibleData.data.indexWhere((bible) => bible["version"] == versionNameFormatted);
+
+    if (versionIndex == -1) {
+      // Versão ainda não decodificada (carregamento sob demanda): mostra a
+      // versão de referência e refaz a carga assim que a correta ficar pronta.
+      versionIndex = 0;
+      _bibleData.ensureVersionLoaded(versionNameFormatted).then((_) {
+        if (_bibleData.isLoaded(versionNameFormatted)) {
+          loadVerses(bookIndex, bookName,
+              versionName: versionName, forMultiVersion: forMultiVersion);
+        }
+      });
+    }
+
+    final bibleData = _bibleData.data[versionIndex];
     final List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
 
     if(!forMultiVersion) {
       _allVerses.clear(); // limpar dados anteriores
     }
     for (int chapter = 0; chapter < chapters.length; chapter++) {
-      final List<dynamic> versesByChapter = chapters[chapter];
+      List<dynamic> versesByChapter = chapters[chapter];
       final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
 
-      // Corrigir se o último versículo for uma anotação especial
+      // Corrigir se o último versículo for uma anotação especial.
+      // A cópia evita alterar a estrutura compartilhada de BibleData, que
+      // antes crescia a cada chamada.
       final lastVerse = versesByChapter.last;
       if (lastVerse is String && (lastVerse.startsWith('[') || lastVerse.startsWith(' ['))) {
         final parts = lastVerse.split(']')[0].split('-');
         final initialVerse = int.parse(parts[0].replaceAll('[', ''));
         final finalVerse = int.parse(parts[1]);
         final difference = finalVerse - initialVerse;
+        versesByChapter = List<dynamic>.from(versesByChapter);
         for (var i = 0; i < difference; i++) {
           versesByChapter.add('');
         }
@@ -159,10 +175,7 @@ class VersesProvider extends ChangeNotifier {
             "annotation": annotationFound.firstOrNull
           });
         }catch(e) {
-          print('DEU ERRO NO CAPITULO $chapter /// $e');
-          for(final verse in versesByChapter) {
-            log(verse);
-          }
+          debugPrint('Falha ao montar o capítulo $chapter de $bookName ($versionNameFormatted): $e');
         }
       }
 
@@ -209,7 +222,7 @@ class VersesProvider extends ChangeNotifier {
   String filePath = '${appDocDir.path}/$fileName';
   
   File file = File(filePath);
-  if (await file.exists()) {
+  if (file.existsSync()) {
     return file;
   } else {
     throw Exception('File not found: $fileName');
@@ -310,7 +323,9 @@ class VersesProvider extends ChangeNotifier {
     String verse,
     int chapter,
     int verseNumber
-  ) => Share.share('$bookName $chapter:$verseNumber "$verse"');
+  ) => SharePlus.instance.share(
+        ShareParams(text: '$bookName $chapter:$verseNumber "$verse"'),
+      );
 
   Future<void> copyText(String bookName, String verse, int chapter, int verseNumber) => Clipboard.setData(
     ClipboardData(text: '$bookName $chapter:$verseNumber "$verse')

@@ -326,6 +326,7 @@ class _GroupSelectedScreenState extends State<GroupSelectedScreen> {
               usersProvider.leaveGroup(group: group!).whenComplete(() {
                 showCustomSnackBar(child: Text('Você saiu do grupo "${group!.nome}"'));
                 usersProvider.getUserGroups(notify: true).whenComplete(() {
+                  if (!context.mounted) return;
                   Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
                 });
               });

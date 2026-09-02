@@ -38,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await readingGroupProvider.doLogin(email: _emailController.text.trim(), pass: _passController.text.trim());
       setState(() => _loading = false);
       widget.eventBus?.fire('Refresh');
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, 'user_home_screen');
     }on FirebaseAuthException catch(e) {
       setState(() {
@@ -172,6 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           showDragHandle: true,
                           builder: (contet) => const ResetPassModal()
                         ).then((res) {
+                          if (!context.mounted) return;
                           if(res is String) {
                             showDialog(
                                 context: context,
@@ -245,5 +247,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passController.dispose();
+    super.dispose();
   }
 }

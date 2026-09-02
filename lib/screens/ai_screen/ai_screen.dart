@@ -1,12 +1,13 @@
+import 'dart:async';
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'dart:math';
 import 'package:biblia_flutter_app/data/ai_helper.dart';
 import 'package:biblia_flutter_app/data/user_provider.dart';
-import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
-import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/ai_message.dart';
 import 'package:biblia_flutter_app/screens/ai_screen/ad_dialog.dart';
-import 'package:biblia_flutter_app/services/ad_mob_service.dart';
+import 'package:biblia_flutter_app/screens/ai_screen/ai_ads_controller.dart';
+import 'package:biblia_flutter_app/screens/ai_screen/widgets/message_widget.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_ai/firebase_ai.dart';
@@ -16,10 +17,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import '../../data/bible_data.dart';
-import '../../data/theme_provider.dart';
-import '../../helpers/go_to_verse_screen.dart';
-import '../../themes/theme_colors.dart';
 import 'package:intl/intl.dart';
 
 class AiScreen extends StatefulWidget {
@@ -33,8 +30,8 @@ class _AiScreenState extends State<AiScreen> {
   Future<void>? _chatHistoryFuture;
   late final _userProvider = Provider.of<UserProvider>(context, listen:  false);
   final EventBus eventBus = EventBus();
-  InterstitialAd? _interstitialAd;
-  RewardedAd? _rewardedAd;
+  StreamSubscription<dynamic>? _eventBusSubscription;
+  final AiAdsController _ads = AiAdsController();
   ChatSession? _chat;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
@@ -45,86 +42,20 @@ class _AiScreenState extends State<AiScreen> {
   bool _loading = false;
   bool requireLabel = false;
 
-  Future<void> loadAd() async {
-    await RewardedAd.load(
-      adUnitId: AdMobService.rewardedAdId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-          onAdLoaded: (ad) {
-            ad.fullScreenContentCallback = FullScreenContentCallback(
-              // Called when the ad showed the full screen content.
-                onAdShowedFullScreenContent: (ad) {},
-                // Called when an impression occurs on the ad.
-                onAdImpression: (ad) {},
-                // Called when the ad failed to show full screen content.
-                onAdFailedToShowFullScreenContent: (ad, err) {
-                  // Dispose the ad here to free resources.
-                  ad.dispose();
-                },
-                // Called when the ad dismissed full screen content.
-                onAdDismissedFullScreenContent: (ad) {
-                  // Dispose the ad here to free resources.
-                  ad.dispose();
-                },
-                // Called when a click is recorded for an ad.
-                onAdClicked: (ad) {}
-            );
-            _rewardedAd = ad;
-          },
-          onAdFailedToLoad: (LoadAdError error) {}
-      )
-    );
-  }
-
-  void _createInterstitialAd() {
-    InterstitialAd.load(
-        adUnitId: AdMobService.aiInterstitialAdId!,
-        request: const AdRequest(),
-        adLoadCallback: InterstitialAdLoadCallback(
-          onAdLoaded: (ad) {
-            _interstitialAd = ad;
-            _showInterstitialAd();
-          },
-          onAdFailedToLoad: (error) => _interstitialAd = null,
-        )
-    );
-  }
-
-  void _showInterstitialAd() {
-    if(_interstitialAd != null) {
-      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) => ad.dispose(),
-        onAdFailedToShowFullScreenContent: (ad, error) => ad.dispose()
-      );
-      _interstitialAd!.show();
-      _interstitialAd = null;
-    }
-  }
-
-  bool showAd() {
-    Random random = Random();
-
-    int randomInt = random.nextInt(3);
-
-    bool showAd = randomInt == 1;
-
-    return showAd;
-  }
-
   @override
   void initState() {
     super.initState();
-    eventBus.on().listen((event) {
-      if(event == 'Refresh') {
+    _eventBusSubscription = eventBus.on().listen((event) {
+      if (event == 'Refresh' && mounted) {
         setState(() {
           _chatHistoryFuture = _loadChatHistory();
         });
       }
     });
-    if(showAd()) {
-      _createInterstitialAd();
+    if (_ads.shouldShowInterstitial) {
+      _ads.loadAndShowInterstitial();
     }
-    loadAd();
+    _ads.loadRewardedAd();
     _chatHistoryFuture = _loadChatHistory();
   }
 
@@ -177,6 +108,7 @@ class _AiScreenState extends State<AiScreen> {
       prefs.setInt('available_questions', _qtdQuestions);
       final randomBool = Random().nextBool();
       if(randomBool) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text.rich(TextSpan(
@@ -225,13 +157,22 @@ class _AiScreenState extends State<AiScreen> {
       await _userProvider.deleteAiChatHistory();
     }
     getQuestionsCountFromLocal();
+    if (!mounted) return;
     Navigator.pop(context);
     return;
   }
 
   @override
   void dispose() {
-    _rewardedAd?.dispose();
+    // A tela pode ser reaberta várias vezes; sem isto a assinatura do EventBus
+    // e os controllers ficavam pendurados a cada abertura.
+    _eventBusSubscription?.cancel();
+    eventBus.destroy();
+    _scrollController.dispose();
+    _textController.dispose();
+    _textFieldFocus.dispose();
+    dayLabel.dispose();
+    _ads.dispose();
     super.dispose();
   }
 
@@ -448,7 +389,7 @@ class _AiScreenState extends State<AiScreen> {
                               onTap: (() {
                                 if(_qtdQuestions == 0) {
                                   showDialog(context: context, builder: (context) => AdDialog(
-                                      onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
+                                      onTap: () => _ads.showRewardedAd((AdWithoutView ad, RewardItem rewardItem) {
                                         Navigator.pop(context);
                                         setState(() => _qtdQuestions = rewardItem.amount.toInt());
                                       })
@@ -499,7 +440,7 @@ class _AiScreenState extends State<AiScreen> {
                 ? () {
                     showDialog(context: context, builder:
                         (context) => AdDialog(
-                            onTap: () => _rewardedAd?.show(onUserEarnedReward: (AdWithoutView ad, RewardItem rewardItem) {
+                            onTap: () => _ads.showRewardedAd((AdWithoutView ad, RewardItem rewardItem) {
                               Navigator.pop(context);
                               setState(() => _qtdQuestions = rewardItem.amount.toInt());
                             })
@@ -554,7 +495,7 @@ class _AiScreenState extends State<AiScreen> {
         } catch (e, stack) {
           _showError(e.toString());
           setState(() => _loading = false);
-          print('ERRO AO ENVIAR MENSAGEM: $e /// STACK $stack');
+          logError('ERRO AO ENVIAR MENSAGEM: $e /// STACK $stack');
         } finally {
           _textController.clear();
           setState(() => _loading = false);
@@ -586,270 +527,6 @@ class _AiScreenState extends State<AiScreen> {
           ],
         );
       },
-    );
-  }
-}
-
-class MessageWidget extends StatelessWidget {
-  const MessageWidget({
-    super.key,
-    required this.text,
-    required this.isFromUser,
-    required this.timestamp
-  });
-
-  final String text;
-  final bool isFromUser;
-  final int? timestamp;
-
-  Widget _buildFormattedText(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final darkMode = !themeProvider.isOn;
-    final List<InlineSpan> children = [];
-    final RegExp regExp = RegExp(r'\*\s*\*\*(.*?)\*\*');
-
-    int start = 0;
-
-    regExp.allMatches(text).forEach((match) {
-      final String plainText = text.substring(start, match.start);
-      final String boldText = match.group(1)!;
-      children.add(TextSpan(text: plainText));
-      children.add(TextSpan(
-        text: '\n$boldText'.trimRight(),
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ));
-      start = match.end;
-    });
-
-    if (start < text.length) {
-      children.add(TextSpan(text: text.substring(start)));
-    }
-
-    return Text.rich(
-      textWidthBasis: TextWidthBasis.longestLine,
-      TextSpan(
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          color: isFromUser ? Colors.white : (darkMode) ? const Color.fromRGBO(255, 255, 255, 0.85) : Colors.black,
-          fontSize: 16,
-          height: 1.4
-        ),
-        children: children,
-      ),
-    );
-  }
-
-  Widget _timestampWidget(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final darkMode = !themeProvider.isOn;
-    return Text(
-      DateTime.fromMillisecondsSinceEpoch(timestamp ?? 0).formattedShort(),
-      style: TextStyle(
-        fontSize: 10,
-        color: isFromUser ? Colors.white70 : (darkMode) ? Colors.white70 : Colors.black54,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final RegExp passageRegExp = RegExp(r'~(.*?)~');
-    final passageMatches = passageRegExp
-        .allMatches(text)
-        .expand((match) => match.group(1)!.split(';'))
-        .map((e) => e.trim())
-        .map((passage) {
-          if (!RegExp(r'\d+:\d+').hasMatch(passage)) {
-            final parts = passage.split(RegExp(r'\s+'));
-            if (parts.length > 1 && RegExp(r'^\d+$').hasMatch(parts.last)) {
-              parts.last += ':1';
-              return parts.join(' ');
-            }
-          }
-          return passage;
-        })
-        .where((passage) => RegExp(r'\d+:\d+').hasMatch(passage))
-        .toSet()
-        .toList();
-    return LayoutBuilder(builder: (context, constraints) {
-      return Column(
-        crossAxisAlignment: isFromUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: constraints.maxWidth >= 500 ? 600 : 300),
-            decoration: BoxDecoration(
-              color: isFromUser
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            padding: const EdgeInsets.symmetric(
-              vertical: 8,
-              horizontal: 12,
-            ),
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildFormattedText(context),
-                _timestampWidget(context)
-              ],
-            ),
-          ),
-          if (passageMatches.isNotEmpty)
-            Container(
-              width: constraints.maxWidth,
-              height: 50,
-              margin: const EdgeInsets.only(bottom: 16.0),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                shrinkWrap: true,
-                itemCount: passageMatches.length,
-                itemBuilder: (context, idx) {
-                  final passage = passageMatches[idx];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () {
-                        final List<dynamic> list = BibleData().data[0]["text"];
-                        String bookName = (passage.split(' ')[0].contains('ª') || passage.split(' ')[0].contains('º') || passage.split(' ')[0].contains('°') || RegExp(r'^\d+$').hasMatch(passage.split(' ')[0]))
-                            ? '${passage.split(' ')[0]} ${passage.split(' ')[1]}'
-                            : passage.split(' ')[0];
-                        int chapter = (passage.split(' ')[0].contains('ª') || passage.split(' ')[0].contains('º') || passage.split(' ')[0].contains('°') || RegExp(r'^\d+$').hasMatch(passage.split(' ')[0]))
-                            ? int.parse(passage.split(' ')[2].split(':')[0])
-                            : int.parse(passage.split(' ')[1].split(':')[0]);
-                        String verse = passage.split(':')[1];
-                        int start = 0;
-                        int end = 0;
-                        if(verse.contains('-')) {
-                          start = int.parse(verse.split('-')[0]);
-                          end = int.parse(verse.split('-')[1]);
-                        }else {
-                          start = int.parse(verse);
-                          end = start;
-                        }
-                        final bookInfo = list.where((element) => element['name'] == bookName).toList();
-                        final sublist = bookInfo[0]["chapters"][chapter - 1].sublist(start - 1, end);
-                        showDialog(
-                            context: context,
-                            useRootNavigator: false,
-                            builder: (BuildContext context) {
-                              return VerseDialog(
-                                width: constraints.maxWidth * .6,
-                                height: constraints.maxWidth >= 500 ? 350 : 200,
-                                bookName: bookName,
-                                chapter: chapter,
-                                verse: (end == start) ? '$start' : '$start-$end',
-                                verses: sublist.toList(),
-                              );
-                            });
-                      },
-                      child: Text(passage),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      );
-    });
-  }
-}
-
-class VerseDialog extends StatelessWidget {
-  final double width;
-  final double height;
-  final String bookName;
-  final int chapter;
-  final String verse;
-  final List<dynamic> verses;
-  const VerseDialog({super.key, required this.bookName, required this.chapter, required this.verse, required this.verses, required this.width, required this.height});
-
-  static ThemeColors themeColors = ThemeColors();
-
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    return AlertDialog(
-      titlePadding: const EdgeInsets.all(0),
-      title: Container(
-          height: 90,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: const BorderRadiusDirectional.only(topStart: Radius.circular(26), topEnd: Radius.circular(26))
-          ),
-          child: Stack(
-            children: [
-              Center(
-                child: Text('$bookName $chapter:$verse', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600))
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.white,),
-                ),
-              )
-            ],
-          )
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      content: SelectionArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for(var i = 0; i < verses.length; i++)
-                Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Text.rich(TextSpan(
-                      text: '${int.parse(verse.contains('-') ? verse.split('-')[0] : verse) + i}  ',
-                      style: themeColors.coloredVerse(themeProvider.isOn),
-                      children: <TextSpan>[
-                        TextSpan(text: verses[i], style: themeColors.verseColor(themeProvider.isOn))
-                      ]
-                  )
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: (() {
-              final versesProvider = Provider.of<VersesProvider>(context, listen: false);
-              final List<dynamic> list = BibleData().data[0]["text"];
-              final bookInfo = list.where((element) => element['name'] == bookName).toList();
-              int verseNumber = int.parse(verse.contains('-') ? verse.split('-')[0] : verse);
-              versesProvider.clear();
-              versesProvider.loadVerses(list.indexOf(bookInfo.first), bookName);
-              GoToVerseScreen().goToVersePage(
-                bookName,
-                bookInfo[0]['abbrev'],
-                list.indexOf(bookInfo.first),
-                bookInfo[0]['chapters'].length,
-                chapter,
-                verseNumber
-              );
-            }),
-            child: const Text('Ler completo')
-          ),
-        )
-      ],
     );
   }
 }

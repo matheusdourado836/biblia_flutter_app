@@ -49,7 +49,7 @@ class _SelectVersionsDialogState extends State<SelectVersionsDialog> {
     required Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: selected,
+      initialValue: selected,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -88,7 +88,7 @@ class _SelectVersionsDialogState extends State<SelectVersionsDialog> {
       );
       if(res != true) return;
       await versionProvider.loadBibleData();
-
+      if (!mounted) return;
     }
     if(!_downloadedVersions.contains(version2Formatted)) {
       final res = await showDialog<bool>(
@@ -103,6 +103,7 @@ class _SelectVersionsDialogState extends State<SelectVersionsDialog> {
       await versionProvider.loadBibleData();
     }
 
+    if (!mounted) return;
     Navigator.popAndPushNamed(
         context,
         'multi_version_screen',

@@ -30,6 +30,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
       }
       await groupsProvider.deleteAccount();
       setState(() => _loading = false);
+      if (!mounted) return;
       Navigator.popUntil(context, (route) => route.settings.name == 'devocionais_screen');
     }on FirebaseAuthException catch(e) {
       setState(() {
@@ -98,5 +99,12 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passController.dispose();
+    super.dispose();
   }
 }

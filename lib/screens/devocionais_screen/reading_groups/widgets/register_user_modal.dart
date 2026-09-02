@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:biblia_flutter_app/models/user.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,8 @@ class _RegisterUserModalState extends State<RegisterUserModal> {
   late final UserProvider _groupsProvider = Provider.of<UserProvider>(context, listen: false);
   bool _isLoading = false;
   bool _error = false;
+  bool _usernameIndisponivel = false;
+  Timer? _debounceUsername;
   final imagePicker = ImagePicker();
   File? imageFile;
   late Widget avatar;
@@ -98,16 +101,18 @@ class _RegisterUserModalState extends State<RegisterUserModal> {
                 TextFormField(
                   controller: _usernameController,
                   maxLength: 35,
+                  onChanged: _onUsernameChanged,
                   validator: (value) {
                     if(value?.isEmpty ?? true) {
                       return 'Este campo é obrigatório';
                     }
 
-                    _groupsProvider.checkIfUsernameIsAvailable(username: value!).then((res) {
-                      if(!res) {
-                        return 'Este nome de usuario não está disponível';
-                      }
-                    });
+                    // O `return` dentro do .then() saía do callback, não do
+                    // validator — a mensagem nunca aparecia. A checagem agora
+                    // roda ao digitar e guarda o resultado em _usernameIndisponivel.
+                    if (_usernameIndisponivel) {
+                      return 'Este nome de usuário não está disponível';
+                    }
 
                     return null;
                   },
@@ -211,6 +216,7 @@ class _RegisterUserModalState extends State<RegisterUserModal> {
                     _groupsProvider.registerUser(user: user, pass: _passController.text).then((res) {
                       setState(() => _isLoading = false);
                       if(res) {
+                        if (!context.mounted) return;
                         Navigator.pop(context, _emailController.text);
                       }else {
                         setState(() => _error = true);
@@ -224,5 +230,31 @@ class _RegisterUserModalState extends State<RegisterUserModal> {
         ),
       )
     );
+  }
+
+  /// Consulta o índice público `usernames` enquanto a pessoa digita. Com
+  /// debounce para não disparar uma leitura por tecla.
+  void _onUsernameChanged(String value) {
+    _debounceUsername?.cancel();
+    if (_usernameIndisponivel) {
+      setState(() => _usernameIndisponivel = false);
+    }
+    if (value.trim().isEmpty) return;
+
+    _debounceUsername = Timer(const Duration(milliseconds: 500), () async {
+      final disponivel = await _groupsProvider.checkIfUsernameIsAvailable(username: value);
+      if (!mounted || value != _usernameController.text) return;
+      setState(() => _usernameIndisponivel = !disponivel);
+      _key.currentState?.validate();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounceUsername?.cancel();
+    _emailController.dispose();
+    _passController.dispose();
+    _usernameController.dispose();
+    super.dispose();
   }
 }

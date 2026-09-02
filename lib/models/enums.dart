@@ -1,8 +1,8 @@
 enum PlanType {
-  ONE_YEAR(0, 'one_year'),
-  THREE_MONTHS(1, 'three_months'),
-  TWO_MONTHS_NEW(2, 'two_months_new'),
-  SIX_MONTHS_OLD(3, 'six_months_old');
+  oneYear(0, 'one_year'),
+  threeMonths(1, 'three_months'),
+  twoMonthsNew(2, 'two_months_new'),
+  sixMonthsOld(3, 'six_months_old');
 
   final int code;
   final String description;
@@ -14,9 +14,9 @@ enum PlanType {
 }
 
 enum Status {
-  APPROVED(0, 'Aprovado'),
-  PENDING(1, 'Pendente'),
-  REJECTED(2, 'Rejeitado');
+  approved(0, 'Aprovado'),
+  pending(1, 'Pendente'),
+  rejected(2, 'Rejeitado');
 
   final int code;
   final String description;
@@ -28,12 +28,12 @@ enum Status {
 }
 
 enum ReportReason {
-  SEXUAL_CONTENT('Conteúdo sexual'),
-  VIOLENT_OR_REPULSIVE_CONTENT('Conteúdo violento ou repulsivo'),
-  HATESPEECH_OR_ABUSE('Ódio gratuito'),
-  BULLYING_OR_HARASSMENT('Assédio ou bullying'),
-  VIOLATE_MY_RIGHTS('Viola meus direitos'),
-  NOT_LISTED('Não listado');
+  sexualContent('Conteúdo sexual'),
+  violentOrRepulsiveContent('Conteúdo violento ou repulsivo'),
+  hatespeechOrAbuse('Ódio gratuito'),
+  bullyingOrHarassment('Assédio ou bullying'),
+  violateMyRights('Viola meus direitos'),
+  notListed('Não listado');
 
   final String description;
   const ReportReason(this.description);

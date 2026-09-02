@@ -1,7 +1,7 @@
+import 'package:biblia_flutter_app/screens/devocionais_screen/community/widgets/no_bg_placeholders.dart';
 import 'package:biblia_flutter_app/data/devocional_provider.dart';
 import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:biblia_flutter_app/models/devocional.dart';
-import 'package:biblia_flutter_app/screens/devocionais_screen/community/feed_screen.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/comments_skeleton.dart';
 import 'package:biblia_flutter_app/screens/devocionais_screen/widgets/report_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -73,6 +73,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                   _nameController.clear();
                   _commentController.clear();
                   setState(() => _isLoading = false);
+                  if (!mounted) return;
                   FocusScope.of(context).unfocus();
                 });
               }
@@ -151,6 +152,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                     _nameController.clear();
                     _commentController.clear();
                     setState(() => _isLoading = false);
+                    if (!mounted) return;
                     FocusScope.of(context).unfocus();
                   });
                 }

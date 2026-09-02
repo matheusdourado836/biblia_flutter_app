@@ -1,8 +1,184 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    // ---------- helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
     }
+
+    function isUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Campos alterados em um update
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function group(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    function isGroupMember(groupId) {
+      let g = group(groupId);
+      return isSignedIn()
+        && (g.ownerId == request.auth.uid || request.auth.uid in g.get('participantes', []));
+    }
+
+    // ---------- usuarios ----------
+    match /users/{userId} {
+      // perfis sao visiveis entre usuarios autenticados (feed, participantes de grupo)
+      allow read: if isSignedIn();
+      allow create, update, delete: if isUser(userId);
+
+      // historico de conversa com a IA: estritamente privado
+      match /chat/{messageId} {
+        allow read, write: if isUser(userId);
+      }
+    }
+
+    // ---------- indice publico de nomes de usuario ----------
+    // Existe porque a checagem de disponibilidade roda durante o cadastro, com
+    // o usuario ainda deslogado, e `users` guarda email/fcmToken (nao pode ser
+    // publica). Aqui so mora o uid do dono.
+    //
+    // A unicidade e garantida por estas regras: como `update` e proibido, um
+    // `set` sobre um nome ja existente e avaliado como update e negado — duas
+    // pessoas nao conseguem reservar o mesmo nome, nem em corrida.
+    match /usernames/{username} {
+      allow get: if true;
+      allow list: if false; // impede varrer a lista de nomes
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid']);
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------- grupos de leitura ----------
+    match /groups/{groupId} {
+      // leitura autenticada: necessaria para entrar em um grupo pelo codigo
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() && (
+        // dono do grupo pode tudo
+        resource.data.ownerId == request.auth.uid
+        // participante atualiza progresso de leitura e sai do grupo
+        || request.auth.uid in resource.data.get('participantes', [])
+        // qualquer usuario logado pode enviar uma solicitacao de entrada
+        || changedKeys().hasOnly(['solicitacoes'])
+      );
+
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /chat/{messageId} {
+        allow read: if isGroupMember(groupId);
+        // senderId vazio é o marcador da assistente "Éden" (ver chat_screen.dart,
+        // que usa senderId.isEmpty para identificar as mensagens dela). Não é
+        // escalada de privilégio: quem já é membro pode postar texto de qualquer forma.
+        allow create: if isGroupMember(groupId)
+          && (request.resource.data.senderId == request.auth.uid
+              || request.resource.data.senderId == '');
+        // update liberado para marcar mensagem como lida (campo hasSeen)
+        allow update: if isGroupMember(groupId)
+          && (resource.data.senderId == request.auth.uid || changedKeys().hasOnly(['hasSeen']));
+        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // ---------- devocionais da comunidade ----------
+    match /devocionais/{devocionalId} {
+      // o feed e navegavel sem login
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid
+        // contadores podem ser incrementados por terceiros
+        || changedKeys().hasOnly(['qtdViews', 'qtdComentarios', 'qtdCurtidas'])
+      );
+
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /comentarios/{comentarioId} {
+        allow read: if true;
+        allow create: if isSignedIn()
+          && request.resource.data.autorId == request.auth.uid;
+        allow update: if isSignedIn() && resource.data.autorId == request.auth.uid;
+        allow delete: if isSignedIn() && (
+          resource.data.autorId == request.auth.uid
+          || get(/databases/$(database)/documents/devocionais/$(devocionalId)).data.ownerId == request.auth.uid
+        );
+      }
+
+      // uma curtida por usuario, no documento com o proprio uid
+      match /curtidas/{userId} {
+        allow read: if true;
+        allow create, delete: if isUser(userId);
+        allow update: if false;
+      }
+    }
+
+    // ---------- conteudo somente leitura ----------
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /jornada_espiritual/{devocionalId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ---------- denuncias e moderacao (write-only) ----------
+    match /reports/{reportId} {
+      allow create: if request.resource.data.keys().hasOnly(
+        ['autor', 'comment', 'commentId', 'devocionalId', 'reportReason', 'text', 'createdAt', 'reportId']
+      );
+      allow update: if changedKeys().hasOnly(['reportId']);
+      allow read, delete: if false;
+    }
+
+    match /toReview/{docId} {
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly(['devocionalId', 'argument']);
+      allow read, update, delete: if false;
+    }
+
+    // ---------- tokens de push ----------
+    // gravados no boot, antes de qualquer login; nunca legiveis pelo cliente
+    match /devices/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['user_token', 'createdAt']);
+      allow read, delete: if false;
+    }
+
+    match /one_year_subs/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['user_token', 'created_at']);
+      allow delete: if true;
+      allow read: if false;
+    }
+    match /three_months_subs/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['user_token', 'created_at']);
+      allow delete: if true;
+      allow read: if false;
+    }
+    match /two_months_new_subs/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['user_token', 'created_at']);
+      allow delete: if true;
+      allow read: if false;
+    }
+    match /six_months_old_subs/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['user_token', 'created_at']);
+      allow delete: if true;
+      allow read: if false;
+    }
+
+    // Tudo que nao casar com as regras acima e negado por padrao.
   }
 }

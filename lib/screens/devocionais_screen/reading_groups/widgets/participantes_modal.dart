@@ -48,6 +48,7 @@ class _ParticipantesModalState extends State<ParticipantesModal> {
               )
             ).then((res) {
               if(res ?? false) {
+                if (!context.mounted) return;
                 Navigator.pop(context, participantesRemoved);
               }
             }),

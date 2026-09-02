@@ -146,4 +146,10 @@ class _SearchingVerseState extends State<SearchingVerse> {
       )
     );
   }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 }

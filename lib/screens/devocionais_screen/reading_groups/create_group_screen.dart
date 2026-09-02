@@ -179,6 +179,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               if(res) {
                 _usersProvider.getUserGroups(notify: true);
                 showCustomSnackBar(child: const Text('Grupo criado com sucesso'));
+                if (!context.mounted) return;
                 Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
               }
             });
@@ -191,6 +192,14 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _numberPeopleController.dispose();
+    super.dispose();
   }
 }
 
@@ -264,7 +273,6 @@ class _PersonalizadoWidgetState extends State<PersonalizadoWidget> {
                             _addedBooks.add(book);
                           }
                           setState(() {
-                            _addedBooks;
                             widget.group.books = _addedBooks;
                           });
                           Navigator.pop(context);
@@ -369,5 +377,12 @@ class _PersonalizadoWidgetState extends State<PersonalizadoWidget> {
         )
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _startController.dispose();
+    _endController.dispose();
+    super.dispose();
   }
 }

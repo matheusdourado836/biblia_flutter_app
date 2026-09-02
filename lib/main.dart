@@ -21,6 +21,10 @@ import 'firebase_options.dart';
 import 'helpers/go_to_verse_screen.dart';
 
 GlobalKey<NavigatorState>? navigatorKey = GlobalKey<NavigatorState>();
+
+/// Permite que uma tela saiba que voltou ao topo da pilha e se atualize sem
+/// precisar recarregar dados a cada `build`.
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 ThemeMode? _themeMode;
 RemoteMessage? _initialMessage;
 
@@ -52,6 +56,8 @@ void main() async {
         (options) {
       options.dsn = 'https://efdde2646a14d6b1bcd692e0cc099b51@o4507963534147584.ingest.us.sentry.io/4508399384133637';
       options.tracesSampleRate = 1.0;
+      // Experimental no sentry_flutter, mas é a API oficial de profiling.
+      // ignore: experimental_member_use
       options.profilesSampleRate = 1.0;
     },
     // Init your App.
@@ -64,19 +70,30 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final RemoteMessage? initialMessage;
   const MyApp({super.key, this.initialMessage});
 
   @override
-  Widget build(BuildContext context) {
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Carga inicial fora do build: antes rodava a cada reconstrução do app.
     Provider.of<VersesProvider>(context, listen: false).loadUserData();
-    final versionProvider = Provider.of<VersionProvider>(context, listen: false);
-    versionProvider.getPreferredVersion();
+    Provider.of<VersionProvider>(context, listen: false).getPreferredVersion();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     return Portal(
       child: MaterialApp(
         navigatorKey: navigatorKey,
+        navigatorObservers: [routeObserver],
         themeMode: themeProvider.themeMode ?? _themeMode,
         theme: lightTheme,
         darkTheme: darkTheme,
@@ -94,7 +111,7 @@ class MyApp extends StatelessWidget {
         title: 'BibleWise',
         debugShowCheckedModeBanner: false,
         //initialRoute: "home",
-        home: InitialSplashScreen(initialMessage: initialMessage),
+        home: InitialSplashScreen(initialMessage: widget.initialMessage),
         routes: AppRoutes.routes,
         onGenerateRoute: (settings) => AppRoutes.generateRoute(settings),
       ),

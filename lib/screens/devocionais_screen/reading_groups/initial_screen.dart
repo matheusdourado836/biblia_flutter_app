@@ -17,8 +17,10 @@ class _InitialScreenState extends State<InitialScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.getLoggedUser().whenComplete(() {
         if(userProvider.currentUser == null) {
+          if (!mounted) return;
           Navigator.pushReplacementNamed(context, 'login_screen');
         }else {
+          if (!mounted) return;
           Navigator.pushReplacementNamed(context, 'user_home_screen');
         }
       });

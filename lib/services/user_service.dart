@@ -1,3 +1,4 @@
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'dart:io';
 import 'dart:math';
 import 'package:biblia_flutter_app/models/ai_message.dart';
@@ -10,6 +11,17 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../models/group.dart';
 import '../models/message.dart';
 import '../models/user.dart';
+
+/// O operador `whereIn` do Firestore aceita no máximo 30 valores por consulta.
+const int _whereInLimit = 30;
+
+List<List<T>> _chunk<T>(List<T> items, int size) {
+  final chunks = <List<T>>[];
+  for (var i = 0; i < items.length; i += size) {
+    chunks.add(items.sublist(i, i + size > items.length ? items.length : i + size));
+  }
+  return chunks;
+}
 
 class UserService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -35,7 +47,7 @@ class UserService {
 
       return user;
     }catch(e, stack) {
-      print('Nao foi possivel recuperar o usuario $e /// $stack');
+      logError('Nao foi possivel recuperar o usuario $e /// $stack');
       return null;
     }
   }
@@ -52,7 +64,7 @@ class UserService {
 
       return user;
     }catch(e) {
-      print('Nao foi possivel recuperar o usuario pelo ID $e');
+      logError('Nao foi possivel recuperar o usuario pelo ID $e');
       return null;
     }
   }
@@ -86,22 +98,22 @@ class UserService {
 
       return groups;
     } catch (e) {
-      print('Não foi possível recuperar os grupos do usuário: $e');
+      logError('Não foi possível recuperar os grupos do usuário: $e');
       return [];
     }
   }
 
   Future<List<String>?> getAllUsersTokens({required List<String> ids}) async {
-    List<String>? usersTokens = [];
-    await _database.collection('users').where('id', whereIn: ids).get().then((res) {
-      if(res.docs.isNotEmpty) {
-        final docs = res.docs;
-        for(var doc in docs) {
-          final data = doc.data();
-          usersTokens.add(data["fcmToken"]);
-        }
+    final usersTokens = <String>[];
+    if (ids.isEmpty) return usersTokens;
+
+    for (final batch in _chunk(ids, _whereInLimit)) {
+      final res = await _database.collection('users').where('id', whereIn: batch).get();
+      for (final doc in res.docs) {
+        final token = doc.data()["fcmToken"];
+        if (token is String && token.isNotEmpty) usersTokens.add(token);
       }
-    });
+    }
 
     return usersTokens;
   }
@@ -110,6 +122,13 @@ class UserService {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(email: user.email!, password: pass);
       if(credential.user != null) {
+        // A reserva só é possível depois do login. Se o nome foi tomado entre a
+        // checagem na tela e agora, desfazemos a conta recém-criada.
+        final claimed = await _claimUsername(user.nomeUsuario ?? '');
+        if (!claimed) {
+          await _auth.currentUser!.delete();
+          return false;
+        }
         await _auth.currentUser!.updateDisplayName(user.nomeUsuario);
         final fcmToken = Platform.isIOS ? await _messaging.getAPNSToken() : await _messaging.getToken();
         await _database.collection('users').doc(_auth.currentUser!.uid).set(user.toJson());
@@ -127,25 +146,29 @@ class UserService {
 
       return false;
     }catch(e) {
-      print('Nao foi possivel criar um usuario $e');
+      logError('Nao foi possivel criar um usuario $e');
       return false;
     }
   }
 
   Future<List<MyUser>?> getUsersById({required List<String> ids}) async {
     try {
-      List<MyUser> users = [];
-      await _database.collection('users').where(FieldPath.documentId, whereIn: ids).get().then((res) {
-        if(res.docs.isNotEmpty) {
-          for(var doc in res.docs) {
-            users.add(MyUser.fromJson(doc.data()));
-          }
+      final users = <MyUser>[];
+      if (ids.isEmpty) return users;
+
+      for (final batch in _chunk(ids, _whereInLimit)) {
+        final res = await _database
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        for (final doc in res.docs) {
+          users.add(MyUser.fromJson(doc.data()));
         }
-      });
+      }
 
       return users;
-    }catch(e) {
-      print('Nao foi possivel recuperar os usuarios pelo ID $e');
+    }catch(e, stack) {
+      logError('Nao foi possivel recuperar os usuarios pelo ID', e, stack);
       return null;
     }
   }
@@ -154,9 +177,19 @@ class UserService {
     return await _auth.signInWithEmailAndPassword(email: email, password: pass);
   }
 
-  Future<void> updateUsername({required String newUsername}) async {
+  /// Devolve false quando o nome foi tomado no meio do caminho. O antigo só é
+  /// liberado depois que o novo está reservado, para não ficar sem nenhum.
+  Future<bool> updateUsername({required String newUsername, String? currentUsername}) async {
+    if (!await _claimUsername(newUsername)) return false;
+
     await updateUserData({"username": newUsername}, _auth.currentUser!.uid);
-    return await _auth.currentUser!.updateDisplayName(newUsername);
+    await _auth.currentUser!.updateDisplayName(newUsername);
+
+    if (normalizeUsername(currentUsername ?? '') != normalizeUsername(newUsername)) {
+      await _releaseUsername(currentUsername);
+    }
+
+    return true;
   }
 
   Future<void> _clearImages(String path) async {
@@ -190,7 +223,7 @@ class UserService {
       await setImage(photoURL);
       return true;
     }on FirebaseException catch(e) {
-      print('Não foi possível atualizar a imagem ${e.message}');
+      logError('Não foi possível atualizar a imagem ${e.message}');
       return false;
     }
   }
@@ -199,12 +232,13 @@ class UserService {
     try{
       return await _auth.signInWithEmailAndPassword(email: email, password: password);
     }on FirebaseAuthException catch(e) {
-      print('Nao foi possivel reautenticar $e');
+      logError('Nao foi possivel reautenticar $e');
       return e;
     }
   }
 
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({String? username}) async {
+    await _releaseUsername(username);
     await _database.collection('users').doc(_auth.currentUser!.uid).delete();
     return await _auth.currentUser!.delete();
   }
@@ -217,7 +251,7 @@ class UserService {
 
       return true;
     }catch(e) {
-      print('Nao foi possivel alterar a senha $e');
+      logError('Nao foi possivel alterar a senha $e');
       return false;
     }
   }
@@ -226,10 +260,58 @@ class UserService {
     return await _auth.sendPasswordResetEmail(email: email);
   }
 
-  Future<bool> checkIfUsernameIsAvailable({required String username}) async {
-    final querySnapshot = await _database.collection('users').where('username', isEqualTo: username).get();
+  /// Índice público de nomes em uso: `usernames/{nome normalizado}` guarda
+  /// apenas o uid do dono. Existe porque a coleção `users` só é legível para
+  /// quem está autenticado, e a checagem precisa rodar durante o cadastro.
+  static const String usernamesCollection = 'usernames';
 
-    return querySnapshot.docs.isEmpty;
+  /// Mesma normalização na escrita e na leitura, para "Alice" e "alice"
+  /// ocuparem a mesma chave.
+  static String normalizeUsername(String username) => username.trim().toLowerCase();
+
+  Future<bool> checkIfUsernameIsAvailable({required String username}) async {
+    final key = normalizeUsername(username);
+    if (key.isEmpty) return false;
+
+    try {
+      final doc = await _database.collection(usernamesCollection).doc(key).get();
+
+      return !doc.exists;
+    } catch (e, stack) {
+      logError('Não foi possível verificar a disponibilidade do username', e, stack);
+      return false;
+    }
+  }
+
+  /// Reserva o nome. A unicidade é garantida pelas regras: `update` é proibido
+  /// em `usernames`, então um `set` sobre um nome já tomado é negado — duas
+  /// pessoas não conseguem reservar o mesmo nome nem em corrida.
+  Future<bool> _claimUsername(String username) async {
+    final key = normalizeUsername(username);
+    if (key.isEmpty) return false;
+
+    try {
+      await _database
+          .collection(usernamesCollection)
+          .doc(key)
+          .set({'uid': _auth.currentUser!.uid});
+
+      return true;
+    } catch (e, stack) {
+      logError('Não foi possível reservar o username "$key"', e, stack);
+      return false;
+    }
+  }
+
+  Future<void> _releaseUsername(String? username) async {
+    final key = normalizeUsername(username ?? '');
+    if (key.isEmpty) return;
+
+    try {
+      await _database.collection(usernamesCollection).doc(key).delete();
+    } catch (e, stack) {
+      logError('Não foi possível liberar o username "$key"', e, stack);
+    }
   }
 
   Future<void> updateDailyReading({
@@ -253,7 +335,7 @@ class UserService {
         });
       }
     } catch (e) {
-      print("Erro ao atualizar leitura: $e");
+      logError("Erro ao atualizar leitura: $e");
     }
   }
 
@@ -285,7 +367,7 @@ class UserService {
 
       return true;
     }catch(e) {
-      print('Nao foi possivel criar o grupo $e');
+      logError('Nao foi possivel criar o grupo $e');
       return false;
     }
   }
@@ -313,35 +395,30 @@ class UserService {
       await setImage(photoURL);
       return true;
     }on FirebaseException catch(e) {
-      print('Não foi possível atualizar a imagem ${e.message}');
+      logError('Não foi possível atualizar a imagem ${e.message}');
       return false;
     }
   }
 
+  /// Sorteia um código livre consultando apenas o candidato, em vez de baixar
+  /// todos os grupos existentes a cada criação.
   Future<String> gerarCodigoGrupo() async {
-    String generateCode() {
-      final random = Random();
-      return List.generate(4, (_) => random.nextInt(10)).join();
-    }
-    String code = generateCode();
-    final querySnapshot = await _database
-        .collection('groups')
-        .get();
-    List<String> codigos = [];
-    for(var docs in querySnapshot.docs) {
-      if(docs.exists) {
-        final data = docs.data();
-        codigos.add(data["code"].toString());
-      }
+    final random = Random();
+    String generateCode() => List.generate(4, (_) => random.nextInt(10)).join();
+
+    for (var attempt = 0; attempt < 10; attempt++) {
+      final code = generateCode();
+      final existing = await _database
+          .collection('groups')
+          .where('code', isEqualTo: int.parse(code))
+          .limit(1)
+          .get();
+      if (existing.docs.isEmpty) return code;
     }
 
-    if(codigos.isNotEmpty) {
-      while(codigos.contains(code)) {
-        code = generateCode();
-      }
-    }
-
-    return code;
+    // Fallback improvável: mantém o comportamento anterior de sempre devolver
+    // algo, mesmo que a colisão só seja detectada na escrita.
+    return generateCode();
   }
 
   Future<void> deleteGroup({required String groupId, String? groupBgUrl}) async {
@@ -352,7 +429,7 @@ class UserService {
   }
 
   Future<void> sendGroupMessage(String groupId, Message message) async {
-    final chatRef = FirebaseFirestore.instance
+    final chatRef = _database
         .collection('groups')
         .doc(groupId)
         .collection('chat');
@@ -377,7 +454,7 @@ class UserService {
       });
       return;
     } catch (e) {
-      print('Erro: $e');
+      logError('Erro: $e');
     }
   }
 
@@ -396,35 +473,42 @@ class UserService {
   Future<void> markMessagesAsRead({required String groupId}) async {
     final userId = _auth.currentUser!.uid;
 
+    // Só as mensagens que o usuário ainda não viu, e em lote: antes era um
+    // update por documento a cada abertura do chat.
     final snapshot = await _database
         .collection('groups')
         .doc(groupId)
         .collection('chat')
         .get();
 
-    for (final doc in snapshot.docs) {
-      await doc.reference.update({
-        'hasSeen': FieldValue.arrayUnion([userId]),
-      });
+    final pending = snapshot.docs.where((doc) {
+      final seen = doc.data()['hasSeen'];
+      return seen is! List || !seen.contains(userId);
+    }).toList();
+
+    if (pending.isEmpty) return;
+
+    // O batch do Firestore aceita até 500 operações.
+    for (final group in _chunk(pending, 500)) {
+      final batch = _database.batch();
+      for (final doc in group) {
+        batch.update(doc.reference, {
+          'hasSeen': FieldValue.arrayUnion([userId]),
+        });
+      }
+      await batch.commit();
     }
   }
 
   Future<Group?> getGroupById({required String groupId}) async {
     try {
-      Group? group;
-      await _database.collection('groups').where('id', isEqualTo: groupId).get().then((res) async {
-        if(res.docs.isNotEmpty) {
-          final docs = res.docs;
-          final data = docs.first.data();
-          if(data.isNotEmpty) {
-            group = Group.fromJson(data);
-          }
-        }
-      });
+      final doc = await _database.collection('groups').doc(groupId).get();
+      final data = doc.data();
+      if (!doc.exists || data == null || data.isEmpty) return null;
 
-      return group;
+      return Group.fromJson(data);
     }catch(e) {
-      print('Nao foi possivel recuperar o grupo pelo ID $e');
+      logError('Nao foi possivel recuperar o grupo pelo ID $e');
       return null;
     }
   }
@@ -444,7 +528,7 @@ class UserService {
 
       return group;
     }catch(e, stack) {
-      print('Nao foi possivel recuperar o grupo pelo codigo $e /// $stack');
+      logError('Nao foi possivel recuperar o grupo pelo codigo $e /// $stack');
       return null;
     }
   }
@@ -464,7 +548,7 @@ class UserService {
 
       return invites;
     }catch(e) {
-      print('Nao foi possivel recuperar os convites $e');
+      logError('Nao foi possivel recuperar os convites $e');
       return null;
     }
   }
@@ -478,7 +562,7 @@ class UserService {
       await _database.collection('groups').doc(group.id!).update({"solicitacoes": solicitacoesJson});
       return true;
     }catch(e) {
-      print('Nao foi possivel enviar um convite $e');
+      logError('Nao foi possivel enviar um convite $e');
       return false;
     }
   }
@@ -496,14 +580,14 @@ class UserService {
         'groupName': groupName,
       });
       if (result.data['success']) {
-        print('Notificação enviada com sucesso');
+        logError('Notificação enviada com sucesso');
         return true;
       } else {
-        print('Erro ao enviar notificação: ${result.data['error']}');
+        logError('Erro ao enviar notificação: ${result.data['error']}');
         return false;
       }
     } catch (e) {
-      print('Erro: $e');
+      logError('Erro: $e');
       return false;
     }
   }
@@ -517,13 +601,18 @@ class UserService {
   }
 
   Future<void> saveAiChatHistory({required List<Content> chatMessages, required MyUser user}) async {
-    for(final message in chatMessages) {
-      final messageJson = message.toJson();
-      messageJson["timestamp"] = DateTime.now().millisecondsSinceEpoch;
-      await _database.collection('users').doc(_auth.currentUser!.uid).collection('chat').add(messageJson);
-    }
+    if (chatMessages.isEmpty) return;
 
-    return;
+    final chatRef = _database.collection('users').doc(_auth.currentUser!.uid).collection('chat');
+    for (final group in _chunk(chatMessages, 500)) {
+      final batch = _database.batch();
+      for (final message in group) {
+        final messageJson = message.toJson();
+        messageJson["timestamp"] = DateTime.now().millisecondsSinceEpoch;
+        batch.set(chatRef.doc(), messageJson);
+      }
+      await batch.commit();
+    }
   }
 
   Future<List<AiChatMessage>> loadAiChatHistory() async {
@@ -542,13 +631,14 @@ class UserService {
 
   Future<void> deleteAiChatHistory() async {
     final history = await _database.collection('users').doc(_auth.currentUser!.uid).collection('chat').get();
-    if(history.docs.isNotEmpty) {
-      final docs = history.docs;
-      for(final doc in docs) {
-        await doc.reference.delete();
-      }
-    }
+    if (history.docs.isEmpty) return;
 
-    return;
+    for (final group in _chunk(history.docs, 500)) {
+      final batch = _database.batch();
+      for (final doc in group) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
   }
 }

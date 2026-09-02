@@ -32,8 +32,10 @@ class NotificationService {
   Future<void> _initializeNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iOS = DarwinInitializationSettings();
+    // flutter_local_notifications 22 passou initialize/show para parâmetros
+    // nomeados (`settings:`, `id:`, `notificationDetails:`).
     await localNotificationsPlugin.initialize(
-      const InitializationSettings(android: android, iOS: iOS),
+      settings: const InitializationSettings(android: android, iOS: iOS),
       onDidReceiveNotificationResponse: _onSelectedNotification,
     );
   }
@@ -77,10 +79,10 @@ class NotificationService {
     );
 
     localNotificationsPlugin.show(
-      notification.id,
-      notification.title,
-      notification.body,
-      NotificationDetails(android: androidNotificationDetails),
+      id: notification.id,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(android: androidNotificationDetails),
       payload: notification.payload,
     );
   }

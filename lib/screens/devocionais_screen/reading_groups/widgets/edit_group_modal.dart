@@ -84,11 +84,13 @@ class _EditGroupModalState extends State<EditGroupModal> {
       await _usersProvider.updateGroupData(group.toJson()..remove('solicitacoes'), group.id!);
       setState(() => _saving = false);
       _usersProvider.getUserGroups(notify: true);
+      if (!mounted) return;
       Navigator.popUntil(context, (route) => route.settings.name == 'user_home_screen');
     }catch(e) {
       showCustomSnackBar(
         child: const Text('Nao foi possível salvar suas alterações')
       );
+      if (!mounted) return;
       Navigator.pop(context);
     }
   }
@@ -249,5 +251,13 @@ class _EditGroupModalState extends State<EditGroupModal> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _numberPeopleController.dispose();
+    super.dispose();
   }
 }

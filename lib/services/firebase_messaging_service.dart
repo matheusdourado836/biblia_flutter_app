@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
+import 'package:biblia_flutter_app/helpers/app_logger.dart';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
 import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
@@ -25,41 +25,43 @@ class FirebaseMessagingService {
     _onMessageOpenedApp();
   }
 
-  Future<void> _tokenRefresh() async {
-    try {
-      FirebaseMessaging.instance.onTokenRefresh.listen((String? token) {
-        assert(token != null);
+  Future<void> _saveDeviceToken(String? token) async {
+    if (token == null || token.isEmpty) return;
 
-        FirebaseFirestore.instance.collection('devices').doc(token).set(
-            {'user_token': token, 'createdAt': FieldValue.serverTimestamp()},
-            SetOptions(merge: true));
-      });
-    }catch (e) {
-      return alertDialog(title: 'Dispositivo sem conexão com a internet', content: 'parece que você está sem internet, não será possível receber notificações(caso permitido)');
-    }
+    await FirebaseFirestore.instance.collection('devices').doc(token).set(
+        {'user_token': token, 'createdAt': FieldValue.serverTimestamp()},
+        SetOptions(merge: true));
+  }
+
+  Future<void> _tokenRefresh() async {
+    FirebaseMessaging.instance.onTokenRefresh.listen(
+      (String? token) => _saveDeviceToken(token).catchError(
+        (e, stack) => logError('Falha ao atualizar o token de push', e, stack),
+      ),
+      onError: (e, stack) => logError('Erro no stream de refresh do token de push', e, stack),
+    );
   }
 
   Future<void> _registerToken() async {
+    // No iOS o token APNS pode ainda não estar disponível no boot e o
+    // getToken() falha com `apns-token-not-set`. O try/catch antigo não pegava
+    // esse erro (ele vinha pelo Future, não pela chamada), então a exceção
+    // escapava como erro assíncrono não tratado a cada inicialização.
     try {
-      FirebaseMessaging.instance.getToken().then((String? token) {
-        assert(token != null);
-
-        FirebaseFirestore.instance.collection('devices').doc(token).set(
-            {'user_token': token, 'createdAt': FieldValue.serverTimestamp()},
-            SetOptions(merge: true));
-      });
-    }catch (e) {
-      return alertDialog(title: 'Dispositivo sem conexão com a internet', content: 'parece que você está sem internet, não será possível receber notificações(caso permitido)');
+      final token = await FirebaseMessaging.instance.getToken();
+      await _saveDeviceToken(token);
+    } catch (e, stack) {
+      logError('Não foi possível registrar o token de push do dispositivo', e, stack);
     }
   }
 
-  _onMessage() {
+  void _onMessage() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       _foregroundNotification(message);
     });
   }
 
-  _onMessageOpenedApp() {
+  void _onMessageOpenedApp() {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       if(!message.data.containsKey("route")) {
         GoToVerseScreen().goToVersePage(
@@ -90,7 +92,7 @@ class FirebaseMessagingService {
         });
   }
 
-  _foregroundNotification(RemoteMessage message) {
+  void _foregroundNotification(RemoteMessage message) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
