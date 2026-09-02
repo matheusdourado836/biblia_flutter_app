@@ -1,9 +1,13 @@
+import 'dart:convert';
+
+import 'package:biblia_flutter_app/helpers/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
 import 'books_dao.dart';
 
 class ChaptersProvider extends ChangeNotifier {
+  static final BooksDao _booksDao = BooksDao();
   List<bool> _readChapters = [];
   int _orderStyle = 0;
 
@@ -13,67 +17,49 @@ class ChaptersProvider extends ChangeNotifier {
 
   List<bool> get readChapters => _readChapters;
 
-  bool _isSearching = false;
+  String currentBook = '';
 
-  bool get isSearching => _isSearching;
+  bool isSearching = false;
 
-  void toggleSearch(bool value) {
-    _isSearching = value;
-    notifyListeners();
-  }
+  double _position = 0.0;
 
-  void setChaptersRead(String bookName, int chapters) async {
-    for(var i = 0; i < chapters; i++) {
-      _readChapters.add(false);
+  double get position => _position;
+
+  void updatePosition(double newPosition) => _position = newPosition;
+
+  Future<List<bool>> setChaptersRead(String bookName, int chapters) async {
+    _readChapters = [];
+    List<dynamic> chaptersList = [];
+    final booksRead = await _booksDao.findByChapter(bookName, chapters);
+    if(booksRead['chapters'] is String) {
+      final chaptersString = booksRead['chapters'];
+
+      chaptersList = jsonDecode(chaptersString);
+    }else {
+      chaptersList = booksRead['chapters'];
     }
-    await BooksDao().findByChapter(bookName).then((value) => {
-      _readChapters = [],
-      for(var i = 0; i < value['chapters'].length; i++) {
-        if(value['chapters'][i][(i + 1).toString()] == true) {
-          _readChapters.add(true)
-        }else {
-          _readChapters.add(false)
-        }
-      },
-    });
 
     notifyListeners();
+    return _readChapters = chaptersList.map((chapter) => chapter.values.first as bool).toList();
   }
 
-  void saveChapter(String bookName, String chapter) {
+  Future<void> setChapterRead(String bookName, String chapter, int qtdChapters, bool read) async {
     final index = int.parse(chapter) - 1;
-    readChapters[index] = true;
-    BooksDao().saveChapter(bookName, chapter);
-    notifyListeners();
-  }
-
-  void deleteChapter(String bookName, String chapter) {
-    final index = int.parse(chapter) - 1;
-    readChapters[index] = false;
-    BooksDao().deleteChapter(bookName, chapter);
+    _readChapters[index] = read;
+    await _booksDao.setChapterRead(bookName, chapter, qtdChapters, read);
     notifyListeners();
   }
 
   void addAllChapters(String bookName, int chapters) async {
-    await BooksDao().save(bookName, chapters, 1);
-    await BooksDao().findByChapter(bookName).then((value) => {
-      _readChapters = [],
-      for(var i = 0; i < value['chapters'].length; i++) {
-        _readChapters.add(true)
-      },
-    });
+    await _booksDao.save(bookName, chapters, 1);
+    _readChapters = List.generate(chapters, (i) => true, growable: false);
 
     notifyListeners();
   }
 
   void removeAllChapters(String bookName, int chapters) async {
-    await BooksDao().delete(bookName);
-    await BooksDao().findByChapter(bookName).then((value) => {
-      _readChapters = [],
-      for(var i = 0; i < value['chapters'].length; i++) {
-        _readChapters.add(false)
-      },
-    });
+    await _booksDao.delete(bookName);
+    _readChapters = List.generate(chapters, (i) => false, growable: false);
 
     notifyListeners();
   }
@@ -95,14 +81,24 @@ class ChaptersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getOrderStyle() async {
+  Future<void> getOrderStyle() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    _orderStyle = prefs.getInt('orderStyle') ?? 0;
-
+    final stored = prefs.getInt('orderStyle') ?? 0;
+    if (stored != _orderStyle) {
+      _orderStyle = stored;
+      notifyListeners();
+    }
   }
 
   void updateSearch(List<Book> books, String query) {
-    innerList = books.where((item) => item.name.toLowerCase().startsWith(query.toLowerCase()) || item.name.toLowerCase().contains(query.toLowerCase())).toList();
+    if(query.isEmpty) {
+      isSearching = false;
+      notifyListeners();
+      return;
+    }
+    isSearching = true;
+    final querySemAcento = query.toLowerCase().removerAcentos();
+    innerList = books.where((item) => item.name.toLowerCase().removerAcentos().startsWith(querySemAcento) || item.name.toLowerCase().removerAcentos().contains(querySemAcento)).toList();
     notifyListeners();
   }
 }

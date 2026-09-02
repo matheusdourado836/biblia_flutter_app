@@ -1,49 +1,150 @@
+import 'dart:io';
+import 'package:biblia_flutter_app/data/bible_data.dart';
+import 'package:biblia_flutter_app/helpers/version_to_name.dart';
+import 'package:biblia_flutter_app/services/bible_service.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VersionProvider extends ChangeNotifier {
-  String _version = 'nvi';
-  final List<Widget> _versionsList = [];
+  final BibleData _data = BibleData();
   final List<String> _options = [
     'NVI (Nova Versão Internacional)',
     'ACF (Almeida Corrigida Fiel)',
+    'NTLH (Nova Tradução na Linguagem de Hoje)',
     'RA (Revista e Atualizada)',
-    'BBE (Bible in Basic English)',
     'KJV (King James Version)',
-    'RVR (Versão Espanhola Reina-Valera)',
-    'GREGO'
+    'Multi versão',
+    'NVT (Nova versão transformadora)',
+    'BBE (Bible in Basic English)',
+    'RVR (Espanhol)',
+    'APEE (Francês)',
+    'GREGO',
   ];
+
   String _selectedOption = 'NVI (Nova Versão Internacional)';
 
   String get selectedOption => _selectedOption;
 
   List<String> get options => _options;
 
-  String get version => _version;
+  double _downloadProgress = 0.0;
 
-  List<Widget> get versionsList => _versionsList;
+  double get downloadProgress => _downloadProgress;
+
+  bool _downloadCompleted = false;
+
+  bool get downloadCompleted => _downloadCompleted;
+
+  String downloadError = '';
 
   set changeSelectedOption(String newOption) {
     _selectedOption = newOption;
   }
 
-  List<Widget> setListItem(String versionOption) {
-    _versionsList.add(
-      Center(
-        child: Text(versionOption.toUpperCase(),),),
-    );
-
-    return _versionsList;
+  set setDownloadProgress(bool newValue) {
+    _downloadCompleted = newValue;
   }
 
-  void changeOptionBd(String newOptionBd) {
-    _selectedOption = newOptionBd.trim();
-    _version = newOptionBd.split(' ')[0].toLowerCase();
+  Future<void> getPreferredVersion() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _selectedOption = prefs.getString('version') ?? _selectedOption;
+    await _data.ensureVersionLoaded(versionToName(_selectedOption));
+  }
+
+  /// Troca a versão ativa garantindo que ela esteja em memória antes de
+  /// notificar as telas — com o carregamento sob demanda, a versão pode ainda
+  /// não ter sido decodificada.
+  Future<void> changeVersion(String newVersion) async {
+    _selectedOption = newVersion;
+    notifyListeners();
+    await _data.ensureVersionLoaded(versionToName(newVersion));
     notifyListeners();
   }
 
-  void changeVersion(String newVersion) {
-    _selectedOption = newVersion;
-    _version = newVersion.split(' ')[0];
+  bool getDownloadedVersion(String version) {
+    return !_data.downloadedVersions.contains(version);
+  }
+
+  List<Map<String, dynamic>> getVersions() => _data.data;
+
+  /// Versões que o usuário baixou (nome e tamanho), sem exigir que estejam
+  /// decodificadas em memória.
+  List<Map<String, dynamic>> get downloadedFiles => _data.downloadedFiles;
+
+  Future<String> getVersionsDirectoryPath() async {
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String versionsDirPath = '${appDocDir.path}/versions';
+
+    final versionsDir = Directory(versionsDirPath);
+    if (!versionsDir.existsSync()) {
+      await versionsDir.create(recursive: true);
+    }
+
+    return versionsDirPath;
+  }
+
+  /// Reavalia o que está disponível em disco e garante que a versão
+  /// selecionada esteja pronta para uso.
+  Future<void> loadBibleData() async {
+    await _data.refreshDownloadedFiles();
+    await _data.ensureVersionLoaded(versionToName(_selectedOption));
+  }
+
+  Future<void> ensureVersionLoaded(String versionLabel) async {
+    await _data.ensureVersionLoaded(versionToName(versionLabel));
+  }
+
+  void downloadVersion({required String versionName}) async {
+    try {
+      _downloadProgress = 0;
+      downloadError = '';
+      _downloadCompleted = false;
+      await BibleService().checkInternetConnectivity().then((res) async {
+        if(res) {
+          notifyListeners();
+          Dio dio = Dio();
+          String appDocDirPath = await getVersionsDirectoryPath();
+          final storage = FirebaseStorage.instance;
+          storage.setMaxDownloadRetryTime(const Duration(seconds: 10));
+          final ref = storage.ref().child('bible_versions/$versionName.json');
+          final downloadUrl = await ref.getDownloadURL().catchError((err) => '');
+          final Response response = await dio.download(
+              downloadUrl,
+              '$appDocDirPath/$versionName.json',
+              onReceiveProgress: (received, total) {
+                if (total != -1) {
+                  _downloadProgress = (received / total) * 100;
+                  notifyListeners();
+                }
+              });
+
+          if (response.statusCode == 200) {
+            await _data.refreshDownloadedFiles();
+            await _data.ensureVersionLoaded(versionName);
+            _downloadCompleted = true;
+            _downloadProgress = 0;
+            downloadError = '';
+            notifyListeners();
+          } else {
+            downloadError = 'Erro ao baixar a versão: ${response.statusCode}';
+            notifyListeners();
+          }
+        }else {
+          downloadError = 'Parece que você não está conectado à internet. Verifique sua conexão e tente novamente.';
+          notifyListeners();
+        }
+      });
+    }catch (e) {
+      downloadError = 'Erro ao baixar versão: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteVersions({required List<String> versions}) async {
+    await _data.deleteVersions(versions: versions);
     notifyListeners();
   }
 }

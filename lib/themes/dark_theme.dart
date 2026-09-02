@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primaryColor: Colors.black,
-  cardTheme: const CardTheme(
+  cardTheme: const CardThemeData(
     color: Color.fromRGBO(51, 41, 64, 1)
   ),
   colorScheme: ColorScheme(
@@ -15,10 +15,9 @@ ThemeData darkTheme = ThemeData(
     tertiary: const Color(0xff1c1b1f),
     error: Colors.red,
     onError: Colors.white,
-    background: const Color(0xff1c1b1f),
-    onBackground: Colors.black,
-    surface: const Color.fromRGBO(59, 79, 254, 1),
-    onSurface: Colors.white.withOpacity(.85)
+    //surface: const Color.fromRGBO(59, 79, 254, 1),
+    surface: const Color(0xff1c1b1f),
+    onSurface: Colors.white.withValues(alpha: .85)
   ),
   dropdownMenuTheme: const DropdownMenuThemeData(
     textStyle: TextStyle(
@@ -28,6 +27,9 @@ ThemeData darkTheme = ThemeData(
     ),
   ),
   highlightColor: const Color.fromRGBO(89, 89, 89, 1.0),
+  drawerTheme: const DrawerThemeData(
+    backgroundColor: Color(0xff1c1b1f),
+  ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Color(0xff1c1b1f),
     elevation: 0.5,

@@ -1,23 +1,21 @@
 import 'dart:io';
-
 import 'package:biblia_flutter_app/data/verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
+import 'package:biblia_flutter_app/helpers/calculate_font_size.dart';
 import 'package:biblia_flutter_app/helpers/loading_widget.dart';
-import 'package:biblia_flutter_app/main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-GlobalKey globalKey = GlobalKey();
-
 class RandomVerseScreen extends StatefulWidget {
-  const RandomVerseScreen({Key? key}) : super(key: key);
+  const RandomVerseScreen({super.key});
 
   @override
   State<RandomVerseScreen> createState() => _RandomVerseScreenState();
 }
 
 class _RandomVerseScreenState extends State<RandomVerseScreen> {
+  GlobalKey globalKey = GlobalKey();
   late VersesProvider versesProvider;
   late Future<Map<String, dynamic>> futureRandomVerses;
   String abbrev = '';
@@ -39,6 +37,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     return Scaffold(
       body: FutureBuilder<Map<String, dynamic>>(
         future: futureRandomVerses,
@@ -52,7 +51,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
             chapter = snapshot.data!["chapter"];
             verseNumber = snapshot.data!["verseNumber"];
             verse = snapshot.data!["verse"];
-            final List<dynamic> bookReference = bibleData.data[0];
+            final List<dynamic> bookReference = versesProvider.bibleData[0]["text"];
             final book = bookReference.where((element) => element["abbrev"] == abbrev).first;
             bookIndex = bookReference.indexOf(book);
             chapters = book["chapters"].length;
@@ -62,48 +61,53 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                   child: RepaintBoundary(
                     key: globalKey,
                     child: Container(
-                        width: width,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5), BlendMode.darken),
-                            opacity: 0.8,
-                            image:
-                            CachedNetworkImageProvider(snapshot.data!["url"]),
-                            fit: BoxFit.cover,
-                          ),
+                      width: width,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
+                          opacity: 0.8,
+                          image: CachedNetworkImageProvider(snapshot.data!["url"]),
+                          fit: BoxFit.cover,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 40.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 72.0),
-                                child: Text(
-                                  'BibleWise',
-                                  style: Theme.of(context).textTheme.displayLarge,
-                                ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 40.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 72.0),
+                              child: Text(
+                                'BibleWise',
+                                style: Theme.of(context).textTheme.displayLarge,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 16.0, right: 16.0, bottom: 40.0),
-                                child: Text.rich(
-                                  TextSpan(
-                                      text: '$bookName $chapter:$verseNumber\n\n',
-                                      style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
-                                      children: <TextSpan>[
-                                        TextSpan(
-                                            text: verse,
-                                            style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, color: Colors.white))
-                                      ]),
-                                  textAlign: TextAlign.center,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 40.0),
+                              child: Text.rich(
+                                TextSpan(
+                                  text: '$bookName $chapter:$verseNumber\n\n',
+                                  style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: verse,
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                        fontSize: calculateFontSize(verse.length, height)
+                                      )
+                                    )
+                                  ]
                                 ),
+                                textAlign: TextAlign.center,
                               ),
-                              const SizedBox()
-                            ],
-                          ),
-                        )),
+                            ),
+                            const SizedBox()
+                          ],
+                        ),
+                      )
+                    ),
                   ),
                 ),
                 Positioned(
@@ -118,15 +122,13 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             IconButton(
-                              onPressed: (() {
-                                versesProvider.shareImageAndText();
-                              }),
+                              onPressed: () => versesProvider.shareImageAndText(globalKey),
                               icon: const Icon(Icons.share),
                               iconSize: 32,
                               color: Colors.white,
                             ),
                             IconButton(
-                              onPressed: (() {
+                              onPressed: () {
                                 versesProvider.clear();
                                 versesProvider.loadVerses(bookIndex, bookName);
                                 Navigator.pushNamed(context, 'verses_screen', arguments: {
@@ -137,16 +139,15 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                                   "chapter": chapter,
                                   "verseNumber": verseNumber
                                 });
-                              }),
+                              },
                               icon: const Icon(Icons.menu_book_outlined),
                               iconSize: 32,
                               color: Colors.white,
                             ),
                             IconButton(
-                              onPressed: (() {
-                                versesProvider.copyText(
-                                    bookName, verse, chapter, verseNumber);
-                              }),
+                              onPressed: () => versesProvider.copyText(
+                                bookName, verse, chapter, verseNumber
+                              ),
                               icon: const Icon(Icons.copy),
                               iconSize: 32,
                               color: Colors.white,
@@ -156,18 +157,19 @@ class _RandomVerseScreenState extends State<RandomVerseScreen> {
                         Padding(
                           padding: (Platform.isIOS) ? const EdgeInsets.only(bottom: 32, top: 8) : const EdgeInsets.only(bottom: 16.0, top: 8),
                           child: ElevatedButton(
-                            onPressed: (() {
+                            onPressed: () {
                               versesProvider.clear();
                               versesProvider.getImage();
                               Navigator.pop(context);
-                            }),
+                            },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Colors.transparent),
-                              side: MaterialStateProperty.all<BorderSide>(
+                              backgroundColor: WidgetStateProperty.all<Color>(
+                                Colors.transparent
+                              ),
+                              side: WidgetStateProperty.all<BorderSide>(
                                 const BorderSide(color: Colors.white, width: 2),
                               ),
-                              fixedSize: MaterialStateProperty.all<Size>(
+                              fixedSize: WidgetStateProperty.all<Size>(
                                 Size(width * 0.7, 40),
                               ),
                             ),

@@ -14,16 +14,15 @@ ThemeData lightTheme = ThemeData(
     tertiary: const Color.fromRGBO(242, 231, 191, 1),
     error: Colors.red,
     onError: Colors.white,
-    background: Colors.white,
-    onBackground: Colors.black,
     surface: Colors.white,
     onSurface: Colors.black),
-  cardTheme: const CardTheme(
-    color: Colors.brown,
-  ),
+  cardTheme: const CardThemeData(color: Colors.brown),
   dropdownMenuTheme: const DropdownMenuThemeData(
     textStyle: TextStyle(
         color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+  ),
+  drawerTheme: const DrawerThemeData(
+    backgroundColor: Color.fromRGBO(191, 170, 140, 1)
   ),
   highlightColor: Colors.black12,
   appBarTheme: const AppBarTheme(
@@ -59,6 +58,7 @@ ThemeData lightTheme = ThemeData(
       bodyLarge: const TextStyle(
         fontFamily: 'Poppins',
         fontSize: 16,
+        color: Colors.black,
         fontWeight: FontWeight.bold,
       )),
 );

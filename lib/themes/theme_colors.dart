@@ -24,57 +24,17 @@ class ThemeColors {
 
   final fontSize = Provider.of<VersesProvider>(navigatorKey!.currentContext!, listen: false).fontSize;
 
-  TextStyle verseColor(bool isLightMode) {
-    if(isLightMode) {
-      return TextStyle(
-          fontFamily: 'Poppins',
-          color: Colors.black,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w500
-      );
-    }
+  TextStyle verseColor(bool isLightMode) => TextStyle(
+    fontFamily: 'Poppins',
+    color: isLightMode ? Colors.black : const Color.fromRGBO(255, 255, 255, 0.85),
+    fontSize: fontSize,
+    fontWeight: FontWeight.w500
+  );
 
-    return TextStyle(
-        fontFamily: 'Poppins',
-        color: const Color.fromRGBO(255, 255, 255, 0.85),
-        fontSize: fontSize,
-        fontWeight: FontWeight.w500
-    );
-  }
-
-  TextStyle coloredVerse(bool isLightMode) {
-    if(isLightMode) {
-      return TextStyle(
-          fontFamily: 'Poppins',
-          color: Colors.black,
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold
-      );
-    }
-
-    return TextStyle(
-        fontFamily: 'Poppins',
-        color: const Color.fromRGBO(255, 255, 255, 0.85),
-        fontSize: fontSize,
-        fontWeight: FontWeight.bold
-    );
-  }
-
-  TextStyle verseNumberColor(bool isLightMode)  {
-    if(isLightMode) {
-      return TextStyle(
-          fontFamily: 'Poppins',
-          color: Colors.black,
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold
-      );
-    }
-
-    return TextStyle(
-        fontFamily: 'Poppins',
-        color: const Color.fromRGBO(255, 255, 255, 0.85),
-        fontSize: fontSize,
-        fontWeight: FontWeight.bold
-    );
-  }
+  TextStyle coloredVerse(bool isLightMode) => TextStyle(
+    fontFamily: 'Poppins',
+    color: isLightMode ? Colors.black : const Color.fromRGBO(255, 255, 255, 0.85),
+    fontSize: fontSize,
+    fontWeight: FontWeight.bold
+  );
 }

@@ -1,6 +1,6 @@
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/screens/verses_screen/widgets/loading_verses_widget.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/verses_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,13 +12,14 @@ List<Map<int, dynamic>> allVersesTextSpan = [];
 class SearchingVerse extends StatefulWidget {
   final Function() function;
   final int chapter;
-  const SearchingVerse({Key? key, required this.function, required this.chapter}) : super(key: key);
+  const SearchingVerse({super.key, required this.function, required this.chapter});
 
   @override
   State<SearchingVerse> createState() => _SearchingVerseState();
 }
 
 class _SearchingVerseState extends State<SearchingVerse> {
+  final FocusNode _focusNode = FocusNode();
   late VersesProvider _versesProvider;
   late SearchVersesProvider _searchVersesProvider;
 
@@ -26,12 +27,15 @@ class _SearchingVerseState extends State<SearchingVerse> {
   void initState() {
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
+    _focusNode.requestFocus();
     super.initState();
   }
 
   void _textEditingControllerListener(String text) {
     List<int> contador = [];
-    if(text.isEmpty) {
+    allVersesTextSpan = [];
+
+    if (text.isEmpty) {
       _versesProvider.versesFound([]);
       _versesProvider.resetVersesFoundCounter();
       setState(() {
@@ -39,40 +43,44 @@ class _SearchingVerseState extends State<SearchingVerse> {
         antListVerses = [];
         allVersesTextSpan = [];
       });
-    }else {
-      allVersesTextSpan = [];
-      final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
-      setState(() {
-        listVerses = allVerses.where((element) =>
-         element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
-        ).toList();
-        antListVerses = allVerses.where((element) =>
-            !element["verse"].toString().toLowerCase().contains(text.toLowerCase().trim())
-        ).toList();
-      });
+      return;
     }
 
-    for(var verse in listVerses) {
-      contador.add(verse["verseNumber"] - 1);
+    final String searchText = text.toLowerCase().trim();
+    final List<Map<String, dynamic>> allVerses = _versesProvider.allVerses![widget.chapter];
+
+    listVerses = allVerses.where((verse) => verse["verse"].toString().toLowerCase().contains(searchText)).toList();
+    antListVerses = allVerses.where((verse) => !verse["verse"].toString().toLowerCase().contains(searchText)).toList();
+
+    for (var verse in listVerses) {
+      int verseIndex = verse["verseNumber"] - 1;
+      contador.add(verseIndex);
+
       _versesProvider.versesFound(contador);
-      _searchVersesProvider.changeColorOfMatchedWord(text.toLowerCase(), verse["verse"].toString(), textOnColoredBackground: (verse["verseColor"] != Colors.transparent) ? true : false);
-      itemScrollController.jumpTo(index: _versesProvider.versesFoundList[0]);
-      _versesProvider.resetVersesFoundCounter();
-      final List<TextSpan> listTextSpan = [];
-      for (var element in _searchVersesProvider.highlightedWords) {
-        listTextSpan.add(element);
-      }
+      _searchVersesProvider.changeColorOfMatchedWord(
+          searchText,
+          verse["verse"].toString(),
+          textOnColoredBackground: verse["verseColor"] != Colors.transparent
+      );
+
+      final List<TextSpan> listTextSpan = _searchVersesProvider.highlightedWords.toList();
       allVersesTextSpan.add({verse["verseNumber"]: listTextSpan});
     }
 
-    for(var antVerse in antListVerses) {
-      allVersesTextSpan.add({antVerse["verseNumber"]: [TextSpan(text: antVerse["verse"], style: TextStyle(fontSize: _versesProvider.fontSize))]});
-    }
-    if(contador.isEmpty) {
-      setState(() {
-        allVersesTextSpan = [];
+    for (var antVerse in antListVerses) {
+      allVersesTextSpan.add({
+        antVerse["verseNumber"]: [
+          TextSpan(text: antVerse["verse"], style: TextStyle(fontSize: _versesProvider.fontSize))
+        ]
       });
     }
+
+    if (contador.isNotEmpty) {
+      itemScrollController?.jumpTo(index: contador.first);
+    } else {
+      setState(() => allVersesTextSpan = []);
+    }
+
     allVersesTextSpan.sort((a, b) => a.keys.first.compareTo(b.keys.first));
   }
 
@@ -86,6 +94,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
           Expanded(
             child: TextField(
               controller: textEditingController,
+              focusNode: _focusNode,
               style: Theme.of(context).textTheme.bodyMedium,
               autocorrect: false,
               decoration: const InputDecoration(
@@ -107,7 +116,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
                      child: IconButton(padding: const EdgeInsets.only(bottom: 0), onPressed: (() {
                        if(_versesProvider.versesFoundCounter < _versesProvider.versesFoundList.length) {
                          _versesProvider.increaseVersesFoundCounter();
-                         itemScrollController.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
+                         itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
                        }
                      }), icon: const Icon(Icons.arrow_drop_up), iconSize: 28,),
                    ),
@@ -119,7 +128,7 @@ class _SearchingVerseState extends State<SearchingVerse> {
                      child: IconButton(padding: const EdgeInsets.only(bottom: 10), onPressed: (() {
                        if(_versesProvider.versesFoundCounter > 1) {
                          _versesProvider.decreaseVersesFoundCounter();
-                         itemScrollController.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
+                         itemScrollController!.jumpTo(index: _versesProvider.versesFoundList[_versesProvider.versesFoundCounter - 1]);
                        }
                      }), icon: const Icon(Icons.arrow_drop_down), iconSize: 28),
                    ),
@@ -136,5 +145,11 @@ class _SearchingVerseState extends State<SearchingVerse> {
         ],
       )
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 }

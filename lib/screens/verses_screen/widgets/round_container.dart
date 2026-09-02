@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class RoundContainer extends StatelessWidget {
   final Color color;
 
-  const RoundContainer({Key? key, required this.color}) : super(key: key);
+  const RoundContainer({super.key, required this.color});
 
   @override
   Widget build(BuildContext context) {

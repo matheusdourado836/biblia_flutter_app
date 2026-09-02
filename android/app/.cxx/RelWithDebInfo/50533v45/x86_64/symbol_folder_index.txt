@@ -1,0 +1,1 @@
+/Users/matheusdourado/StudioProjects/biblia_flutter_app/build/app/intermediates/cxx/RelWithDebInfo/50533v45/obj/x86_64

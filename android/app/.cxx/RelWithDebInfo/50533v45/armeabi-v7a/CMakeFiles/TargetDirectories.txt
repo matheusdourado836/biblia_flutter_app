@@ -1,0 +1,2 @@
+/Users/matheusdourado/StudioProjects/biblia_flutter_app/android/app/.cxx/RelWithDebInfo/50533v45/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/matheusdourado/StudioProjects/biblia_flutter_app/android/app/.cxx/RelWithDebInfo/50533v45/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,21 +1,25 @@
 import 'dart:math';
-import 'package:biblia_flutter_app/data/bible_data_controller.dart';
 import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:biblia_flutter_app/services/ad_mob_service.dart';
-import 'package:biblia_flutter_app/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import '../../../data/devocional_provider.dart';
+import '../../../data/theme_provider.dart';
 import '../../../helpers/alert_dialog.dart';
+import '../../../helpers/tutorial_widget.dart';
 import '../../../models/book.dart';
 import '../../../services/bible_service.dart';
 
+TutorialCoachMark? _coachMark;
+List<TargetFocus> _targets = [];
+
 class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   final List<Book> books;
-  const HomeAppBar({Key? key, required this.books}) : super(key: key);
+  const HomeAppBar({super.key, required this.books});
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
@@ -25,16 +29,80 @@ class HomeAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _HomeAppBarState extends State<HomeAppBar> {
+  final GlobalKey _randomVerseKey = GlobalKey();
+  final GlobalKey _searchBookKey = GlobalKey();
   final TextEditingController _controller = TextEditingController();
   InterstitialAd? _interstitialAd;
   final start = ValueNotifier(false);
-  late final ChaptersProvider provider;
+  late final ChaptersProvider provider = Provider.of<ChaptersProvider>(context, listen: false);
 
   @override
   void initState() {
-    provider = Provider.of<ChaptersProvider>(context, listen: false);
     _createInterstitialAd();
+    Future.delayed(const Duration(seconds: 1), () => showTutorial());
     super.initState();
+  }
+
+  void showTutorial() {
+    final devocionalProvider = Provider.of<DevocionalProvider>(context, listen: false);
+    if(!devocionalProvider.tutorials.contains('tutorial 1')) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      initTargets();
+      _coachMark = TutorialCoachMark(
+          onSkip: () {
+            devocionalProvider.markTutorial(1);
+            return true;
+          },
+          onFinish: () => devocionalProvider.markTutorial(1),
+          colorShadow: (themeProvider.isOn) ? Colors.black : Theme.of(context).cardTheme.color!,
+          targets: _targets,
+          hideSkip: true
+      )..show(context: context);
+    }
+  }
+
+  void initTargets() {
+    _targets = [
+      TargetFocus(
+          identify: 'search-book-key',
+          keyTarget: _searchBookKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            TargetContent(
+                align: ContentAlign.bottom,
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Clique aqui para pesquisar pelo livro desejado de forma rápida ',
+                      skip: 'Pular',
+                      next: 'Próximo',
+                      onNext: () => c.next(),
+                      onSkip: () => c.skip()
+                  );
+                }
+            ),
+          ]
+      ),
+      TargetFocus(
+          identify: 'random-verse-key',
+          keyTarget: _randomVerseKey,
+          shape: ShapeLightFocus.Circle,
+          contents: [
+            TargetContent(
+                align: ContentAlign.bottom,
+                builder: (context, c) {
+                  return TutorialWidget(
+                      text: 'Experimente clicar aqui para receber um versículo aleatório para ler ou '
+                          'compartilhar nas redes sociais',
+                      skip: '',
+                      next: 'Finalizar',
+                      onNext: () => c.skip(),
+                      onSkip: () => c.skip()
+                  );
+                }
+            ),
+          ]
+      ),
+    ];
   }
 
   void _createInterstitialAd() {
@@ -72,15 +140,13 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
     int randomInt = random.nextInt(2);
 
-    bool randomBool = randomInt == 1;
-
-    return randomBool;
+    return randomInt == 1;
   }
 
   void toggleSearch() {
     start.value = !start.value;
     if(!start.value) {
-      provider.toggleSearch(false);
+      provider.updateSearch(widget.books, '');
       _controller.text = '';
     }
   }
@@ -88,68 +154,67 @@ class _HomeAppBarState extends State<HomeAppBar> {
   @override
   void dispose() {
     _controller.dispose();
+    _interstitialAd?.dispose();
+    _coachMark?.finish();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final versesProvider = Provider.of<VersesProvider>(context, listen: false);
     return AppBar(
       titleSpacing: 0,
       centerTitle: true,
       title: ValueListenableBuilder(
-          valueListenable: start,
-          builder: (context, value, _) {
-            if(value) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Digite o livro aqui...'
-                      ),
-                      onChanged: (value) {
-                        if(start.value && _controller.text.isNotEmpty) {
-                          provider.toggleSearch(true);
-                        }
-                        provider.updateSearch(widget.books, value.trim());
-                      },
+        valueListenable: start,
+        builder: (context, value, _) {
+          if(value) {
+            return Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Digite o livro aqui...'
                     ),
-                  ).animate().fade(),
-                  IconButton(onPressed: (() => toggleSearch()), icon: const Icon(Icons.close)),
-                ],
-              );
-            }
+                    onChanged: (value) => provider.updateSearch(widget.books, value.trim())
+                  ),
+                ).animate().fade(),
+                IconButton(onPressed: (() => toggleSearch()), icon: const Icon(Icons.close)),
+              ],
+            );
+          }
 
-            return const Text('BibleWise').animate().fade();
-          }),
+          return const Text('BibleWise').animate().fade();
+        }),
       actions: [
         ValueListenableBuilder(
             valueListenable: start,
             builder: (context, value, _) {
-              return IconButton(onPressed: (() => toggleSearch()), icon: const Icon(Icons.search))
-                  .animate(target: (start.value) ? 1 : 0)
-                  .fade(begin: 1, end: 0);
+              return IconButton(key: _searchBookKey, onPressed: (() => toggleSearch()), icon: const Icon(Icons.search))
+                .animate(target: (start.value) ? 1 : 0)
+                .fade(begin: 1, end: 0);
             }
         ),
         IconButton(
-          onPressed: () {
-            NotificationService().showNotification(CustomNotification(id: 0, title: 'Testew', body: 'teste', payload: ''));
+          key: _randomVerseKey,
+          onPressed: () async {
+            final versesProvider = Provider.of<VersesProvider>(context, listen: false);
             versesProvider.clear();
-            BibleService().checkInternetConnectivity().then((value) => {
-                  if (value) {
-                    if(showAd()) {
-                      _showInterstitialAd()
-                    }else {
-                      Navigator.pushNamed(context, 'random_verse_screen')
-                    }
-                  }
-                  else {
-                      alertDialog(content: 'Você precisa estar conectado a internet para receber um versiculo aleatório')
-                  }
-                });
+            final hasInternet = await BibleService().checkInternetConnectivity();
+
+            if (!hasInternet) {
+              alertDialog(content: 'Você precisa estar conectado a internet para receber um versiculo aleatório');
+              return;
+            }
+
+            if (showAd()) {
+              _showInterstitialAd();
+              return;
+            }
+
+            if (!context.mounted) return;
+            Navigator.pushNamed(context, 'random_verse_screen');
           },
           tooltip: 'Versículo Aleatório',
           icon: const Icon(Icons.help_outline_rounded),

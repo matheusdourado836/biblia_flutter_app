@@ -1,0 +1,61 @@
+rules_version = '2';
+
+// Espelha o modelo de permissões do firestore.rules para os arquivos.
+// Caminhos usados pelo app (ver devocional_service.dart e user_service.dart):
+//   bible_versions/{versao}.json          -> versões da Bíblia para download
+//   users/{userId}/{arquivo}              -> foto de perfil
+//   groups/{groupId}/{arquivo}            -> imagem do grupo
+//   devocionais/{id}/bgImage/{arquivo}    -> fundo do devocional
+//   devocionais/{id}/bgUserImage/{arquivo}
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Imagens enviadas pelo usuário: tipo e tamanho limitados para o bucket
+    // não virar hospedagem de arquivo arbitrário.
+    // Em regras de Storage não existe `request.method`; num delete o
+    // `request.resource` vem nulo — por isso a checagem aparece nos writes.
+    function isImageUpload() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 8 * 1024 * 1024;
+    }
+
+    // Baixadas por qualquer pessoa, inclusive sem login (tela de versões).
+    // A escrita é feita pelo console/admin, nunca pelo app.
+    match /bible_versions/{arquivo} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Foto de perfil: pública para leitura (aparece no feed e nos grupos),
+    // gravável apenas pelo dono.
+    match /users/{userId}/{arquivo=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId
+        && (request.resource == null || isImageUpload());
+    }
+
+    // Imagem do grupo: qualquer usuário logado do app pode ver; a escrita fica
+    // com quem está autenticado (o dono é verificado no Firestore ao salvar).
+    match /groups/{groupId}/{arquivo=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+        && (request.resource == null || isImageUpload());
+    }
+
+    // Fundo dos devocionais: o feed é público, então a leitura também é.
+    match /devocionais/{devocionalId}/{arquivo=**} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && (request.resource == null || isImageUpload());
+    }
+
+    // Nada fora dos caminhos acima.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

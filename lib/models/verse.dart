@@ -2,7 +2,7 @@ class VerseModel {
   String verse;
   String verseColor;
   String book;
-  int version;
+  String version;
   int chapter;
   int verseNumber;
 

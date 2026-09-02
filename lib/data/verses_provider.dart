@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:biblia_flutter_app/data/annotations_dao.dart';
 import 'package:biblia_flutter_app/data/verses_dao.dart';
+import 'package:biblia_flutter_app/helpers/version_to_name.dart';
 import 'package:biblia_flutter_app/models/annotation.dart';
 import 'package:biblia_flutter_app/models/verse.dart';
-import 'package:biblia_flutter_app/screens/home_screen/widgets/random_verse_widget.dart';
 import 'package:biblia_flutter_app/services/bible_service.dart';
-import 'package:biblia_flutter_app/themes/theme_colors.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -22,13 +23,13 @@ import 'books_dao.dart';
 import 'package:path_provider/path_provider.dart';
 
 class VersesProvider extends ChangeNotifier {
-  final BibleData _bibleData = BibleData();
-  BibleService service = BibleService();
-  List<VerseModel> _lista = [];
+  static final BibleData _bibleData = BibleData();
+  static final BooksDao _booksDao = BooksDao();
+  static final VersesDao _versesDao = VersesDao();
+  static final AnnotationsDao _annotationsDao = AnnotationsDao();
+  static final BibleService _service = BibleService();
   List<VerseModel> _listaBd = [];
-  List<Annotation> _listAnnotations = [];
   List<Annotation> _listAnnotationsDb = [];
-  List<Map<String, dynamic>> _listMapVerses = [];
   List<Map<String, dynamic>> _listMap = [];
   List<int> _versesFound = [];
   bool _bottomSheetOpened = false;
@@ -38,16 +39,13 @@ class VersesProvider extends ChangeNotifier {
   double _fontSize = 16;
   Map<String, dynamic> _verseInfo = {};
   Map<int, dynamic> _allVerses = {};
+  String currentBook = '';
 
-  String _color = 'todas';
+  List<Map<String, dynamic>> get bibleData => _bibleData.data;
 
   bool get bottomSheetOpened => _bottomSheetOpened;
 
-  UnmodifiableListView<VerseModel> get lista => UnmodifiableListView(_lista);
-
   List<VerseModel> get listaBd => _listaBd;
-
-  UnmodifiableListView<Annotation> get listaAnnotations => UnmodifiableListView(_listAnnotations);
 
   List<Annotation> get listaAnnotationsDb => _listAnnotationsDb;
 
@@ -59,27 +57,25 @@ class VersesProvider extends ChangeNotifier {
 
   double get fontSize => _fontSize;
 
-  String get color => _color;
-
   Map<String, dynamic> get verseInfo => _verseInfo;
 
   List<Map<String, dynamic>> get listMap => _listMap;
 
-  List<Map<String, dynamic>> get listMapVerses => _listMapVerses;
+  List<bool> readChapters = [];
 
   List<int> get versesFoundList => _versesFound;
 
   Map<int, dynamic>? get allVerses => _allVerses;
 
-  void loadUserData() async {
+  Future<void> loadUserData() async {
     _listaBd = [];
     _listAnnotationsDb = [];
-    final versesDao = VersesDao();
     final BibleDataController bibleDataController = BibleDataController();
     await Future.wait([
-      versesDao.findAll().then((verses) => _listaBd = verses),
+      _versesDao.findAll().then((verses) => _listaBd = verses),
       bibleDataController.getAllAnnotations().then((annotations) => _listAnnotationsDb = annotations)
     ]);
+    return;
   }
 
   void newFontSize(double newSize, bool save) async {
@@ -106,91 +102,98 @@ class VersesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {int versionIndex = 0}) {
-    if (_listMapVerses.isEmpty) {
-      List<dynamic> chapters = _bibleData.data[versionIndex][bookIndex]['chapters'];
-      for (int i = 0; i < chapters.length; i++) {
-        refreshFunction(bookName, bookIndex, i, versionIndex: versionIndex);
-      }
-      notifyListeners();
-      return _allVerses;
+  Map<int, dynamic> loadVerses(int bookIndex, String bookName, {String versionName = 'nvi', bool forMultiVersion = false}) {
+    final Map<int, dynamic> allVerses = {};
+    final versionNameFormatted = versionToName(versionName);
+    int versionIndex = _bibleData.data.indexWhere((bible) => bible["version"] == versionNameFormatted);
+
+    if (versionIndex == -1) {
+      // Versão ainda não decodificada (carregamento sob demanda): mostra a
+      // versão de referência e refaz a carga assim que a correta ficar pronta.
+      versionIndex = 0;
+      _bibleData.ensureVersionLoaded(versionNameFormatted).then((_) {
+        if (_bibleData.isLoaded(versionNameFormatted)) {
+          loadVerses(bookIndex, bookName,
+              versionName: versionName, forMultiVersion: forMultiVersion);
+        }
+      });
     }
 
+    final bibleData = _bibleData.data[versionIndex];
+    final List<dynamic> chapters = bibleData["text"][bookIndex]['chapters'];
+
+    if(!forMultiVersion) {
+      _allVerses.clear(); // limpar dados anteriores
+    }
+    for (int chapter = 0; chapter < chapters.length; chapter++) {
+      List<dynamic> versesByChapter = chapters[chapter];
+      final List<dynamic> versesByChapterDefault = _bibleData.data[0]["text"][bookIndex]['chapters'][chapter];
+
+      // Corrigir se o último versículo for uma anotação especial.
+      // A cópia evita alterar a estrutura compartilhada de BibleData, que
+      // antes crescia a cada chamada.
+      final lastVerse = versesByChapter.last;
+      if (lastVerse is String && (lastVerse.startsWith('[') || lastVerse.startsWith(' ['))) {
+        final parts = lastVerse.split(']')[0].split('-');
+        final initialVerse = int.parse(parts[0].replaceAll('[', ''));
+        final finalVerse = int.parse(parts[1]);
+        final difference = finalVerse - initialVerse;
+        versesByChapter = List<dynamic>.from(versesByChapter);
+        for (var i = 0; i < difference; i++) {
+          versesByChapter.add('');
+        }
+      }
+
+      final List<Map<String, dynamic>> versesMap = [];
+      for (var i = 0; i < versesByChapterDefault.length; i++) {
+        try{
+          final verseText = versesByChapter[i];
+          final defaultVerseText = versesByChapterDefault[i];
+
+          // Cor e versão com base no banco de dados
+          final foundDb = _listaBd.where((verse) => verse.verse == defaultVerseText);
+
+          final verseColor = foundDb.isNotEmpty
+              ? ConvertColors().convertColors(foundDb.first.verseColor)
+              : Colors.transparent;
+
+          final annotationFound = _listAnnotationsDb.where(
+                (annotation) =>
+            annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1,
+          );
+
+          versesMap.add({
+            "bookName": bookName,
+            "chapter": chapter + 1,
+            "verseNumber": i + 1,
+            "verse": verseText,
+            "verseDefault": defaultVerseText,
+            "verseColor": verseColor,
+            "version": versionNameFormatted,
+            "isSelected": false,
+            "isEditing": false,
+            "annotation": annotationFound.firstOrNull
+          });
+        }catch(e) {
+          debugPrint('Falha ao montar o capítulo $chapter de $bookName ($versionNameFormatted): $e');
+        }
+      }
+
+      if(forMultiVersion) {
+        allVerses[chapter + 1] = versesMap;
+      }else {
+        _allVerses[chapter + 1] = versesMap;
+      }
+    }
+
+    if(forMultiVersion) {
+      return allVerses;
+    }
+    notifyListeners();
     return _allVerses;
   }
 
-  void refreshFunction(String bookName, int bookIndex, int chapter, {int versionIndex = 0}) {
-    final listColorsDb = [];
-    _listMapVerses = [];
-    final List<dynamic> versesByChapter = _bibleData.data[versionIndex][bookIndex]['chapters'][chapter];
-    final List<dynamic> versesByChapterDefault = _bibleData.data[0][bookIndex]['chapters'][chapter];
-
-    for (var i = 0; i < versesByChapterDefault.length; i++) {
-      if(_listaBd.isNotEmpty && _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).isNotEmpty) {
-        final verseFound = _listaBd.where((verse) => verse.verse == versesByChapterDefault[i]).first;
-        listColorsDb.add({
-          "verse": versesByChapterDefault[i],
-          "version": verseFound.version,
-          "color": ConvertColors().convertColors(verseFound.verseColor)
-        });
-      }else {
-        listColorsDb.add({
-          "verse": versesByChapterDefault[i],
-          "version": 0,
-          "color": Colors.transparent
-        });
-      }
-      final annotationFound = _listAnnotationsDb.where((annotation) => annotation.book == bookName && annotation.chapter == chapter + 1 && annotation.verseEnd == i + 1);
-      _listMapVerses.add({
-        "bookName": bookName,
-        "chapter": chapter + 1,
-        "verseNumber": i + 1,
-        "verse": versesByChapter[i],
-        "verseDefault": versesByChapterDefault[i],
-        "verseColor": listColorsDb[i]["color"],
-        "version": versionIndex,
-        "isSelected": false,
-        "isEditing": false,
-        "annotation": annotationFound.isEmpty ? null : annotationFound.first
-      });
-      // await versesDao.find(versesByChapterDefault[i]).then((res) => {
-      //     if (res.isNotEmpty) {
-      //       if (res[0].verse == versesByChapterDefault[i]) {
-      //         listColorsDb.add({
-      //           "verse": versesByChapterDefault[i],
-      //           "version": res[0].version,
-      //           "color": ConvertColors().convertColors(res[0].verseColor)
-      //         }),
-      //       }
-      //     }
-      //     else {
-      //       listColorsDb.add({
-      //         "verse": versesByChapterDefault[i],
-      //         "version": 0,
-      //         "color": Colors.transparent
-      //       }),
-      //     },
-      //   });
-      // await bibleDataController.annotationExists(bookName, chapter + 1, i + 1)
-      //     .then((value) => _listMapVerses.add({
-      //         "bookName": bookName,
-      //         "chapter": chapter + 1,
-      //         "verseNumber": i + 1,
-      //         "verse": versesByChapter[i],
-      //         "verseDefault": versesByChapterDefault[i],
-      //         "verseColor": listColorsDb[i]["color"],
-      //         "version": versionIndex,
-      //         "isSelected": false,
-      //         "isEditing": false,
-      //         "annotation": value
-      //       })
-      // );
-    }
-    _allVerses[chapter + 1] = _listMapVerses;
-  }
-
   void clear() {
-    _listMapVerses = [];
     _allVerses = {};
     notifyListeners();
   }
@@ -201,11 +204,33 @@ class VersesProvider extends ChangeNotifier {
   }
 
   Future<void> getImage() async {
-    await service.getRandomImage().then((value) => _verseInfo["url"] = value);
+    await _service.getRandomImage().then((value) => _verseInfo["url"] = value);
   }
 
+  Future<File?> getOnlyImage() async {
+    final Dio dio = Dio();
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    final image = await _service.getOnlyImage();
+    String fileName = image.split('/').last.split('.')[0];
+    await dio.download(image.trim(), '${appDocDir.path}/$fileName');
+    
+    return await getDownloadedFile(fileName);
+  }
+
+  Future<File> getDownloadedFile(String fileName) async {
+  Directory appDocDir = await getApplicationDocumentsDirectory();
+  String filePath = '${appDocDir.path}/$fileName';
+  
+  File file = File(filePath);
+  if (file.existsSync()) {
+    return file;
+  } else {
+    throw Exception('File not found: $fileName');
+  }
+}
+
   Future<Map<String, dynamic>> getRandomVerse() async {
-    await service.getRandomVerse()
+    await _service.getRandomVerse()
         .then((value) => {
               _verseInfo["bookName"] = value["book"]["name"],
               _verseInfo["abbrev"] = value["book"]["abbrev"]["pt"],
@@ -219,15 +244,18 @@ class VersesProvider extends ChangeNotifier {
             title: 'Erro ${innerError.message}',
             content: 'O servidor demorou pra responder. Tente novamente mais tarde.'
           );
+          return <dynamic>{};
       },
       test: (error) => error is TimeoutException,
     ).catchError(
       (error) {
         var innerError = error as HttpException;
         alertDialog(
-            title: 'Erro ${innerError.message}',
-            content:
-                'O servidor demorou pra responder. Tente novamente mais tarde.');
+          title: 'Erro ${innerError.message}',
+          content: 'O servidor demorou pra responder. Tente novamente mais tarde.'
+        );
+
+        return <dynamic>{};
       },
       test: (error) => error is HttpException,
     );
@@ -237,33 +265,32 @@ class VersesProvider extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     final List<Map<String, dynamic>> allBooks = [];
-    for (var i = 0; i < _bibleData.data[0].length; i++) {
+    for (var i = 0; i < _bibleData.data[0]["text"].length; i++) {
       allBooks.add({
-        'bookName': _bibleData.data[0][i]["name"],
-        'abbrev': _bibleData.data[0][i]["abbrev"],
+        'bookName': _bibleData.data[0]["text"][i]["name"],
+        'abbrev': _bibleData.data[0]["text"][i]["abbrev"],
         'bookIndex': i,
-        'chapters': _bibleData.data[0][i]["chapters"].length
+        'chapters': _bibleData.data[0]["text"][i]["chapters"].length
       });
     }
 
     return allBooks;
   }
 
-  Future<void> shareImageAndText() async {
+  Future<void> shareImageAndText(GlobalKey globalKey) async {
     try {
-      final boundary =
-          globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 2.0);
+      final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final image = await boundary.toImage(pixelRatio: 4.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData != null) {
         Uint8List pngBytes = byteData.buffer.asUint8List();
-        bytesToXFile(pngBytes).then((image) => Share.shareXFiles(image));
+        bytesToXFile(pngBytes).then((image) => SharePlus.instance.share(ShareParams(files: image)));
       }
     } catch (e) {
       alertDialog(
-          content:
-              'Não foi possível compartilhar o versículo! Se o erro persistir, envie um feedback de erro.\nErro: $e');
+        content: 'Não foi possível compartilhar o versículo! Se o erro persistir, envie um feedback de erro.\nErro: $e'
+      );
     }
   }
 
@@ -278,41 +305,47 @@ class VersesProvider extends ChangeNotifier {
     return files;
   }
 
-  void shareVerses(BuildContext context, List<Map<String, dynamic>> listMap, String bookName) {
-    String verse = '';
-    String book = '';
-    for (var element in listMap) {
-      book = '${element["bookName"]} ${element["chapter"]}';
-      if(element["isSelected"]) {
-        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
-      }
-    }
-    Share.share('$book:$verse');
+  void shareVerses(List<Map<String, dynamic>> listMap, String bookName, int chapter) {
+    int startIndex = listMap.first["verseNumber"];
+    int? endIndex = listMap.length > 1 ? listMap.last["verseNumber"] : null;
+
+    String book = endIndex != null
+        ? '$bookName $chapter:$startIndex-$endIndex'
+        : '$bookName $chapter:$startIndex';
+
+    String verses = listMap.map((v) => '${v["verseNumber"]} ${v["verse"]}').join(' ');
+
+    SharePlus.instance.share(ShareParams(text: '$book "$verses"'));
   }
 
-  void share(String bookName, String verse, int chapter, int verseNumber) {
-    Share.share('$bookName $chapter:$verseNumber $verse');
-  }
+  void share(
+    String bookName,
+    String verse,
+    int chapter,
+    int verseNumber
+  ) => SharePlus.instance.share(
+        ShareParams(text: '$bookName $chapter:$verseNumber "$verse"'),
+      );
 
-  void copyText(String bookName, String verse, int chapter, int verseNumber) async {
-    await Clipboard.setData(
-        ClipboardData(text: '$bookName $chapter:$verseNumber $verse'));
-  }
+  Future<void> copyText(String bookName, String verse, int chapter, int verseNumber) => Clipboard.setData(
+    ClipboardData(text: '$bookName $chapter:$verseNumber "$verse')
+  );
 
-  void copyVerses(List<Map<String, dynamic>> listMap) async {
-    String verse = '';
-    String book = '';
-    for (var element in listMap) {
-      book = '${element["bookName"]} ${element["chapter"]}';
-      if(element["isSelected"]) {
-        verse = '$verse ${element["verseNumber"]} ${element["verse"]}';
-      }
-    }
-    await Clipboard.setData(ClipboardData(text: '$book:$verse'));
+  void copyVerses(List<Map<String, dynamic>> listMap, String bookname, int chapter) {
+    int startIndex = listMap.first["verseNumber"];
+    int? endIndex = listMap.length > 1 ? listMap.last["verseNumber"] : null;
+
+    String book = endIndex == null
+        ? '$bookname $chapter:$startIndex'
+        : '$bookname $chapter:$startIndex-$endIndex';
+
+    String verses = listMap.map((v) => '${v["verseNumber"]} ${v["verse"]}').join(' ');
+
+    Clipboard.setData(ClipboardData(text: '$book "$verses"'));
   }
 
   Future<void> deleteVerse(String verse) async {
-    await VersesDao().delete(verse);
+    await _versesDao.delete(verse);
     notifyListeners();
   }
 
@@ -322,62 +355,21 @@ class VersesProvider extends ChangeNotifier {
         element["verseColor"] = Colors.transparent;
         element["isSelected"] = false;
         element["isEditing"] = false;
-        VersesDao().delete(element["verseDefault"]);
+        await _versesDao.delete(element["verseDefault"]);
       }
     }
+    await loadUserData();
     notifyListeners();
   }
 
   Future<void> deleteAllVerses() async {
-    await VersesDao().deleteAllVerses();
+    await _versesDao.deleteAllVerses();
     notifyListeners();
   }
 
   Future<void> deleteAllAnnotations() async {
-    await AnnotationsDao().deleteAllAnnotations();
+    await _annotationsDao.deleteAllAnnotations();
     notifyListeners();
-  }
-
-  void orderListByColor(String option) {
-    switch (option) {
-      case 'todas':
-        _color = 'todas';
-        break;
-      case 'azul':
-        _color = ThemeColors.colorString2;
-        break;
-      case 'amarelo':
-        _color = ThemeColors.colorString3;
-        break;
-      case 'marrom':
-        _color = ThemeColors.colorString4;
-        break;
-      case 'vermelho':
-        _color = ThemeColors.colorString5;
-        break;
-      case 'laranja':
-        _color = ThemeColors.colorString6;
-        break;
-      case 'verde':
-        _color = ThemeColors.colorString7;
-        break;
-      case 'rosa':
-        _color = ThemeColors.colorString8;
-        break;
-      case 'ciano':
-        _color = ThemeColors.colorString1;
-        break;
-    }
-    notifyListeners();
-  }
-
-  bool bookIsReadCheckBox(bool isChecked) {
-    if (isChecked == true) {
-      notifyListeners();
-      return true;
-    }
-    notifyListeners();
-    return false;
   }
 
   void clearSelectedVerses(List<Map<String, dynamic>> listMap) {
@@ -389,23 +381,50 @@ class VersesProvider extends ChangeNotifier {
   }
 
   Future<void> getAnnotations() async {
-    _listAnnotations = await AnnotationsDao().findAll();
-    _qtdAnnotations = _listAnnotations.length;
+    _listAnnotationsDb = await _annotationsDao.findAll();
+    _qtdAnnotations = _listAnnotationsDb.length;
   }
 
+  Future<int> saveAnnotation({required Annotation annotation}) async => await _annotationsDao.save(annotation);
+
+  Future<int> updateAnnotation({
+    required String annotationId,
+    required String content,
+    required String style
+  }) async => await _annotationsDao.updateAnnotation(annotationId, content, style);
+
   Future<void> deleteAnnotation(String annotationId) async {
-    await AnnotationsDao().delete(annotationId);
+    await _annotationsDao.delete(annotationId);
     notifyListeners();
   }
 
+  Future<void> getReadChapters({required String bookName, required int qtdChapters}) async {
+    readChapters = [];
+    List<dynamic> chaptersList = [];
+    final booksRead = await _booksDao.findByChapter(bookName, qtdChapters);
+    if(booksRead['chapters'] is String) {
+      final String chaptersString = booksRead['chapters'];
+      // Corrige a string, colocando aspas nos números das chaves
+      String correctedChapters = chaptersString.replaceAllMapped(
+          RegExp(r'(\d+):'), (match) => '"${match[1]}":'
+      );
+
+      // Converte a string JSON corrigida para uma lista
+      chaptersList = jsonDecode(correctedChapters);
+    }else {
+      chaptersList = booksRead['chapters'];
+    }
+
+    readChapters = chaptersList.map((chapter) => chapter.values.first as bool).toList();
+    notifyListeners();
+    return;
+  }
+
   void refresh() async {
-    _lista = await VersesDao().findAll();
-    _qtdVerses = _lista.length;
-    _listAnnotations = await AnnotationsDao().findAll();
-    _qtdAnnotations = _listAnnotations.length;
-    await BooksDao().findAll().then((value) {
-      _listMap = value;
-    });
+    _listaBd = await _versesDao.findAll();
+    _qtdVerses = _listaBd.length;
+    getAnnotations();
+    _listMap = await _booksDao.findAll();
     notifyListeners();
   }
 
@@ -436,15 +455,21 @@ class VersesProvider extends ChangeNotifier {
 
   void updateColors(List<Map<String, dynamic>> listMap, Color newColor, String bdColor) {
     for (var element in listMap) {
-      if(element["isSelected"] == true) {
-        element["verseColor"] = newColor;
-        element["isSelected"] = false;
-        if(element["isEditing"] == true) {
-          VersesDao().updateColor(element["verseDefault"], bdColor);
-        }else {
-          VersesDao().save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
-        }
+      element["verseColor"] = newColor;
+      element["isSelected"] = false;
+      if(element["isEditing"] == true) {
+        _versesDao.updateColor(element["verseDefault"], bdColor);
+      }else {
+        _versesDao.save(VerseModel(verse: element["verseDefault"], verseColor: bdColor, book: element["bookName"], version: element["version"], chapter: element["chapter"], verseNumber: element["verseNumber"]));
       }
     }
+  }
+
+  void highlightSpeechBloc(int chapter, int count) {
+    if(count > 0) {
+      _allVerses[chapter][count - 1]["isSelected"] = false;
+    }
+    _allVerses[chapter][count]["isSelected"] = true;
+    notifyListeners();
   }
 }

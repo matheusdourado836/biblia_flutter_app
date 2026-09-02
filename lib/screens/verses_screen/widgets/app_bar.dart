@@ -1,11 +1,16 @@
+import 'package:biblia_flutter_app/models/book.dart';
+import 'package:biblia_flutter_app/models/chapter.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/verses_screen.dart';
+import 'package:biblia_flutter_app/helpers/progress_dialog.dart';
 import 'package:biblia_flutter_app/screens/verses_screen/widgets/searching_verse.dart';
+import 'package:biblia_flutter_app/screens/verses_screen/widgets/select_versions_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../data/verses_provider.dart';
 import '../../../data/version_provider.dart';
-import 'loading_verses_widget.dart';
+import '../../../helpers/version_to_name.dart';
 
 class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String bookName;
@@ -13,15 +18,17 @@ class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int chapters;
   final int bookIndex;
   final int chapter;
+  final ItemPositionsListener itemPositionsListener;
 
-  const VersesAppBar(
-      {Key? key,
-      required this.bookName,
-      required this.abbrev,
-      required this.chapters,
-      required this.bookIndex,
-      required this.chapter})
-      : super(key: key);
+  const VersesAppBar({
+    super.key,
+    required this.bookName,
+    required this.abbrev,
+    required this.chapters,
+    required this.bookIndex,
+    required this.chapter,
+    required this.itemPositionsListener
+  });
 
   @override
   State<VersesAppBar> createState() => _VersesAppBarState();
@@ -31,11 +38,9 @@ class VersesAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _VersesAppBarState extends State<VersesAppBar> {
-  final GlobalKey containerKey = GlobalKey();
   final start = ValueNotifier(false);
   bool isSearching = false;
   late VersesProvider _versesProvider;
-  double position = 0;
 
   @override
   void initState() {
@@ -50,9 +55,12 @@ class _VersesAppBarState extends State<VersesAppBar> {
     });
     start.value = !start.value;
     if (!isSearching) {
-      _versesProvider
-          .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
       _versesProvider.resetVersesFoundCounter();
+      if(_versesProvider.bottomSheetOpened) {
+        Navigator.pop(context);
+        _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
+        _versesProvider.openBottomSheet(false);
+      }
       setState(() {
         listVerses = [];
         textEditingController.text = '';
@@ -66,7 +74,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
     final double dx = (width - width * .2) * -1;
     return AppBar(
       titleSpacing: 0,
-      leadingWidth: 70,
+      leadingWidth: 85,
       toolbarHeight: kToolbarHeight + 20,
       automaticallyImplyLeading: false,
       leading: Padding(
@@ -76,8 +84,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
             if(_versesProvider.bottomSheetOpened) {
               Navigator.pop(context);
             }
-            _versesProvider
-                .clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
+            _versesProvider.clearSelectedVerses(_versesProvider.allVerses?[widget.chapter] ?? {});
             _versesProvider.resetVersesFoundCounter();
             setState(() {
               textEditingController.text = '';
@@ -86,30 +93,27 @@ class _VersesAppBarState extends State<VersesAppBar> {
             _versesProvider.refresh();
             Navigator.pop(context);
           }),
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.adaptive.arrow_back),
         ),
       ),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Flexible(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Container(
-                height: 30,
-                width: width * .4,
-                decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                    border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)),
-                child: InkWell(
-                  onTap: (() {
-                    Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(2.0),
-                    child: Center(
-                      child: Text(widget.bookName),
-                    ),
+            child: Container(
+              height: 30,
+              width: width * .4,
+              decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)),
+              child: InkWell(
+                onTap: (() {
+                  Navigator.pushNamedAndRemoveUntil(context, 'home', (route) => false);
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Center(
+                    child: Text(widget.bookName),
                   ),
                 ),
               ),
@@ -118,6 +122,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
           Container(
             height: 30,
             width: width * 0.1,
+            margin: const EdgeInsets.symmetric(horizontal: 8.0),
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radius.circular(5.0)),
               border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
@@ -126,7 +131,7 @@ class _VersesAppBarState extends State<VersesAppBar> {
               onTap: () {
                 _versesProvider.refresh();
                 _versesProvider.clearSelectedVerses(_versesProvider.allVerses![widget.chapter]);
-                Navigator.pushNamedAndRemoveUntil(context, 'chapter_screen', (route) => false,
+                Navigator.pushNamed(context, 'chapter_screen',
                   arguments: {
                     'bookName': widget.bookName,
                     'abbrev': widget.abbrev,
@@ -137,85 +142,153 @@ class _VersesAppBarState extends State<VersesAppBar> {
               child: Center(child: Text(widget.chapter.toString())),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
+          Flexible(
             child: Container(
-              width: width * 0.30,
               height: 30,
+              constraints: const BoxConstraints(maxWidth: 250),
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  width: 2,
+                ),
               ),
               child: Consumer<VersionProvider>(
                 builder: (context, value, _) {
-                  return DropdownButton(
-                    underline: Container(
-                      height: 0,
-                      color: Colors.transparent,
-                    ),
-                    style: Theme.of(context).dropdownMenuTheme.textStyle,
-                    isExpanded: true,
-                    itemHeight: 125.0,
-                    value: value.selectedOption,
-                    items: value.options.map((option) {
-                      value.setListItem(option.split(' ')[0]);
+                  final theme = Theme.of(context);
+                  final textStyle = theme.textTheme.titleSmall!.copyWith(fontSize: 12);
+
+                  List<DropdownMenuItem<String>> buildDropdownItems() {
+                    final options = value.options;
+                    return options.map((option) {
+                      final isDownloaded = value.getDownloadedVersion(versionToName(option));
+
+                      Widget content = isDownloaded && option != 'Multi versão'
+                          ? Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              option,
+                              style: textStyle.copyWith(
+                                color: textStyle.color?.withAlpha(128),
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.download, size: 16),
+                        ],
+                      )
+                          : Center(child: Text(option, style: textStyle));
+
                       return DropdownMenuItem(
                         value: option,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0, left: 8, right: 8),
-                          child: Center(
-                              child: Text(
-                                option,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              )),
-                        ),
+                        child: content,
                       );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (_versesProvider.bottomSheetOpened) {
-                        Navigator.pop(context);
-                        _versesProvider.openBottomSheet(false);
+                    }).toList();
+                  }
+
+                  return DropdownButton<String>(
+                    underline: const SizedBox.shrink(),
+                    style: theme.dropdownMenuTheme.textStyle,
+                    isExpanded: true,
+                    itemHeight: 110.0,
+                    value: value.selectedOption,
+                    items: buildDropdownItems(),
+                    onChanged: (newValue) async {
+                      if (newValue == null) return;
+                      if(newValue == 'Multi versão') {
+                        final book = BookFull(
+                          bookIndex: widget.bookIndex,
+                          abbrev: widget.abbrev,
+                          chapter: widget.chapter,
+                          chapters: List.generate(widget.chapters, (i) => Chapter(verses: [])),
+                          name: widget.bookName,
+                          verseNumber: 1
+                        );
+                        showDialog(
+                          context: context,
+                          builder: (context) => SelectVersionsDialog(book: book)
+                        );
+                        return;
                       }
-                      _versesProvider.resetVersesFoundCounter();
-                      setState(() {
-                        listVerses = [];
-                        initialVerse = itemPositionsListener.itemPositions.value.first.index + 1;
-                      });
-                      _versesProvider.clear();
-                      value.changeVersion(newValue!.toString());
-                      _versesProvider.loadVerses(widget.bookIndex, widget.bookName, versionIndex: value.options.indexOf(value.selectedOption));
+
+                      final versionKey = newValue.split(' ')[0].toLowerCase();
+                      final versionRaw = newValue.split(' ')[0];
+                      final isDownloaded = value.getDownloadedVersion(versionToName(newValue));
+
+                      void handleVersionChange() {
+                        if (_versesProvider.bottomSheetOpened) {
+                          Navigator.pop(context);
+                          _versesProvider.openBottomSheet(false);
+                        }
+
+                        _versesProvider.resetVersesFoundCounter();
+                        setState(() {
+                          listVerses = [];
+                          initialVerse = widget.itemPositionsListener.itemPositions.value.first.index + 1;
+                        });
+
+                        value.changeVersion(newValue);
+                      }
+
+                      void loadVerses() {
+                        _versesProvider.clear();
+                        _versesProvider.loadVerses(
+                          widget.bookIndex,
+                          widget.bookName,
+                          versionName: versionKey,
+                        );
+                      }
+
+                      if (isDownloaded) {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => ProgressDialog(
+                            versionName: versionToName(newValue),
+                            versionNameRaw: versionRaw,
+                          ),
+                        );
+
+                        if (result ?? false) {
+                          handleVersionChange();
+                          loadVerses();
+                        }
+                      } else {
+                        handleVersionChange();
+                        loadVerses();
+                      }
                     },
-                    selectedItemBuilder: (BuildContext context) {
-                      return value.versionsList;
-                    },
+                    selectedItemBuilder: (_) => value.options.map(
+                      (v) => Center(
+                        child: Text(v.toUpperCase().split(' ')[0]),
+                      )
+                    ).toList(),
                   );
                 },
               ),
             ),
-          ),
+          )
         ],
-      ).animate(target: start.value ? 1 : 0)
-          .fadeOut(duration: 1300.ms),
+      ).animate(target: start.value ? 1 : 0).fadeOut(duration: 1300.ms),
       actions: [
-        (isSearching) ? SearchingVerse(function: toggleSearch, chapter: widget.chapter)
+        if(isSearching)
+          SearchingVerse(function: toggleSearch, chapter: widget.chapter)
             .animate(target: start.value ? 1 : 0)
-            .fadeIn(duration: 1300.ms) : Container(),
+            .fadeIn(duration: 1300.ms),
         ValueListenableBuilder(
-            valueListenable: start,
-            builder: (context, started, _) => IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: toggleSearch,
-                )
-                    .animate(
-                      target: started ? 1 : 0,
-                    )
-                    .rotate(duration: 1300.ms)
-                    .moveX(
-                      begin: 0,
-                      end: dx,
-                      curve: Curves.easeInOut,
-                      duration: 1300.ms,
-                    )
+          valueListenable: start,
+          builder: (context, started, _) => IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: toggleSearch,
+          )
+          .animate(target: started ? 1 : 0)
+          .rotate(duration: 1300.ms)
+          .moveX(
+            begin: 0,
+            end: dx,
+            curve: Curves.easeInOut,
+            duration: 1300.ms,
+          )
         ),
       ],
     );

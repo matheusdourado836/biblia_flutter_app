@@ -1,3 +1,44 @@
+import 'chapter.dart';
+
+class BookFull {
+  int? bookIndex;
+  String? name;
+  String? abbrev;
+  List<Chapter>? chapters;
+  int? chapter;
+  int? verseNumber;
+
+  BookFull({
+    this.bookIndex,
+    this.name,
+    this.abbrev,
+    this.chapters,
+    this.chapter,
+    this.verseNumber
+  });
+
+  factory BookFull.fromMap(Map<String, dynamic> map) {
+    return BookFull(
+      name: map["name"],
+      abbrev: map["abbrev"],
+      chapters: (map['chapters'] as List)
+          .map((chapter) => Chapter.fromJson(chapter))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'abbrev': abbrev,
+      'chapters': chapters?.map((chapter) => chapter.toJson()).toList(),
+      'bookIndex': bookIndex,
+      'chapter': chapter,
+      'verseNumber': verseNumber
+    };
+  }
+}
+
 class Book {
   String name;
   String abbrev;

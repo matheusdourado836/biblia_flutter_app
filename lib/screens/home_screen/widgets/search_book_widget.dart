@@ -1,5 +1,5 @@
+import 'package:biblia_flutter_app/data/chapters_provider.dart';
 import 'package:biblia_flutter_app/data/verses_provider.dart';
-import 'package:biblia_flutter_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/book.dart';
@@ -10,11 +10,14 @@ class SearchBookWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenOrientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size.width;
     if(books.isEmpty) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Image.asset('assets/images/not_found.png', width: 230, height: 230),
-          const Text('Livro não encontrado...\nverifique a ortografia e tente novamente', style: TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+          const Text('Livro não encontrado...\nverifique a ortografia e tente novamente', style: TextStyle(fontWeight: FontWeight.w600), textAlign: TextAlign.center,),
         ],
       );
     }
@@ -23,8 +26,6 @@ class SearchBookWidget extends StatelessWidget {
       shrinkWrap: true,
       itemCount: books.length,
       itemBuilder: (context, index) {
-        final screenOrientation = MediaQuery.of(context).orientation;
-        final screenSize = MediaQuery.of(context).size.width;
         final bool condition1 = screenSize > 500 && screenOrientation == Orientation.portrait;
         final bool condition2 = screenSize > 500 && screenOrientation == Orientation.landscape;
         final bookName = books[index].name;
@@ -33,13 +34,15 @@ class SearchBookWidget extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0, left: 8, top: 16),
           child: InkWell(
-            onTap: (() {
+            onTap: () {
               final versesProvider = Provider.of<VersesProvider>(context, listen: false);
+              final chaptersProvider = Provider.of<ChaptersProvider>(context, listen: false);
+              chaptersProvider.updateSearch(books, '');
               versesProvider.clear();
-              final book = bibleData.data[0].where((element) => element["name"] == bookName).first;
-              final bookIndex = bibleData.data[0].indexOf(book);
+              final book = versesProvider.bibleData[0]["text"].where((element) => element["name"] == bookName).first;
+              final bookIndex = versesProvider.bibleData[0]["text"].indexOf(book);
               Navigator.pushNamed(context, 'chapter_screen', arguments: {'bookName': bookName, 'abbrev': abbrev, 'bookIndex': bookIndex, 'chapters': books[index].chapters,});
-            }),
+            },
             child: Row(
               children: [
                 Container(
@@ -47,9 +50,7 @@ class SearchBookWidget extends StatelessWidget {
                   height: (condition1 || condition2) ? 80 : 55,
                   decoration: BoxDecoration(
                     color: (index < 39) ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(100),
-                    ),
+                    borderRadius: const BorderRadius.all(Radius.circular(100)),
                   ),
                   alignment: Alignment.center,
                   child: Text(

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:biblia_flutter_app/helpers/go_to_verse_screen.dart';
+import 'package:biblia_flutter_app/main.dart';
 import 'package:biblia_flutter_app/models/custom_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_native_timezone_updated_gradle/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
@@ -15,65 +17,73 @@ class NotificationService {
     _setupNotifications();
   }
 
-  _setupNotifications() async {
+  Future<void> _setupNotifications() async {
     await _setupTimezone();
     await _initializeNotifications();
   }
 
   Future<void> _setupTimezone() async {
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    final timezone = await FlutterTimezone.getLocalTimezone();
+    final String timeZoneName = timezone.identifier;
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
-  _initializeNotifications() async {
+  Future<void> _initializeNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iOS = DarwinInitializationSettings();
+    // flutter_local_notifications 22 passou initialize/show para parâmetros
+    // nomeados (`settings:`, `id:`, `notificationDetails:`).
     await localNotificationsPlugin.initialize(
-      const InitializationSettings(android: android, iOS: iOS),
+      settings: const InitializationSettings(android: android, iOS: iOS),
       onDidReceiveNotificationResponse: _onSelectedNotification,
     );
   }
 
-  _onSelectedNotification(NotificationResponse? notificationResponse) {
-    if(notificationResponse != null) {
-      if (notificationResponse.payload != null && notificationResponse.payload!.isNotEmpty) {
-        final payload = notificationResponse.payload;
-        print('OLHA A MENSAGEM AEEEEEE $payload');
-        if(payload !=  null) {
-          GoToVerseScreen().goToVersePage(
-              payload.split(' ')[0],
-              payload.split(' ')[1],
-              int.parse(payload.split(' ')[2]),
-              int.parse(payload.split(' ')[3]),
-              int.parse(payload.split(' ')[4]),
-              int.parse(payload.split(' ')[5])
-          );
-        }
+  void _onSelectedNotification(NotificationResponse? notificationResponse) {
+    if (notificationResponse?.payload?.isEmpty ?? true) return;
+
+    try {
+      final Map<String, dynamic> data = jsonDecode(notificationResponse!.payload!);
+
+      if (data['type'] == 'route') {
+        navigatorKey!.currentState!.pushNamedAndRemoveUntil(
+          data['route'], (route) => false,
+          arguments: {"notification": true},
+        );
+      } else if (data['type'] == 'verse') {
+        GoToVerseScreen().goToVersePage(
+          data['bookName'],
+          data['abbrev'],
+          int.parse(data['bookIndex'].toString()),
+          int.parse(data['chapters'].toString()),
+          int.parse(data['chapter'].toString()),
+          int.parse(data['verseNumber'].toString()),
+        );
       }
+    } catch (e) {
+      debugPrint('Erro ao tratar payload: $e');
     }
   }
 
-  showNotification(CustomNotification notification) {
-    androidNotificationDetails = const AndroidNotificationDetails(
-      'versiculo_diario_notification', 'versiculo_diario',
+  void showNotification(CustomNotification notification, String? channelInfo) {
+    final channel = (channelInfo == null) ? 'versiculo_diario' : channelInfo;
+    androidNotificationDetails = AndroidNotificationDetails(
+      '${channel}_notification',
+      channel,
       importance: Importance.max,
       priority: Priority.max,
       enableVibration: true,
+      colorized: true,
+      color: Colors.brown,
     );
 
     localNotificationsPlugin.show(
-        notification.id,
-        notification.title,
-        notification.body,
-        NotificationDetails(android: androidNotificationDetails),
-        payload: notification.payload);
-  }
-
-  checkForNotification() async {
-    final details = await localNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (details != null && details.didNotificationLaunchApp) {
-      _onSelectedNotification(details.notificationResponse!);
-    }
+      id: notification.id,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: NotificationDetails(android: androidNotificationDetails),
+      payload: notification.payload,
+    );
   }
 }

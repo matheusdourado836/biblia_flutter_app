@@ -31,10 +31,10 @@ class BibleDataController {
     return await _annotationsDao.checkByTitle(bookName, chapter, verse);
   }
 
-  void getStartAndEndIndex(List<Map<String, dynamic>> listMap, int verseNumber) {
+  void getStartAndEndIndex(List<Map<String, dynamic>> listMap) {
     _startIndex = 0;
     _endIndex = 0;
-    List<Map<String, dynamic>> versosSelecionados = listMap.where((element) => element["isSelected"] == true).toList();
+    List<Map<String, dynamic>> versosSelecionados = listMap.where((element) => element["isSelected"]).toList();
     _startIndex = versosSelecionados.first['verseNumber'];
     _endIndex = versosSelecionados.last['verseNumber'];
     _annotationTitle = '${versosSelecionados.first['bookName']} ${versosSelecionados.first['chapter']}:$_startIndex-$_endIndex';
@@ -47,38 +47,19 @@ class BibleDataController {
   List<Book> getBooks() {
     _books = [];
     String testament = '';
-    for (int i = 0; i < _bibleData.data[0].length; i++) {
+    for (int i = 0; i < _bibleData.data[0]["text"].length; i++) {
       testament = i < 39 ? 'VT' : 'NT';
       _books.add(Book(
-          abbrev: _bibleData.data[0][i]['abbrev'],
-          name: _bibleData.data[0][i]['name'],
+          abbrev: _bibleData.data[0]["text"][i]['abbrev'],
+          name: _bibleData.data[0]["text"][i]['name'],
           testament: testament,
-          chapters: _bibleData.data[0][i]['chapters'].length));
+          chapters: _bibleData.data[0]["text"][i]['chapters'].length));
     }
 
     return _books;
   }
 
-  getVersionName(int versionCode) {
-    switch(versionCode) {
-      case 0:
-        return 'NVI (Nova Versão Internacional)';
-      case 1:
-        return 'ACF (Almeida Corrigida Fiel)';
-      case 2:
-        return 'RA (Revista e Atualizada)';
-      case 3:
-        return 'BBE (Bible in Basic English)';
-      case 4:
-        return 'KJV (King James Version)';
-      case 5:
-        return 'RVR (Versão Espanhola Reina-Valera)';
-      case 6:
-        return 'GREGO ';
-    }
-  }
-
-  getColorName(String option) {
+  int getColorName(String option) {
     switch (option) {
       case 'todas':
         return 0;
@@ -98,6 +79,10 @@ class BibleDataController {
         return 7;
       case 'rosa':
         return 8;
+      default:
+        // Antes o método caía fora do switch e devolvia null, quebrando o
+        // índice da lista de cores.
+        return 0;
     }
   }
 }

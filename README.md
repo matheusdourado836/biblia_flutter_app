@@ -30,6 +30,7 @@ O aplicativo também suporta o modo escuro, que pode ser habilitado no menu.
 
 ## Licença
 O conteúdo deste projeto foi disponibilizado pelo https://github.com/thiagobodruk/bible e está licenciado sob Creative Commons 3.0 BY-NC-SA.
+Este projeto também está licenciado sob a Licença MIT. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
 
 ## Contribuindo
 Este é um projeto de código aberto e todos são bem-vindos para contribuir. Para contribuir com o projeto, basta criar um "fork" do repositório, implementar as melhorias desejadas e enviar um "pull request" para análise.

@@ -1,15 +1,14 @@
-import 'package:biblia_flutter_app/data/bible_data.dart';
 import 'package:biblia_flutter_app/data/search_verses_provider.dart';
 import 'package:biblia_flutter_app/data/version_provider.dart';
-import 'package:biblia_flutter_app/helpers/alert_dialog.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import '../../data/verses_provider.dart';
+import '../../helpers/version_to_name.dart';
+import '../../helpers/progress_dialog.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -18,22 +17,24 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _textEditingController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final BibleData _bibleData = BibleData();
   late SearchVersesProvider _searchVersesProvider;
   late VersesProvider _versesProvider;
   late VersionProvider versionProvider;
   List<Map<String, dynamic>>? listResult;
   Map<String, dynamic> map = {};
-  String _findInSelectedOption = '';
-  String _selectedOption = '';
+  final ValueNotifier<String> _findInSelectedOption = ValueNotifier('');
   final List<String> _findInOptions = [
     'Toda a Biblia',
     'Antigo Testamento',
     'Novo Testamento',
   ];
-  String _selectedBook = '';
-  final List<String> _findInBooks = [];
-
+  final ValueNotifier<String> _selectedBook = ValueNotifier('');
+  final ValueNotifier<List<String>> _findInBooks = ValueNotifier([]);
+  final List<String> _otBooks = [];
+  final List<String> _ntBooks = [];
+  List<String> _allBooks = [];
+  final ValueNotifier<bool> _preciseSearch = ValueNotifier(false);
+  final ValueNotifier<bool> _searching = ValueNotifier(false);
 
   @override
   void initState() {
@@ -41,93 +42,84 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchVersesProvider = Provider.of<SearchVersesProvider>(context, listen: false);
     _versesProvider = Provider.of<VersesProvider>(context, listen: false);
     _versesProvider.loadUserData();
-    _selectedOption = versionProvider.selectedOption;
-    _findInSelectedOption = _findInOptions[0];
-    _findInBooks.add('Todos');
-    _selectedBook = 'Todos';
-    for(var book in _bibleData.data[0]) {
-      _findInBooks.add(book["name"]);
+    _findInSelectedOption.value = _findInOptions[0];
+    _findInBooks.value.add('Todos');
+    _allBooks.add('Todos');
+    _otBooks.add('Todos');
+    _ntBooks.add('Todos');
+    _selectedBook.value = 'Todos';
+    for (var book in _versesProvider.bibleData[0]["text"]) {
+      _findInBooks.value.add(book["name"]);
     }
+    _allBooks = _findInBooks.value;
+    _otBooks.addAll(_allBooks.sublist(1, 40));
+    _ntBooks.addAll(_allBooks.sublist(40, 67));
     super.initState();
   }
 
   void onTap() {
     _versesProvider.clear();
-    _versesProvider.loadVerses(map["bookIndex"], map["bookName"],
-      versionIndex: versionProvider.options.indexOf(versionProvider.selectedOption));
+    _versesProvider.loadVerses(map["bookIndex"], map["bookName"], versionName: versionProvider.selectedOption.toLowerCase().split(' ')[0]);
     Navigator.pushNamed(context, 'verses_screen', arguments: map);
+  }
+
+  Future<void> doSearch() async {
+    if (_textEditingController.text.trim().isEmpty || _searching.value) return;
+
+    List<dynamic> allBooks = _versesProvider.bibleData[0]["text"];
+    final bookIndex = (_selectedBook.value == 'Todos')
+        ? -1
+        : allBooks.indexWhere((element) => element["name"] == _selectedBook.value);
+    _focusNode.unfocus();
+
+    if (bookIndex != -1) {
+      _findInSelectedOption.value = _findInOptions[0];
+    }
+    _searching.value = true;
+
+    try {
+      final results = await _searchVersesProvider.searchVerses(
+        _textEditingController.text.trim(),
+        versionProvider.selectedOption,
+        findIn: _findInSelectedOption.value.toLowerCase(),
+        findInBookIndex: bookIndex,
+        preciseSearch: _preciseSearch.value,
+      );
+      if (!mounted) return;
+      setState(() => listResult = results);
+    } finally {
+      if (mounted) _searching.value = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    _focusNode.dispose();
+    _findInSelectedOption.dispose();
+    _selectedBook.dispose();
+    _findInBooks.dispose();
+    _preciseSearch.dispose();
+    _searching.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    versionProvider.changeSelectedOption = _selectedOption;
     return Scaffold(
       appBar: AppBar(
-        leadingWidth: 24,
-        title: TextField(
-          controller: _textEditingController,
-          focusNode: _focusNode,
-          style: Theme.of(context).textTheme.bodyMedium,
-          onSubmitted: ((value) {
-            List<dynamic> allBooks = _bibleData.data[0];
-            final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
-            final versionIndex = versionProvider.options.indexOf(_selectedOption);
-            _focusNode.unfocus();
-            if (_textEditingController.text != '') {
-              setState(() {
-                if(bookIndex != -1) {
-                  _findInSelectedOption = _findInOptions[0];
-                }
-                _searchVersesProvider.searchVerses(_textEditingController.text.trim(), versionIndex, findIn: _findInSelectedOption.toLowerCase(), findInBookIndex: bookIndex).then((value) => listResult = value);
-              });
-            }
-          }),
-          decoration: const InputDecoration(icon: Icon(Icons.search), hintText: 'Digite o versículo aqui...', ),
-
-        ),
+        centerTitle: true,
+        title: const Text('Pesquisar versículos'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ElevatedButton(
-              onPressed: (() {
-                List<dynamic> allBooks = _bibleData.data[0];
-                final bookIndex = allBooks.indexWhere((element) => element["name"] == _selectedBook);
-                final versionIndex = versionProvider.options.indexOf(_selectedOption);
-                _focusNode.unfocus();
-                if (_textEditingController.text != '') {
-                  setState(() {
-                    if(bookIndex != -1) {
-                      _findInSelectedOption = _findInOptions[0];
-                    }
-                    _searchVersesProvider.searchVerses(_textEditingController.text.trim(), versionIndex, findIn: _findInSelectedOption.toLowerCase(), findInBookIndex: bookIndex).then((value) => listResult = value);
-                  });
-                }
-              }),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onError,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-              ),
-              child: const Text('ok'),
-            ),
-          ),
-        ],
-      ),
-      body: Container(
-        color: Theme.of(context).primaryColor,
-        padding: const EdgeInsets.fromLTRB(12, 12 ,12 ,0),
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverAppBar(
-              backgroundColor: Theme.of(context).primaryColor,
-              automaticallyImplyLeading: false,
-              pinned: true,
-              collapsedHeight: 168,
-              expandedHeight: 168,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Column(
+          IconButton(
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              showDragHandle: true,
+              useSafeArea: true,
+              builder: (context) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
@@ -136,35 +128,70 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           const Text('Versão:'),
                           SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.30,
+                            width: 100,
                             height: 30,
-                            child: DropdownButton(
-                              underline: Container(
-                                height: 0,
-                                color: Colors.transparent,
-                              ),
-                              style: Theme.of(context).dropdownMenuTheme.textStyle,
-                              isExpanded: true,
-                              itemHeight: 80.0,
-                              value: versionProvider.selectedOption,
-                              items: versionProvider.options.map((option) {
-                                versionProvider.setListItem(option.split(' ')[0]);
-                                return DropdownMenuItem(
-                                  value: option,
-                                  child: Text(
-                                    option,
-                                    style: Theme.of(context).textTheme.titleSmall,
+                            child: Consumer<VersionProvider>(
+                              builder: (context, value, _) {
+                                return DropdownButton(
+                                  underline: Container(
+                                    height: 0,
+                                    color: Colors.transparent,
                                   ),
+                                  style: Theme.of(context).dropdownMenuTheme.textStyle,
+                                  isExpanded: true,
+                                  itemHeight: 120.0,
+                                  value: versionProvider.selectedOption,
+                                  items: versionProvider.options.where((v) => v != 'Multi versão').map((option) {
+                                    if(value.getDownloadedVersion(versionToName(option))) {
+                                      return DropdownMenuItem(
+                                        value: option,
+                                        child: InkWell(
+                                          onTap: () => showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) => ProgressDialog(versionName: versionToName(option), versionNameRaw: option.split(' ')[0])
+                                          ).whenComplete(() {
+                                            value.loadBibleData().whenComplete(() {
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                              setState(() {});
+                                            });
+                                          }),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  option,
+                                                  style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12, color: Theme.of(context).textTheme.titleSmall!.color!.withValues(alpha: .5)),
+                                                ),
+                                              ),
+                                              const Icon(Icons.download, size: 16,)
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return DropdownMenuItem(
+                                      value: option,
+                                      child: Text(
+                                        option,
+                                        style: Theme.of(context).textTheme.titleSmall!.copyWith(fontSize: 12),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      versionProvider.changeVersion(newValue.toString());
+                                    });
+                                  },
+                                  selectedItemBuilder: (BuildContext context) {
+                                    return value.options.where((v) => v != 'Multi versão').map(
+                                      (v) => Center(
+                                        child: Text(v.toUpperCase().split(' ')[0]),
+                                      )
+                                    ).toList();
+                                  },
                                 );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _selectedOption = newValue!;
-                                  versionProvider.changeVersion(newValue.toString());
-                                });
-                              },
-                              selectedItemBuilder: (BuildContext context) {
-                                return versionProvider.versionsList;
                               },
                             ),
                           )
@@ -175,20 +202,36 @@ class _SearchScreenState extends State<SearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Buscar em:'),
-                        DropdownButton(
-                          alignment: Alignment.centerRight,
-                          underline: Container(
-                            height: 0,
-                            color: Colors.transparent,
-                          ),
-                          value: _findInSelectedOption,
-                          items: _findInOptions.map((option) {
-                            return DropdownMenuItem(
-                              value: option,
-                              child: Text(option, style: Theme.of(context).textTheme.bodyLarge),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) => setState(() => _findInSelectedOption = newValue!),
+                        ValueListenableBuilder(
+                          valueListenable: _findInSelectedOption,
+                          builder: (context, value, _) => DropdownButton(
+                            alignment: Alignment.centerRight,
+                            underline: Container(
+                              height: 0,
+                              color: Colors.transparent,
+                            ),
+                            value: _findInSelectedOption.value,
+                            items: _findInOptions.map((option) {
+                              return DropdownMenuItem(
+                                value: option,
+                                child: Text(
+                                    option,
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              _findInSelectedOption.value = newValue!;
+                              _selectedBook.value = 'Todos';
+                              if(newValue == 'Antigo Testamento') {
+                                _findInBooks.value = _otBooks;
+                              }else if(newValue == 'Novo Testamento') {
+                                _findInBooks.value = _ntBooks;
+                              }else {
+                                _findInBooks.value = _allBooks;
+                              }
+                            },
+                          )
                         )
                       ],
                     ),
@@ -196,78 +239,190 @@ class _SearchScreenState extends State<SearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Livro:'),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * .78,
-                          child: DropdownButton(
-                            alignment: Alignment.centerRight,
-                            padding: EdgeInsets.zero,
-                            isExpanded: true,
-                            underline: Container(
-                              height: 0,
-                              color: Colors.transparent,
-                            ),
-                            value: _selectedBook,
-                            items: _findInBooks.map((option) {
-                              return DropdownMenuItem(
-                                value: option,
-                                child: Text(option, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyLarge),
-                              );
-                            }).toList(),
-                            selectedItemBuilder: (context) {
-                              return _findInBooks.map((book) {
+                        ValueListenableBuilder(
+                          valueListenable: _findInBooks,
+                          builder: (context, val, _) => ValueListenableBuilder(
+                            valueListenable: _selectedBook,
+                            builder: (context, value, _) => DropdownButton(
+                              alignment: Alignment.centerRight,
+                              underline: Container(
+                                height: 0,
+                                color: Colors.transparent,
+                              ),
+                              value: _selectedBook.value,
+                              items: _findInBooks.value.map((option) {
                                 return DropdownMenuItem(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(book, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyLarge),
+                                  value: option,
+                                  child: Text(
+                                      option,
+                                      style: Theme.of(context).textTheme.bodyLarge
+                                  ),
                                 );
-                              }).toList();
-                            },
-                            onChanged: (newValue) {
-                              setState(() => _selectedBook = newValue!);
-                            },
-                          ),
+                              }).toList(),
+                              onChanged: (newValue) => _selectedBook.value = newValue!,
+                            )
+                          )
+                        )
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Busca precisa'),
+                            const SizedBox(width: 4),
+                            Tooltip(
+                              message: 'A busca precisa retorna versos que contenham exatamente a palavra que você está pesquisando.'
+                                  '\nEx. a pesquisa "amor" não retornará um verso que contenha "amorreus".',
+                              showDuration: const Duration(seconds: 10),
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              triggerMode: TooltipTriggerMode.tap,
+                              child: const Icon(Icons.help_outline, size: 20, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: _preciseSearch,
+                          builder: (context, value, _) => Switch(
+                            value: value,
+                            onChanged: (newValue) =>  _preciseSearch.value = !_preciseSearch.value
+                          )
                         )
                       ],
                     ),
                   ],
                 ),
+              )
+            ),
+            icon: const Icon(Icons.settings)
+          ),
+        ],
+      ),
+      body: Container(
+        color: Theme.of(context).primaryColor,
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverAppBar(
+              backgroundColor: Theme.of(context).primaryColor,
+              automaticallyImplyLeading: false,
+              pinned: true,
+              collapsedHeight: 110,
+              expandedHeight: 110,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _textEditingController,
+                              focusNode: _focusNode,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              onSubmitted: (value) => doSearch(),
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.search),
+                                hintText: 'Digite o versículo aqui...',
+                                hintStyle: const TextStyle(color: Colors.grey),
+                                suffixIcon: IconButton(
+                                  onPressed: () => _textEditingController.clear(),
+                                  icon: const Icon(Icons.close)
+                                ),
+                                filled: true,
+                                focusedBorder: OutlineInputBorder(borderSide: BorderSide(width: 0, color: Theme.of(context).colorScheme.onSurface), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                                enabledBorder: OutlineInputBorder(borderSide: BorderSide(width: 0, color: Theme.of(context).colorScheme.onSurface, strokeAlign: 10), borderRadius: const BorderRadius.all(Radius.circular(10))),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          ElevatedButton(
+                            onPressed: () => doSearch(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onError,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(8)),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16)
+                            ),
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _searching,
+                        builder: (context, searching, _) {
+                          if (searching) {
+                            return const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            );
+                          }
+                          if (listResult?.isNotEmpty ?? false) {
+                            return Text(
+                              '${listResult!.length} Resultados',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      )
+                    ],
+                  ),
+                ),
               ),
             ),
-            (listResult == null)
-                ? SliverToBoxAdapter(
-                    child: Container(),
-                  )
-                : (listResult != null && listResult!.isEmpty)
-                    ? SliverToBoxAdapter(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset('assets/images/not_found.png'),
-                            const SizedBox(height: 16),
-                            const Text('Nenhum versículo encontrado',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
-                              textAlign: TextAlign.center)
-                          ],
-                        ),
+            if(listResult != null)
+              if(listResult!.isEmpty)
+                SliverToBoxAdapter(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/images/not_found.png'),
+                      const SizedBox(height: 16),
+                      const Text('Nenhum versículo encontrado',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w200),
+                        textAlign: TextAlign.center
                       )
-                    : SliverList(
-              delegate: SliverChildBuilderDelegate(
+                    ],
+                  ),
+                )
+                else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                  return Consumer<SearchVersesProvider>(
-                    builder: (context, list, child) {
+                      final l = listResult![index];
+                      final bookname = l['book'];
+                      final abbrev = l['abbrev'];
+                      final verse = l['verse'];
+                      final bookIndex = l['bookIndex'];
+                      final qtdChapters = l['qtdChapters'];
+                      final chapter = l['chapter'];
+                      final verseNumber = l['verseNumber'];
+
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: InkWell(
-                          onTap: (() {
+                          onTap: () {
                             setState(() {
-                              map["bookName"] = listResult![index]['book'];
-                              map["abbrev"] = listResult![index]['abbrev'];
-                              map["bookIndex"] = listResult![index]['bookIndex'];
-                              map["chapters"] = listResult![index]['qtdChapters'];
-                              map["chapter"] = listResult![index]['chapter'];
-                              map["verseNumber"] = listResult![index]['verseNumber'];
+                              map["bookName"] = bookname;
+                              map["abbrev"] = abbrev;
+                              map["bookIndex"] = bookIndex;
+                              map["chapters"] = qtdChapters;
+                              map["chapter"] = chapter;
+                              map["verseNumber"] = verseNumber;
                             });
                             onTap();
-                          }),
+                          },
                           child: Card(
                             child: Slidable(
                               endActionPane: ActionPane(
@@ -277,53 +432,55 @@ class _SearchScreenState extends State<SearchScreen> {
                                   SlidableAction(
                                     onPressed: (context) {
                                       _searchVersesProvider.share(
-                                          listResult![index]['book'],
-                                          listResult![index]['verse'],
-                                          listResult![index]
-                                          ['chapter'],
-                                          listResult![index]
-                                          ['verseNumber']);
+                                        bookname,
+                                        verse,
+                                        chapter,
+                                        verseNumber,
+                                      );
                                     },
                                     icon: Icons.share,
                                     label: 'Share',
                                     backgroundColor: Theme.of(context)
                                         .buttonTheme
                                         .colorScheme!
-                                        .background,
+                                        .surface,
                                   ),
                                   SlidableAction(
-                                    borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
                                     onPressed: (context) {
                                       _searchVersesProvider.copyText(
-                                          listResult![index]['book'],
-                                          listResult![index]['verse'],
-                                          listResult![index]
-                                          ['chapter'],
-                                          listResult![index]
-                                          ['verseNumber']);
+                                        bookname,
+                                        verse,
+                                        chapter,
+                                        verseNumber,
+                                      );
                                     },
                                     icon: Icons.copy,
                                     label: 'Copiar',
                                     backgroundColor: Theme.of(context)
                                         .buttonTheme
                                         .colorScheme!
-                                        .background
-                                        .withOpacity(0.9),
-                                  )
+                                        .surface
+                                        .withValues(alpha: 0.9),
+                                  ),
                                 ],
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0,
+                                  vertical: 16.0,
+                                ),
                                 child: Column(
                                   children: [
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '${listResult![index]['book']} ${listResult![index]['chapter']}:${listResult![index]['verseNumber']}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleLarge,
+                                          '$bookname $chapter:$verseNumber',
+                                          style: Theme.of(context).textTheme.titleLarge,
                                         ),
                                       ],
                                     ),
@@ -332,13 +489,24 @@ class _SearchScreenState extends State<SearchScreen> {
                                       padding: const EdgeInsets.all(12.0),
                                       margin: const EdgeInsets.only(bottom: 4),
                                       decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.background,
-                                          borderRadius: BorderRadius.circular(8)
+                                        color: Theme.of(context).colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text.rich(TextSpan(
-                                          children: listResult![index]["highlightedTexts"]
-                                      )),
-                                    )
+                                      child: Text.rich(
+                                        TextSpan(
+                                          children: _searchVersesProvider.buildHighlightedSpans(
+                                            l,
+                                            baseStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                              fontSize: _versesProvider.fontSize,
+                                            ),
+                                            highlightStyle: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              fontSize: _versesProvider.fontSize,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -347,10 +515,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       );
                     },
-                  );
-                },childCount: listResult!.length,
-              ),
-            )
+                    childCount: listResult!.length,
+                  ),
+                )
           ],
         ),
       ),
